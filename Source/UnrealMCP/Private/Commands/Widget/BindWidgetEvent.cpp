@@ -1,5 +1,5 @@
 #include "Commands/UMG/BindWidgetEvent.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/WidgetService.h"
 #include "Core/MCPTypes.h"
 
@@ -21,8 +21,8 @@ auto FBindWidgetEvent::Handle(
 	}
 
 	const UnrealMCP::FWidgetEventBindingParams& ParsedParams = ParamsResult.GetValue();
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("widget_component_name"), ParsedParams.WidgetComponentName);
-	Response->SetStringField(TEXT("event_name"), ParsedParams.EventName);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("widget_component_name"), ParsedParams.WidgetComponentName);
+		Data->SetStringField(TEXT("event_name"), ParsedParams.EventName);
+	});
 }

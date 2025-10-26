@@ -1,5 +1,5 @@
 #include "Commands/BlueprintNode/FindBlueprintNodes.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
 
 auto FFindBlueprintNodes::Handle(
@@ -40,7 +40,7 @@ auto FFindBlueprintNodes::Handle(
 		NodeGuidArray.Add(MakeShared<FJsonValueString>(Guid));
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetArrayField(TEXT("node_guids"), NodeGuidArray);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetArrayField(TEXT("node_guids"), NodeGuidArray);
+	});
 }

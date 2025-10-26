@@ -1,5 +1,5 @@
 #include "Core/MCPTypes.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 namespace UnrealMCP {
 	auto FBlueprintSpawnParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FBlueprintSpawnParams> {
@@ -251,7 +251,8 @@ namespace UnrealMCP {
 		return TResult<FButtonParams>::Success(MoveTemp(Params));
 	}
 
-	auto FWidgetEventBindingParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FWidgetEventBindingParams> {
+	auto FWidgetEventBindingParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FWidgetEventBindingParams> {
 		if (!Json.IsValid()) {
 			return TResult<FWidgetEventBindingParams>::Failure(TEXT("Invalid JSON object"));
 		}
@@ -274,7 +275,8 @@ namespace UnrealMCP {
 
 		if (Json->TryGetStringField(TEXT("function_name"), Params.FunctionName)) {
 			// Use provided function name
-		} else {
+		}
+		else {
 			// Default function name
 			Params.FunctionName = Params.WidgetComponentName + TEXT("_") + Params.EventName;
 		}
@@ -308,7 +310,8 @@ namespace UnrealMCP {
 		return TResult<FTextBlockBindingParams>::Success(MoveTemp(Params));
 	}
 
-	auto FAddWidgetToViewportParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FAddWidgetToViewportParams> {
+	auto FAddWidgetToViewportParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FAddWidgetToViewportParams> {
 		if (!Json.IsValid()) {
 			return TResult<FAddWidgetToViewportParams>::Failure(TEXT("Invalid JSON object"));
 		}
@@ -351,7 +354,8 @@ namespace UnrealMCP {
 		return TResult<FInputActionParams>::Success(MoveTemp(Params));
 	}
 
-	auto FInputMappingContextParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FInputMappingContextParams> {
+	auto FInputMappingContextParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FInputMappingContextParams> {
 		if (!Json.IsValid()) {
 			return TResult<FInputMappingContextParams>::Failure(TEXT("Invalid JSON object"));
 		}
@@ -424,7 +428,8 @@ namespace UnrealMCP {
 		return TResult<FStaticMeshParams>::Success(MoveTemp(Params));
 	}
 
-	auto FApplyMappingContextParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FApplyMappingContextParams> {
+	auto FApplyMappingContextParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FApplyMappingContextParams> {
 		if (!Json.IsValid()) {
 			return TResult<FApplyMappingContextParams>::Failure(TEXT("Invalid JSON object"));
 		}
@@ -444,7 +449,8 @@ namespace UnrealMCP {
 		return TResult<FApplyMappingContextParams>::Success(MoveTemp(Params));
 	}
 
-	auto FRemoveMappingContextParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FRemoveMappingContextParams> {
+	auto FRemoveMappingContextParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FRemoveMappingContextParams> {
 		if (!Json.IsValid()) {
 			return TResult<FRemoveMappingContextParams>::Failure(TEXT("Invalid JSON object"));
 		}
@@ -459,7 +465,8 @@ namespace UnrealMCP {
 		return TResult<FRemoveMappingContextParams>::Success(MoveTemp(Params));
 	}
 
-	auto FLegacyInputMappingParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FLegacyInputMappingParams> {
+	auto FLegacyInputMappingParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FLegacyInputMappingParams> {
 		if (!Json.IsValid()) {
 			return TResult<FLegacyInputMappingParams>::Failure(TEXT("Invalid JSON object"));
 		}

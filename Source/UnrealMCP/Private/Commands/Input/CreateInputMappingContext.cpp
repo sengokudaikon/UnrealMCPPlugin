@@ -1,5 +1,5 @@
 #include "Commands/Input/CreateInputMappingContext.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
@@ -24,8 +24,8 @@ auto FCreateInputMappingContext::Handle(
 
 	const UnrealMCP::FInputMappingContextParams& ParsedParams = ParamsResult.GetValue();
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("name"), ParsedParams.Name);
-	Response->SetStringField(TEXT("asset_path"), ParsedParams.Path / FString::Printf(TEXT("IMC_%s"), *ParsedParams.Name));
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("name"), ParsedParams.Name);
+		Data->SetStringField(TEXT("asset_path"), ParsedParams.Path / FString::Printf(TEXT("IMC_%s"), *ParsedParams.Name));
+	});
 }

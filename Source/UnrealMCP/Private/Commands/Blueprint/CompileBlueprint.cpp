@@ -1,6 +1,6 @@
 ﻿#include "Commands/Blueprint/CompileBlueprint.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Core/Result.h"
 #include "Services/BlueprintCreationService.h"
 
@@ -19,8 +19,8 @@ auto FCompileBlueprint::Handle(
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("name"), BlueprintName);
-	Response->SetBoolField(TEXT("compiled"), true);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("name"), BlueprintName);
+		Data->SetBoolField(TEXT("compiled"), true);
+	});
 }

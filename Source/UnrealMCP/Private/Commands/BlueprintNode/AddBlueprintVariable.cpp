@@ -1,5 +1,5 @@
 #include "Commands/BlueprintNode/AddBlueprintVariable.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
 
 auto FAddBlueprintVariable::Handle(
@@ -38,8 +38,8 @@ auto FAddBlueprintVariable::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("variable_name"), VariableName);
-	Response->SetStringField(TEXT("variable_type"), VariableType);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("variable_name"), VariableName);
+		Data->SetStringField(TEXT("variable_type"), VariableType);
+	});
 }

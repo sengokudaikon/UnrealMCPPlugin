@@ -1,5 +1,5 @@
 #include "Commands/Input/CreateLegacyInputMapping.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
@@ -22,14 +22,14 @@ auto FCreateLegacyInputMapping::Handle(
 	}
 
 
-	const UnrealMCP::FLegacyInputMappingParams& ParsedParams = ParamsResult.GetValue();
+	const auto& [ActionName, Key, bShift, bCtrl, bAlt, bCmd] = ParamsResult.GetValue();
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("action_name"), ParsedParams.ActionName);
-	Response->SetStringField(TEXT("key"), ParsedParams.Key);
-	Response->SetBoolField(TEXT("shift"), ParsedParams.bShift);
-	Response->SetBoolField(TEXT("ctrl"), ParsedParams.bCtrl);
-	Response->SetBoolField(TEXT("alt"), ParsedParams.bAlt);
-	Response->SetBoolField(TEXT("cmd"), ParsedParams.bCmd);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("action_name"), ActionName);
+		Data->SetStringField(TEXT("key"), Key);
+		Data->SetBoolField(TEXT("shift"), bShift);
+		Data->SetBoolField(TEXT("ctrl"), bCtrl);
+		Data->SetBoolField(TEXT("alt"), bAlt);
+		Data->SetBoolField(TEXT("cmd"), bCmd);
+	});
 }

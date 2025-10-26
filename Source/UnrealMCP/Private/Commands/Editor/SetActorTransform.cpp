@@ -1,5 +1,5 @@
 #include "Commands/Editor/SetActorTransform.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ActorService.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
@@ -40,18 +40,17 @@ auto FSetActorTransform::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("actor"), ActorName);
-	Response->SetBoolField(TEXT("success"), true);
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("actor"), ActorName);
+		Data->SetBoolField(TEXT("success"), true);
 
-	if (Location.IsSet()) {
-		const FVector Loc = Location.GetValue();
-		const TSharedPtr<FJsonObject> LocationObj = MakeShared<FJsonObject>();
-		LocationObj->SetNumberField(TEXT("x"), Loc.X);
-		LocationObj->SetNumberField(TEXT("y"), Loc.Y);
-		LocationObj->SetNumberField(TEXT("z"), Loc.Z);
-		Response->SetObjectField(TEXT("location"), LocationObj);
-	}
-
-	return Response;
+		if (Location.IsSet()) {
+			const FVector Loc = Location.GetValue();
+			const TSharedPtr<FJsonObject> LocationObj = MakeShared<FJsonObject>();
+			LocationObj->SetNumberField(TEXT("x"), Loc.X);
+			LocationObj->SetNumberField(TEXT("y"), Loc.Y);
+			LocationObj->SetNumberField(TEXT("z"), Loc.Z);
+			Data->SetObjectField(TEXT("location"), LocationObj);
+		}
+	});
 }

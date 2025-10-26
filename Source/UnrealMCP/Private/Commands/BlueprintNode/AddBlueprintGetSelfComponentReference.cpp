@@ -1,5 +1,5 @@
 #include "Commands/BlueprintNode/AddBlueprintGetSelfComponentReference.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
 #include "K2Node_VariableGet.h"
 
@@ -33,7 +33,7 @@ auto FAddBlueprintGetSelfComponentReference::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("node_id"), Result.GetValue()->NodeGuid.ToString());
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("node_id"), Result.GetValue()->NodeGuid.ToString());
+	});
 }

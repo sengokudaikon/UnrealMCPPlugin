@@ -1,5 +1,5 @@
 #include "Commands/Input/CreateEnhancedInputAction.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
@@ -25,9 +25,9 @@ auto FCreateEnhancedInputAction::Handle(
 	const UnrealMCP::FInputActionParams& ParsedParams = ParamsResult.GetValue();
 	const UInputAction* InputAction = Result.GetValue();
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("name"), ParsedParams.Name);
-	Response->SetStringField(TEXT("value_type"), ParsedParams.ValueType);
-	Response->SetStringField(TEXT("asset_path"), ParsedParams.Path / FString::Printf(TEXT("IA_%s"), *ParsedParams.Name));
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("name"), ParsedParams.Name);
+		Data->SetStringField(TEXT("value_type"), ParsedParams.ValueType);
+		Data->SetStringField(TEXT("asset_path"), ParsedParams.Path / FString::Printf(TEXT("IA_%s"), *ParsedParams.Name));
+	});
 }

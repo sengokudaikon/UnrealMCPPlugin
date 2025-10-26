@@ -1,6 +1,6 @@
 ﻿#include "Commands/Blueprint/SetPawnProperties.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
 
@@ -21,8 +21,7 @@ auto FSetPawnProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TShare
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("blueprint"), BlueprintName);
-	Response->SetBoolField(TEXT("success"), true);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("blueprint"), BlueprintName);
+	});
 }

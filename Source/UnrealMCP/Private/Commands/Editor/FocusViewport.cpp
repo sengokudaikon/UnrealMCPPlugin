@@ -1,5 +1,5 @@
 #include "Commands/Editor/FocusViewport.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ViewportService.h"
 #include "Core/MCPTypes.h"
 
@@ -33,12 +33,11 @@ auto FFocusViewport::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetBoolField(TEXT("success"), true);
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetBoolField(TEXT("success"), true);
 
-	if (TargetActor.IsSet()) {
-		Response->SetStringField(TEXT("focused_on"), TargetActor.GetValue());
-	}
-
-	return Response;
+		if (TargetActor.IsSet()) {
+			Data->SetStringField(TEXT("focused_on"), TargetActor.GetValue());
+		}
+	});
 }

@@ -1,6 +1,6 @@
 #include "Commands/Blueprint/CreateBlueprint.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/BlueprintCreationService.h"
 #include "Core/MCPTypes.h"
 
@@ -26,12 +26,12 @@ auto FCreateBlueprint::Handle(
 	const UnrealMCP::FBlueprintCreationParams& ParsedParams = ParamsResult.GetValue();
 	const UBlueprint* Blueprint = Result.GetValue();
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("name"), ParsedParams.Name);
-	Response->SetStringField(TEXT("path"), ParsedParams.PackagePath + ParsedParams.Name);
-	Response->SetStringField(
-		TEXT("parent_class"),
-		Blueprint->ParentClass ? Blueprint->ParentClass->GetName() : TEXT("AActor")
-	);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("name"), ParsedParams.Name);
+		Data->SetStringField(TEXT("path"), ParsedParams.PackagePath + ParsedParams.Name);
+		Data->SetStringField(
+			TEXT("parent_class"),
+			Blueprint->ParentClass ? Blueprint->ParentClass->GetName() : TEXT("AActor")
+		);
+	});
 }

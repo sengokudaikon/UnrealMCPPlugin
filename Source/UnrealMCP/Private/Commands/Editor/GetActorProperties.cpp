@@ -1,5 +1,5 @@
 #include "Commands/Editor/GetActorProperties.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ActorService.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
@@ -26,8 +26,8 @@ auto FGetActorProperties::Handle(
 		PropertiesObj->SetStringField(Property.Key, Property.Value);
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("actor"), ActorName);
-	Response->SetObjectField(TEXT("properties"), PropertiesObj);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("actor"), ActorName);
+		Data->SetObjectField(TEXT("properties"), PropertiesObj);
+	});
 }

@@ -1,5 +1,5 @@
 #include "Commands/Input/ApplyMappingContext.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
@@ -24,8 +24,8 @@ auto FApplyMappingContext::Handle(
 
 	const UnrealMCP::FApplyMappingContextParams& ParsedParams = ParamsResult.GetValue();
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("context_path"), ParsedParams.ContextPath);
-	Response->SetNumberField(TEXT("priority"), ParsedParams.Priority);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("context_path"), ParsedParams.ContextPath);
+		Data->SetNumberField(TEXT("priority"), ParsedParams.Priority);
+	});
 }

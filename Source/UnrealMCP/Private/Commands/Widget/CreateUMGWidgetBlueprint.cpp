@@ -1,5 +1,5 @@
 #include "Commands/UMG/CreateUMGWidgetBlueprint.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/WidgetService.h"
 #include "Core/MCPTypes.h"
 #include "WidgetBlueprint.h"
@@ -22,8 +22,8 @@ auto FCreateUMGWidgetBlueprint::Handle(
 	}
 
 	const UnrealMCP::FWidgetCreationParams& ParsedParams = ParamsResult.GetValue();
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("name"), ParsedParams.Name);
-	Response->SetStringField(TEXT("path"), ParsedParams.PackagePath / ParsedParams.Name);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("name"), ParsedParams.Name);
+		Data->SetStringField(TEXT("path"), ParsedParams.PackagePath / ParsedParams.Name);
+	});
 }

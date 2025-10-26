@@ -1,5 +1,5 @@
 #include "Commands/UnrealMCPEditorCommands.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Commands/Editor/GetActorsInLevel.h"
 #include "Commands/Editor/FindActorsByName.h"
 #include "Commands/Editor/SpawnActor.h"

@@ -1,6 +1,6 @@
 ﻿#include "Commands/Blueprint/SetBlueprintProperty.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Core/MCPTypes.h"
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
@@ -29,8 +29,7 @@ auto FSetBlueprintProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSh
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("property"), ParamsResult.GetValue().PropertyName);
-	Response->SetBoolField(TEXT("success"), true);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("property"), ParamsResult.GetValue().PropertyName);
+	});
 }

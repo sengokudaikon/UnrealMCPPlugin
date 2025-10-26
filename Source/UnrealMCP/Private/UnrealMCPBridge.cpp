@@ -54,7 +54,7 @@
 #include "Commands/UnrealMCPEditorCommands.h"
 #include "Commands/UnrealMCPBlueprintCommands.h"
 #include "Commands/UnrealMCPBlueprintNodeCommands.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Commands/UnrealMCPInputCommands.h"
 #include "Commands/UnrealMCPWidgetCommands.h"
 #include "Commands/UnrealMCPRegistryCommands.h"

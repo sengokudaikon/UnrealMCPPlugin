@@ -48,7 +48,7 @@ namespace UnrealMCP {
 		}
 		// If location is provided, focus on that location
 		else if (Location.IsSet()) {
-			FLevelEditorViewportClient* ViewportClient = static_cast<FLevelEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
+			auto ViewportClient = static_cast<FLevelEditorViewportClient*>(GEditor->GetActiveViewport()->GetClient());
 			if (ViewportClient) {
 				ViewportClient->SetViewLocation(Location.GetValue());
 			}

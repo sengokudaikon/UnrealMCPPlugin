@@ -1,6 +1,6 @@
 #include "Commands/Blueprint/SpawnActorBlueprint.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/BlueprintService.h"
 #include "Core/MCPTypes.h"
 

@@ -1,5 +1,5 @@
 #include "Commands/UMG/AddTextBlockToWidget.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/WidgetService.h"
 #include "Core/MCPTypes.h"
 #include "Components/TextBlock.h"
@@ -22,8 +22,8 @@ auto FAddTextBlockToWidget::Handle(
 	}
 
 	const UnrealMCP::FTextBlockParams& ParsedParams = ParamsResult.GetValue();
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("widget_name"), ParsedParams.TextBlockName);
-	Response->SetStringField(TEXT("text"), ParsedParams.Text);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("widget_name"), ParsedParams.TextBlockName);
+		Data->SetStringField(TEXT("text"), ParsedParams.Text);
+	});
 }

@@ -25,7 +25,7 @@ public:
 	static auto CreateErrorResponse(const FString& Message) -> TSharedPtr<FJsonObject>;
 
 	static auto CreateSuccessResponse(const TSharedPtr<FJsonObject>& Data = nullptr) -> TSharedPtr<FJsonObject>;
-
+	static auto CreateSuccessResponse(const TFunction<void(TSharedPtr<FJsonObject>&)>& DataBuilder) -> TSharedPtr<FJsonObject>;
 	static void GetIntArrayFromJson(
 		const TSharedPtr<FJsonObject>& JsonObject,
 		const FString& FieldName,
@@ -44,9 +44,9 @@ public:
 
 	static auto GetRotatorFromJson(const TSharedPtr<FJsonObject>& JsonObject, const FString& FieldName) -> FRotator;
 
-	static auto ActorToJson(AActor* Actor) -> TSharedPtr<FJsonValue>;
+	static auto ActorToJson(const AActor* Actor) -> TSharedPtr<FJsonValue>;
 
-	static auto ActorToJsonObject(AActor* Actor, bool bDetailed = false) -> TSharedPtr<FJsonObject>;
+	static auto ActorToJsonObject(const AActor* Actor, bool bDetailed = false) -> TSharedPtr<FJsonObject>;
 
 	static auto FindBlueprint(const FString& BlueprintName) -> UBlueprint*;
 
@@ -58,20 +58,20 @@ public:
 
 	static auto CreateFunctionCallNode(
 		UEdGraph* Graph,
-		UFunction* Function,
+		const UFunction* Function,
 		const FVector2D& Position
 	) -> UK2Node_CallFunction*;
 
 	static auto CreateVariableGetNode(
 		UEdGraph* Graph,
-		UBlueprint* Blueprint,
+		const UBlueprint* Blueprint,
 		const FString& VariableName,
 		const FVector2D& Position
 	) -> UK2Node_VariableGet*;
 
 	static auto CreateVariableSetNode(
 		UEdGraph* Graph,
-		UBlueprint* Blueprint,
+		const UBlueprint* Blueprint,
 		const FString& VariableName,
 		const FVector2D& Position
 	) -> UK2Node_VariableSet*;
@@ -85,7 +85,7 @@ public:
 	static auto CreateSelfReferenceNode(UEdGraph* Graph, const FVector2D& Position) -> UK2Node_Self*;
 
 	static bool ConnectGraphNodes(
-		UEdGraph* Graph,
+		const UEdGraph* Graph,
 		UEdGraphNode* SourceNode,
 		const FString& SourcePinName,
 		UEdGraphNode* TargetNode,

@@ -1,5 +1,5 @@
 #include "Commands/Editor/SpawnActor.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ActorService.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
@@ -41,16 +41,15 @@ auto FSpawnActor::Handle(
 
 
 	const AActor* SpawnedActor = Result.GetValue();
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("actor_name"), SpawnedActor->GetName());
-	Response->SetStringField(TEXT("actor_class"), SpawnedActor->GetClass()->GetName());
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("actor_name"), SpawnedActor->GetName());
+		Data->SetStringField(TEXT("actor_class"), SpawnedActor->GetClass()->GetName());
 
-	const FVector ActorLocation = SpawnedActor->GetActorLocation();
-	const TSharedPtr<FJsonObject> LocationObj = MakeShared<FJsonObject>();
-	LocationObj->SetNumberField(TEXT("x"), ActorLocation.X);
-	LocationObj->SetNumberField(TEXT("y"), ActorLocation.Y);
-	LocationObj->SetNumberField(TEXT("z"), ActorLocation.Z);
-	Response->SetObjectField(TEXT("location"), LocationObj);
-
-	return Response;
+		const FVector ActorLocation = SpawnedActor->GetActorLocation();
+		const TSharedPtr<FJsonObject> LocationObj = MakeShared<FJsonObject>();
+		LocationObj->SetNumberField(TEXT("x"), ActorLocation.X);
+		LocationObj->SetNumberField(TEXT("y"), ActorLocation.Y);
+		LocationObj->SetNumberField(TEXT("z"), ActorLocation.Z);
+		Data->SetObjectField(TEXT("location"), LocationObj);
+	});
 }

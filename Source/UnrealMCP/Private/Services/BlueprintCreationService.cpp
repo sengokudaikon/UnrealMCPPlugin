@@ -1,5 +1,5 @@
 #include "Services/BlueprintCreationService.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Factories/BlueprintFactory.h"

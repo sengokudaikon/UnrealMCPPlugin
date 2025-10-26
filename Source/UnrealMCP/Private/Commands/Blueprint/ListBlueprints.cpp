@@ -1,6 +1,6 @@
 #include "Commands/Blueprint/ListBlueprints.h"
 #include "Services/BlueprintIntrospectionService.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 namespace UnrealMCP {
 
@@ -9,23 +9,19 @@ namespace UnrealMCP {
 		const bool bRecursive = Params->HasField(TEXT("recursive")) ? Params->GetBoolField(TEXT("recursive")) : true;
 
 		TArray<FString> Blueprints;
-		const FVoidResult Result = FBlueprintIntrospectionService::ListBlueprints(Path, bRecursive, Blueprints);
 
-		if (!Result.IsSuccess()) {
+		if (const FVoidResult Result = FBlueprintIntrospectionService::ListBlueprints(Path, bRecursive, Blueprints); !Result.IsSuccess()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 
-		TArray<TSharedPtr<FJsonValue>> JsonArray;
-		for (const FString& BlueprintPath : Blueprints) {
-			JsonArray.Add(MakeShared<FJsonValueString>(BlueprintPath));
-		}
-
-		TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-		Response->SetBoolField(TEXT("success"), true);
-		Response->SetArrayField(TEXT("blueprints"), JsonArray);
-		Response->SetNumberField(TEXT("count"), Blueprints.Num());
-
-		return Response;
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			TArray<TSharedPtr<FJsonValue>> JsonArray;
+			for (const FString& BlueprintPath : Blueprints) {
+				JsonArray.Add(MakeShared<FJsonValueString>(BlueprintPath));
+			}
+			Data->SetArrayField(TEXT("blueprints"), JsonArray);
+			Data->SetNumberField(TEXT("count"), Blueprints.Num());
+		});
 	}
 
 } // namespace UnrealMCP

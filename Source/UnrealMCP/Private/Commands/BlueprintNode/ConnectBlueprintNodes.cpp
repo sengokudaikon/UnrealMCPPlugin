@@ -1,5 +1,5 @@
 #include "Commands/BlueprintNode/ConnectBlueprintNodes.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
 
 auto FConnectBlueprintNodes::Handle(
@@ -44,8 +44,8 @@ auto FConnectBlueprintNodes::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("source_node_id"), SourceNodeId);
-	Response->SetStringField(TEXT("target_node_id"), TargetNodeId);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("source_node_id"), SourceNodeId);
+		Data->SetStringField(TEXT("target_node_id"), TargetNodeId);
+	});
 }

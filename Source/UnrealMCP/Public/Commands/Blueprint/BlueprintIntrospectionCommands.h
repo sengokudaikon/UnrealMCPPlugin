@@ -5,6 +5,11 @@
 
 namespace UnrealMCP {
 
+	/**
+	 * Blueprint introspection commands for querying blueprint information.
+	 * These commands provide read-only access to blueprint metadata.
+	 */
+
 	class UNREALMCP_API FBlueprintExistsCommand {
 	public:
 		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;

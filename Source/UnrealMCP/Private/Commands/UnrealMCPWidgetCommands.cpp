@@ -5,7 +5,7 @@
 #include "Commands/UMG/AddButtonToWidget.h"
 #include "Commands/UMG/BindWidgetEvent.h"
 #include "Commands/UMG/SetTextBlockBinding.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 FUnrealMCPWidgetCommands::FUnrealMCPWidgetCommands()
 {

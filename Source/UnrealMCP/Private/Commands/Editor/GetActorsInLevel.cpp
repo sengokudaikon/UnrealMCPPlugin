@@ -1,5 +1,5 @@
 #include "Commands/Editor/GetActorsInLevel.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ActorService.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
@@ -22,7 +22,7 @@ auto FGetActorsInLevel::Handle(
 		ActorArray.Add(MakeShared<FJsonValueObject>(ActorObj));
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetArrayField(TEXT("actors"), ActorArray);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetArrayField(TEXT("actors"), ActorArray);
+	});
 }

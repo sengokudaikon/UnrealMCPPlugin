@@ -1,5 +1,5 @@
 #include "Commands/Input/ClearAllMappingContexts.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
@@ -16,7 +16,7 @@ auto FClearAllMappingContexts::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetBoolField(TEXT("success"), true);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetBoolField(TEXT("success"), true);
+	});
 }

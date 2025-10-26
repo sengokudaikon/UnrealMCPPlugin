@@ -1,5 +1,5 @@
 #include "Commands/Editor/TakeScreenshot.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ViewportService.h"
 #include "Core/MCPTypes.h"
 
@@ -20,7 +20,7 @@ auto FTakeScreenshot::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("filepath"), Result.GetValue());
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("filepath"), Result.GetValue());
+	});
 }

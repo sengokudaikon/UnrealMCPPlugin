@@ -1,5 +1,5 @@
 #include "Commands/UMG/SetTextBlockBinding.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/WidgetService.h"
 #include "Core/MCPTypes.h"
 
@@ -21,8 +21,8 @@ auto FSetTextBlockBinding::Handle(
 	}
 
 	const UnrealMCP::FTextBlockBindingParams& ParsedParams = ParamsResult.GetValue();
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("text_block_name"), ParsedParams.TextBlockName);
-	Response->SetStringField(TEXT("binding_property"), ParsedParams.BindingProperty);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("text_block_name"), ParsedParams.TextBlockName);
+		Data->SetStringField(TEXT("binding_property"), ParsedParams.BindingProperty);
+	});
 }

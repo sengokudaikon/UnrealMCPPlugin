@@ -1,6 +1,6 @@
 ﻿#include "Commands/Blueprint/SetStaticMeshProperties.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Core/MCPTypes.h"
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
@@ -28,8 +28,7 @@ auto FSetStaticMeshProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> 
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("component"), MeshParams.ComponentName);
-	Response->SetBoolField(TEXT("success"), true);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("component"), MeshParams.ComponentName);
+	});
 }

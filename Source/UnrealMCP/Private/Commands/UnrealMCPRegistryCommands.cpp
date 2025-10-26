@@ -2,7 +2,7 @@
 #include "Commands/Registry/GetSupportedParentClasses.h"
 #include "Commands/Registry/GetSupportedComponentTypes.h"
 #include "Commands/Registry/GetAvailableAPIMethods.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 using namespace UnrealMCP;
 

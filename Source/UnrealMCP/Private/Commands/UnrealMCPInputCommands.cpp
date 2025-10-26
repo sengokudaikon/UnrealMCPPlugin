@@ -8,7 +8,7 @@
 #include "Commands/Input/ApplyMappingContext.h"
 #include "Commands/Input/RemoveMappingContext.h"
 #include "Commands/Input/ClearAllMappingContexts.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 FUnrealMCPInputCommands::FUnrealMCPInputCommands()
 {

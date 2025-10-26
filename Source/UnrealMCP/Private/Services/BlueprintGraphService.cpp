@@ -1,5 +1,5 @@
 #include "Services/BlueprintGraphService.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "EdGraph/EdGraph.h"
@@ -123,7 +123,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the function
-		UFunction* Function = nullptr;
+		const UFunction* Function = nullptr;
 		UK2Node_CallFunction* FunctionNode = nullptr;
 
 		// Check if we have a target class specified
@@ -417,7 +417,7 @@ namespace UnrealMCP {
 
 	auto FBlueprintGraphService::SetFunctionParameters(
 		UK2Node_CallFunction* FunctionNode,
-		UEdGraph* EventGraph,
+		const UEdGraph* EventGraph,
 		const TSharedPtr<FJsonObject>& Parameters
 	) -> FVoidResult {
 		for (const TPair<FString, TSharedPtr<FJsonValue>>& Param : Parameters->Values) {

@@ -1,5 +1,5 @@
 #include "Commands/Input/RemoveMappingContext.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
@@ -24,7 +24,7 @@ auto FRemoveMappingContext::Handle(
 
 	const UnrealMCP::FRemoveMappingContextParams& ParsedParams = ParamsResult.GetValue();
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("context_path"), ParsedParams.ContextPath);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("context_path"), ParsedParams.ContextPath);
+	});
 }

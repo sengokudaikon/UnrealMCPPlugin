@@ -1,6 +1,6 @@
 #include "Commands/Blueprint/BlueprintIntrospectionCommands.h"
 #include "Services/BlueprintIntrospectionService.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 namespace UnrealMCP {
 
@@ -12,12 +12,10 @@ namespace UnrealMCP {
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));
 		const bool bExists = FBlueprintIntrospectionService::BlueprintExists(BlueprintName);
 
-		TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-		Response->SetBoolField(TEXT("success"), true);
-		Response->SetBoolField(TEXT("exists"), bExists);
-		Response->SetStringField(TEXT("blueprint_name"), BlueprintName);
-
-		return Response;
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			Data->SetBoolField(TEXT("exists"), bExists);
+			Data->SetStringField(TEXT("blueprint_name"), BlueprintName);
+		});
 	}
 
 	auto FGetBlueprintInfoCommand::Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
@@ -32,16 +30,13 @@ namespace UnrealMCP {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 
-		const TSharedPtr<FJsonObject> InfoObject = MakeShared<FJsonObject>();
-		for (const auto& Pair : Info) {
-			InfoObject->SetStringField(Pair.Key, Pair.Value);
-		}
-
-		TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-		Response->SetBoolField(TEXT("success"), true);
-		Response->SetObjectField(TEXT("info"), InfoObject);
-
-		return Response;
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			const TSharedPtr<FJsonObject> InfoObject = MakeShared<FJsonObject>();
+			for (const auto& Pair : Info) {
+				InfoObject->SetStringField(Pair.Key, Pair.Value);
+			}
+			Data->SetObjectField(TEXT("info"), InfoObject);
+		});
 	}
 
 	auto FGetBlueprintComponentsCommand::Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
@@ -56,21 +51,18 @@ namespace UnrealMCP {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 
-		TArray<TSharedPtr<FJsonValue>> JsonArray;
-		for (const TMap<FString, FString>& ComponentInfo : Components) {
-			TSharedPtr<FJsonObject> ComponentObject = MakeShared<FJsonObject>();
-			for (const auto& Pair : ComponentInfo) {
-				ComponentObject->SetStringField(Pair.Key, Pair.Value);
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			TArray<TSharedPtr<FJsonValue>> JsonArray;
+			for (const TMap<FString, FString>& ComponentInfo : Components) {
+				TSharedPtr<FJsonObject> ComponentObject = MakeShared<FJsonObject>();
+				for (const auto& Pair : ComponentInfo) {
+					ComponentObject->SetStringField(Pair.Key, Pair.Value);
+				}
+				JsonArray.Add(MakeShared<FJsonValueObject>(ComponentObject));
 			}
-			JsonArray.Add(MakeShared<FJsonValueObject>(ComponentObject));
-		}
-
-		TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-		Response->SetBoolField(TEXT("success"), true);
-		Response->SetArrayField(TEXT("components"), JsonArray);
-		Response->SetNumberField(TEXT("count"), Components.Num());
-
-		return Response;
+			Data->SetArrayField(TEXT("components"), JsonArray);
+			Data->SetNumberField(TEXT("count"), Components.Num());
+		});
 	}
 
 	auto FGetBlueprintVariablesCommand::Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
@@ -94,12 +86,10 @@ namespace UnrealMCP {
 			JsonArray.Add(MakeShared<FJsonValueObject>(VarObject));
 		}
 
-		TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-		Response->SetBoolField(TEXT("success"), true);
-		Response->SetArrayField(TEXT("variables"), JsonArray);
-		Response->SetNumberField(TEXT("count"), Variables.Num());
-
-		return Response;
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			Data->SetArrayField(TEXT("variables"), JsonArray);
+			Data->SetNumberField(TEXT("count"), Variables.Num());
+		});
 	}
 
 	auto FGetBlueprintPathCommand::Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
@@ -110,16 +100,13 @@ namespace UnrealMCP {
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));
 		const FString Path = FBlueprintIntrospectionService::GetBlueprintPath(BlueprintName);
 
-		TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
 		if (Path.IsEmpty()) {
-			Response->SetBoolField(TEXT("success"), false);
-			Response->SetStringField(TEXT("message"), FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
-		} else {
-			Response->SetBoolField(TEXT("success"), true);
-			Response->SetStringField(TEXT("path"), Path);
+			return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
 		}
 
-		return Response;
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			Data->SetStringField(TEXT("path"), Path);
+		});
 	}
 
 } // namespace UnrealMCP

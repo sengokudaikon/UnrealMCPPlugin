@@ -163,7 +163,7 @@ namespace UnrealMCP {
 		 */
 		static auto SetFunctionParameters(
 			UK2Node_CallFunction* FunctionNode,
-			UEdGraph* EventGraph,
+			const UEdGraph* EventGraph,
 			const TSharedPtr<FJsonObject>& Parameters
 		) -> FVoidResult;
 	};

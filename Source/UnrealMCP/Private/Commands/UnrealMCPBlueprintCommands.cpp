@@ -43,6 +43,7 @@ FUnrealMCPBlueprintCommands::FUnrealMCPBlueprintCommands() {
 	CommandHandlers.Add(TEXT("set_static_mesh_properties"), &FSetStaticMeshProperties::Handle);
 	CommandHandlers.Add(TEXT("set_pawn_properties"), &FSetPawnProperties::Handle);
 
+	// Introspection commands
 	CommandHandlers.Add(TEXT("list_blueprints"), &FListBlueprintsCommand::Execute);
 	CommandHandlers.Add(TEXT("blueprint_exists"), &FBlueprintExistsCommand::Execute);
 	CommandHandlers.Add(TEXT("get_blueprint_info"), &FGetBlueprintInfoCommand::Execute);

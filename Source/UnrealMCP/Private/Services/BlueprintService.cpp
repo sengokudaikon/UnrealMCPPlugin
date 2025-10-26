@@ -1,5 +1,5 @@
 #include "Services/BlueprintService.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"

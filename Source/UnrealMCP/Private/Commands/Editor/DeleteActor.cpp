@@ -1,5 +1,5 @@
 #include "Commands/Editor/DeleteActor.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Services/ActorService.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
@@ -18,8 +18,8 @@ auto FDeleteActor::Handle(
 	}
 
 
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("deleted_actor"), ActorName);
-	Response->SetBoolField(TEXT("success"), true);
-	return Response;
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("deleted_actor"), ActorName);
+		Data->SetBoolField(TEXT("success"), true);
+	});
 }

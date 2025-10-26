@@ -8,7 +8,7 @@
 #include "Commands/BlueprintNode/AddBlueprintInputActionNode.h"
 #include "Commands/BlueprintNode/AddBlueprintSelfReference.h"
 #include "Commands/BlueprintNode/FindBlueprintNodes.h"
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 
 FUnrealMCPBlueprintNodeCommands::FUnrealMCPBlueprintNodeCommands() {
 	CommandHandlers.Add(TEXT("connect_blueprint_nodes"), &FConnectBlueprintNodes::Handle);

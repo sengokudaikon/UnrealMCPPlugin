@@ -1,6 +1,6 @@
 ﻿#include "Commands/Blueprint/AddComponent.h"
 
-#include "Commands/CommonUtils.h"
+#include "Core/CommonUtils.h"
 #include "Core/MCPTypes.h"
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
@@ -22,10 +22,10 @@ auto FAddComponent::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<
 	}
 
 	const UnrealMCP::FComponentParams& ComponentParams = ParamsResult.GetValue();
-	TSharedPtr<FJsonObject> Response = MakeShared<FJsonObject>();
-	Response->SetStringField(TEXT("blueprint_name"), ComponentParams.BlueprintName);
-	Response->SetStringField(TEXT("component_name"), ComponentParams.ComponentName);
-	Response->SetStringField(TEXT("component_type"), ComponentParams.ComponentType);
-	Response->SetBoolField(TEXT("success"), true);
-	return Response;
+	
+	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+		Data->SetStringField(TEXT("blueprint_name"), ComponentParams.BlueprintName);
+		Data->SetStringField(TEXT("component_name"), ComponentParams.ComponentName);
+		Data->SetStringField(TEXT("component_type"), ComponentParams.ComponentType);
+	});
 }
