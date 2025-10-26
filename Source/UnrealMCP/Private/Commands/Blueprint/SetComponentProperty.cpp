@@ -5,6 +5,8 @@
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
 
+namespace UnrealMCP {
+
 auto FSetComponentProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 	FString BlueprintName;
 	if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
@@ -16,15 +18,15 @@ auto FSetComponentProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSh
 		return FCommonUtils::CreateErrorResponse(TEXT("Missing 'component_name' parameter"));
 	}
 
-	UnrealMCP::TResult<UnrealMCP::FPropertyParams> ParamsResult =
-		UnrealMCP::FPropertyParams::FromJson(Params, TEXT("component_name"));
+	TResult<FPropertyParams> ParamsResult =
+		FPropertyParams::FromJson(Params, TEXT("component_name"));
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FBlueprintService::SetComponentProperty(
+	const FVoidResult Result =
+		FBlueprintService::SetComponentProperty(
 			BlueprintName,
 			ComponentName,
 			ParamsResult.GetValue()
@@ -38,4 +40,6 @@ auto FSetComponentProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSh
 		Data->SetStringField(TEXT("component"), ComponentName);
 		Data->SetStringField(TEXT("property"), ParamsResult.GetValue().PropertyName);
 	});
+}
+
 }

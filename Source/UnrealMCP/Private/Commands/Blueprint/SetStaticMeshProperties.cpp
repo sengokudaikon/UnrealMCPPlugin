@@ -5,19 +5,21 @@
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
 
+namespace UnrealMCP {
+
 auto FSetStaticMeshProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 
-	UnrealMCP::TResult<UnrealMCP::FStaticMeshParams> ParamsResult =
-		UnrealMCP::FStaticMeshParams::FromJson(Params);
+	TResult<FStaticMeshParams> ParamsResult =
+		FStaticMeshParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::FStaticMeshParams& MeshParams = ParamsResult.GetValue();
+	const FStaticMeshParams& MeshParams = ParamsResult.GetValue();
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FBlueprintService::SetStaticMeshProperties(
+	const FVoidResult Result =
+		FBlueprintService::SetStaticMeshProperties(
 			MeshParams.BlueprintName,
 			MeshParams.ComponentName,
 			MeshParams.StaticMesh,
@@ -31,4 +33,6 @@ auto FSetStaticMeshProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> 
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 		Data->SetStringField(TEXT("component"), MeshParams.ComponentName);
 	});
+}
+
 }

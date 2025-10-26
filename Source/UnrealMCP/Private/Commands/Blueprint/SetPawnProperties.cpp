@@ -4,6 +4,8 @@
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
 
+namespace UnrealMCP {
+
 auto FSetPawnProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 	FString BlueprintName;
 	if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
@@ -14,8 +16,8 @@ auto FSetPawnProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TShare
 		return FCommonUtils::CreateErrorResponse(TEXT("No properties specified to set"));
 	}
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FBlueprintService::SetPawnProperties(BlueprintName, Params);
+	const FVoidResult Result =
+		FBlueprintService::SetPawnProperties(BlueprintName, Params);
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
@@ -24,4 +26,6 @@ auto FSetPawnProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TShare
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 		Data->SetStringField(TEXT("blueprint"), BlueprintName);
 	});
+}
+
 }

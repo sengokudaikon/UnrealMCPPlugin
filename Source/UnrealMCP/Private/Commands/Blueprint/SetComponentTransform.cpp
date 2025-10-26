@@ -4,20 +4,18 @@
 
 namespace UnrealMCP {
 
-	auto FSetComponentTransformCommand::Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
-		// Parse and validate parameters using the service
+	auto FSetComponentTransformCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		const auto TransformParams = FComponentTransformParams::FromJson(Params);
 		if (!TransformParams.IsSuccess()) {
 			return FCommonUtils::CreateErrorResponse(TransformParams.GetError());
 		}
 
-		// Delegate to service layer
 		const auto Result = FBlueprintService::SetComponentTransform(TransformParams.GetValue());
 		if (!Result.IsSuccess()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 
-		// Format response
+
 		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 			Data->SetStringField(
 				TEXT("message"),
@@ -27,4 +25,4 @@ namespace UnrealMCP {
 		});
 	}
 
-} // namespace UnrealMCP
+}

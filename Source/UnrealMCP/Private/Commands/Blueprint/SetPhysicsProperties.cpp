@@ -5,16 +5,18 @@
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
 
+namespace UnrealMCP {
+
 auto FSetPhysicsProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
-	UnrealMCP::TResult<UnrealMCP::FPhysicsParams> ParamsResult =
-		UnrealMCP::FPhysicsParams::FromJson(Params);
+	TResult<FPhysicsParams> ParamsResult =
+		FPhysicsParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FBlueprintService::SetPhysicsProperties(ParamsResult.GetValue());
+	const FVoidResult Result =
+		FBlueprintService::SetPhysicsProperties(ParamsResult.GetValue());
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
@@ -23,4 +25,6 @@ auto FSetPhysicsProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TSh
 	return FCommonUtils::CreateSuccessResponse([&](TSharedPtr<FJsonObject>& Data) {
 		Data->SetStringField(TEXT("component"), ParamsResult.GetValue().ComponentName);
 	});
+}
+
 }
