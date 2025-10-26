@@ -1,11 +1,13 @@
 #include "Commands/UnrealMCPWidgetCommands.h"
-#include "Commands/UMG/CreateUMGWidgetBlueprint.h"
-#include "Commands/UMG/AddTextBlockToWidget.h"
-#include "Commands/UMG/AddWidgetToViewport.h"
-#include "Commands/UMG/AddButtonToWidget.h"
-#include "Commands/UMG/BindWidgetEvent.h"
-#include "Commands/UMG/SetTextBlockBinding.h"
+#include "Commands/Widget/CreateUMGWidgetBlueprint.h"
+#include "Commands/Widget/AddTextBlockToWidget.h"
+#include "Commands/Widget/AddWidgetToViewport.h"
+#include "Commands/Widget/AddButtonToWidget.h"
+#include "Commands/Widget/BindWidgetEvent.h"
+#include "Commands/Widget/SetTextBlockBinding.h"
 #include "Core/CommonUtils.h"
+
+namespace UnrealMCP {
 
 FUnrealMCPWidgetCommands::FUnrealMCPWidgetCommands()
 {
@@ -28,5 +30,5 @@ TSharedPtr<FJsonObject> FUnrealMCPWidgetCommands::HandleCommand(
 	}
 
 	return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown UMG command: %s"), *CommandType));
-}
+}}
 

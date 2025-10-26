@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Core/Result.h"
+#include "Core/MCPTypes.h"
 
 class UBlueprint;
 
@@ -63,13 +64,9 @@ namespace UnrealMCP {
 		 * Get all variables in a blueprint.
 		 *
 		 * @param BlueprintName Name of the blueprint
-		 * @param OutVariables Array of variable info maps
-		 * @return Success if variables were retrieved
+		 * @return Result with variable information or error
 		 */
-		static auto GetBlueprintVariables(
-			const FString& BlueprintName,
-			TArray<TMap<FString, FString>>& OutVariables
-		) -> FVoidResult;
+		static auto GetBlueprintVariables(const FString& BlueprintName) -> TResult<FGetBlueprintVariablesResult>;
 
 		/**
 		 * Get full path for a blueprint.
@@ -86,6 +83,30 @@ namespace UnrealMCP {
 		 * @return Component hierarchy result or error
 		 */
 		static auto GetComponentHierarchy(const FComponentHierarchyParams& Params) -> TResult<FComponentHierarchyResult>;
+
+		/**
+		 * Get properties for a specific component in a blueprint.
+		 *
+		 * @param Params Parameters containing blueprint and component names
+		 * @return Component properties result or error
+		 */
+		static auto GetComponentProperties(const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult>;
+
+		/**
+		 * Remove a component from a blueprint.
+		 *
+		 * @param Params Parameters containing blueprint and component names
+		 * @return Component removal result or error
+		 */
+		static auto removeComponent(const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult>;
+
+		/**
+		 * Rename a component in a blueprint.
+		 *
+		 * @param Params Parameters containing blueprint name, old component name, and new component name
+		 * @return Component rename result or error
+		 */
+		static auto renameComponent(const FRenameComponentParams& Params) -> TResult<FRenameComponentResult>;
 
 	private:
 		/**
@@ -113,4 +134,4 @@ namespace UnrealMCP {
 		static auto BuildHierarchyNode(const USCS_Node* Node) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

@@ -4,6 +4,8 @@
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 
+namespace UnrealMCP {
+
 auto FSetActorTransform::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
@@ -28,7 +30,7 @@ auto FSetActorTransform::Handle(
 		Scale = FCommonUtils::GetVectorFromJson(Params, TEXT("scale"));
 	}
 
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorTransform(
+	const FVoidResult Result = FActorService::SetActorTransform(
 		ActorName,
 		Location,
 		Rotation,
@@ -53,4 +55,4 @@ auto FSetActorTransform::Handle(
 			Data->SetObjectField(TEXT("location"), LocationObj);
 		}
 	});
-}
+}}

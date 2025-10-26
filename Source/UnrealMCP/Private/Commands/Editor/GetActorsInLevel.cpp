@@ -4,13 +4,14 @@
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 
+namespace UnrealMCP {
+
 auto FGetActorsInLevel::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
 	TArray<FString> ActorNames;
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::GetActorsInLevel(ActorNames);
 
-	if (Result.IsFailure()) {
+	if (const FVoidResult Result = FActorService::GetActorsInLevel(ActorNames); Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
@@ -25,4 +26,4 @@ auto FGetActorsInLevel::Handle(
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 		Data->SetArrayField(TEXT("actors"), ActorArray);
 	});
-}
+}}

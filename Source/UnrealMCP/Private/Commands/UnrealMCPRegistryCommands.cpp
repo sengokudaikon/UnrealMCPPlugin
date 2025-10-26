@@ -4,13 +4,13 @@
 #include "Commands/Registry/GetAvailableAPIMethods.h"
 #include "Core/CommonUtils.h"
 
-using namespace UnrealMCP;
+namespace UnrealMCP {
 
 FUnrealMCPRegistryCommands::FUnrealMCPRegistryCommands() {
 	// Register command handlers
-	CommandHandlers.Add(TEXT("get_supported_parent_classes"), &FGetSupportedParentClassesCommand::Execute);
-	CommandHandlers.Add(TEXT("get_supported_component_types"), &FGetSupportedComponentTypesCommand::Execute);
-	CommandHandlers.Add(TEXT("get_available_api_methods"), &FGetAvailableAPIMethodsCommand::Execute);
+	CommandHandlers.Add(TEXT("get_supported_parent_classes"), &FGetSupportedParentClassesCommand::Handle);
+	CommandHandlers.Add(TEXT("get_supported_component_types"), &FGetSupportedComponentTypesCommand::Handle);
+	CommandHandlers.Add(TEXT("get_available_api_methods"), &FGetAvailableAPIMethodsCommand::Handle);
 }
 
 TSharedPtr<FJsonObject> FUnrealMCPRegistryCommands::HandleCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params) {
@@ -23,4 +23,4 @@ TSharedPtr<FJsonObject> FUnrealMCPRegistryCommands::HandleCommand(const FString&
 
 	// Execute command handler
 	return (*Handler)(Params);
-}
+}}

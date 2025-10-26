@@ -3,6 +3,8 @@
 #include "Services/ViewportService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FFocusViewport::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
@@ -18,12 +20,11 @@ auto FFocusViewport::Handle(
 		Location = FCommonUtils::GetVectorFromJson(Params, TEXT("location"));
 	}
 
-	// Validate that we have at least one target
 	if (!TargetActor.IsSet() && !Location.IsSet()) {
 		return FCommonUtils::CreateErrorResponse(TEXT("Either 'target' or 'location' must be provided"));
 	}
 
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FViewportService::FocusViewport(
+	const FVoidResult Result = FViewportService::FocusViewport(
 		TargetActor,
 		Location
 	);
@@ -40,4 +41,4 @@ auto FFocusViewport::Handle(
 			Data->SetStringField(TEXT("focused_on"), TargetActor.GetValue());
 		}
 	});
-}
+}}

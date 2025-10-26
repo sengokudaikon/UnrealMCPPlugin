@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+namespace UnrealMCP {
+
 /**
  * Handles operations for creating UMG Widget Blueprints dynamically.
  */
@@ -18,3 +20,5 @@ public:
 	 */
 	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 };
+
+}

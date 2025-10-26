@@ -308,4 +308,4 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-} // namespace UnrealMCP
+}

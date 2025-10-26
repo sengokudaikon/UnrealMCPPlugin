@@ -3,28 +3,30 @@
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FRemoveMappingContext::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
 
-	UnrealMCP::TResult<UnrealMCP::FRemoveMappingContextParams> ParamsResult =
-		UnrealMCP::FRemoveMappingContextParams::FromJson(Params);
+	TResult<FRemoveMappingContextParams> ParamsResult =
+		FRemoveMappingContextParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FInputService::RemoveMappingContext(ParamsResult.GetValue());
+	const FVoidResult Result =
+		FInputService::RemoveMappingContext(ParamsResult.GetValue());
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
 
-	const UnrealMCP::FRemoveMappingContextParams& ParsedParams = ParamsResult.GetValue();
+	const auto& [ContextPath] = ParamsResult.GetValue();
 
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("context_path"), ParsedParams.ContextPath);
+		Data->SetStringField(TEXT("context_path"), ContextPath);
 	});
-}
+}}

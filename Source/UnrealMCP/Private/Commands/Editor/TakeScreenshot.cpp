@@ -3,17 +3,18 @@
 #include "Services/ViewportService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FTakeScreenshot::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
 
 	FString FilePath;
 	if (!Params->TryGetStringField(TEXT("filepath"), FilePath)) {
-		// Use default path if not provided
 		FilePath = FPaths::ProjectSavedDir() / TEXT("Screenshots") / FString::Printf(TEXT("Screenshot_%s.png"), *FDateTime::Now().ToString());
 	}
 
-	const UnrealMCP::TResult<FString> Result = UnrealMCP::FViewportService::TakeScreenshot(FilePath);
+	const TResult<FString> Result = FViewportService::TakeScreenshot(FilePath);
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
@@ -23,4 +24,4 @@ auto FTakeScreenshot::Handle(
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 		Data->SetStringField(TEXT("filepath"), Result.GetValue());
 	});
-}
+}}

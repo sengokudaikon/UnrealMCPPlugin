@@ -269,4 +269,4 @@ namespace UnrealMCP {
 		return Class;
 	}
 
-} // namespace UnrealMCP
+}

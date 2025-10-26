@@ -60,6 +60,6 @@ namespace UnrealMCP
 		/**
 		 * Applies position and size properties to a canvas panel slot if parameters are set
 		 */
-		static void ApplyCanvasSlotTransform(::UCanvasPanelSlot* Slot, const TOptional<FVector2D>& Position, const TOptional<FVector2D>& Size);
+		static void ApplyCanvasSlotTransform(UCanvasPanelSlot* Slot, const TOptional<FVector2D>& Position, const TOptional<FVector2D>& Size);
 	};
 }

@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+namespace UnrealMCP {
+
 /**
  * Handles operations for adding Button widgets to UMG Widget Blueprints.
  */
@@ -18,3 +20,5 @@ public:
 	 */
 	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 };
+
+}

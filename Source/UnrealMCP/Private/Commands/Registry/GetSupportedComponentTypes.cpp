@@ -4,7 +4,7 @@
 
 namespace UnrealMCP {
 
-	TSharedPtr<FJsonObject> FGetSupportedComponentTypesCommand::Execute(const TSharedPtr<FJsonObject>& Params) {
+	TSharedPtr<FJsonObject> FGetSupportedComponentTypesCommand::Handle(const TSharedPtr<FJsonObject>& Params) {
 		TArray<FString> ComponentTypes;
 
 		if (const FVoidResult Result = FMCPRegistry::GetSupportedComponentTypes(ComponentTypes); !Result.IsSuccess()) {
@@ -21,4 +21,4 @@ namespace UnrealMCP {
 		});
 	}
 
-} // namespace UnrealMCP
+}

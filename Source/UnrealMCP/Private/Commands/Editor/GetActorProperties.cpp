@@ -4,6 +4,8 @@
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 
+namespace UnrealMCP {
+
 auto FGetActorProperties::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
@@ -14,9 +16,8 @@ auto FGetActorProperties::Handle(
 	}
 
 	TMap<FString, FString> Properties;
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::GetActorProperties(ActorName, Properties);
 
-	if (Result.IsFailure()) {
+	if (const FVoidResult Result = FActorService::GetActorProperties(ActorName, Properties); Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
@@ -30,4 +31,4 @@ auto FGetActorProperties::Handle(
 		Data->SetStringField(TEXT("actor"), ActorName);
 		Data->SetObjectField(TEXT("properties"), PropertiesObj);
 	});
-}
+}}

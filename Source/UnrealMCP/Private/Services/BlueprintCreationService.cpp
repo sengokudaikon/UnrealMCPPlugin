@@ -189,4 +189,4 @@ namespace UnrealMCP
 
 		return AActor::StaticClass();
 	}
-} // namespace UnrealMCP
+}

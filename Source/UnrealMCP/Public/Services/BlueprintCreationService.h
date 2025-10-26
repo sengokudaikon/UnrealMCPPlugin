@@ -39,4 +39,4 @@ namespace UnrealMCP
 		 */
 		static auto ResolveParentClass(const FString& ParentClassName) -> UClass*;
 	};
-} // namespace UnrealMCP
+}

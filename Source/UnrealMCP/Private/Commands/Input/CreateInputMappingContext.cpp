@@ -3,29 +3,31 @@
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FCreateInputMappingContext::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
 
-	UnrealMCP::TResult<UnrealMCP::FInputMappingContextParams> ParamsResult =
-		UnrealMCP::FInputMappingContextParams::FromJson(Params);
+	TResult<FInputMappingContextParams> ParamsResult =
+		FInputMappingContextParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::TResult<UInputMappingContext*> Result =
-		UnrealMCP::FInputService::CreateInputMappingContext(ParamsResult.GetValue());
+	const TResult<UInputMappingContext*> Result =
+		FInputService::CreateInputMappingContext(ParamsResult.GetValue());
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
 
-	const UnrealMCP::FInputMappingContextParams& ParsedParams = ParamsResult.GetValue();
+	const auto& [Name, Path] = ParamsResult.GetValue();
 
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("name"), ParsedParams.Name);
-		Data->SetStringField(TEXT("asset_path"), ParsedParams.Path / FString::Printf(TEXT("IMC_%s"), *ParsedParams.Name));
+		Data->SetStringField(TEXT("name"), Name);
+		Data->SetStringField(TEXT("asset_path"), Path / FString::Printf(TEXT("IMC_%s"), *Name));
 	});
-}
+}}

@@ -176,4 +176,4 @@ namespace UnrealMCP {
 		 */
 		static UClass* ResolveComponentClass(const FString& ComponentType);
 	};
-} // namespace UnrealMCP
+}

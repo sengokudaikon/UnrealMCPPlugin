@@ -91,4 +91,4 @@ namespace UnrealMCP {
 		return TResult<FString>::Failure(TEXT("Failed to read viewport pixels"));
 	}
 
-} // namespace UnrealMCP
+}

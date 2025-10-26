@@ -1,4 +1,5 @@
 #include "Core/CommonUtils.h"
+#include "Services/BlueprintIntrospectionService.h"
 #include "GameFramework/Actor.h"
 #include "Engine/Blueprint.h"
 #include "EdGraph/EdGraph.h"
@@ -177,7 +178,7 @@ auto FCommonUtils::ActorToJson(const AActor* Actor) -> TSharedPtr<FJsonValue> {
 	return MakeShared<FJsonValueObject>(ActorObject);
 }
 
-auto FCommonUtils::ActorToJsonObject(const AActor* Actor, bool bDetailed) -> TSharedPtr<FJsonObject> {
+auto FCommonUtils::ActorToJsonObject(const AActor* Actor, [[maybe_unused]] bool bDetailed) -> TSharedPtr<FJsonObject> {
 	if (!Actor) {
 		return nullptr;
 	}
@@ -216,22 +217,21 @@ auto FCommonUtils::FindBlueprint(const FString& BlueprintName) -> UBlueprint* {
 }
 
 auto FCommonUtils::FindBlueprintByName(const FString& BlueprintName) -> UBlueprint* {
-	// Try multiple common locations for blueprints
-	TArray<FString> PossiblePaths = {
-		TEXT("/Game/Blueprints/") + BlueprintName,
-		TEXT("/Game/Tests/") + BlueprintName,
-		TEXT("/Game/") + BlueprintName
-	};
-
-	for (const FString& AssetPath : PossiblePaths) {
-		if (UBlueprint* FoundBlueprint = LoadObject<UBlueprint>(nullptr, *AssetPath)) {
-			UE_LOG(LogTemp, Display, TEXT("Found blueprint '%s' at: %s"), *BlueprintName, *AssetPath);
-			return FoundBlueprint;
-		}
+	// Use the introspection service to find the blueprint path
+	const FString BlueprintPath = UnrealMCP::FBlueprintIntrospectionService::GetBlueprintPath(BlueprintName);
+	if (BlueprintPath.IsEmpty()) {
+		UE_LOG(LogTemp, Warning, TEXT("Blueprint '%s' not found"), *BlueprintName);
+		return nullptr;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Blueprint '%s' not found in any standard location"), *BlueprintName);
-	return nullptr;
+	UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *BlueprintPath);
+	if (!Blueprint) {
+		UE_LOG(LogTemp, Warning, TEXT("Failed to load blueprint '%s' from path: %s"), *BlueprintName, *BlueprintPath);
+		return nullptr;
+	}
+
+	UE_LOG(LogTemp, Display, TEXT("Found blueprint '%s' at: %s"), *BlueprintName, *BlueprintPath);
+	return Blueprint;
 }
 
 UEdGraph* FCommonUtils::FindOrCreateEventGraph(UBlueprint* Blueprint) {
@@ -253,6 +253,45 @@ UEdGraph* FCommonUtils::FindOrCreateEventGraph(UBlueprint* Blueprint) {
 	                                                           UEdGraphSchema_K2::StaticClass());
 	FBlueprintEditorUtils::AddUbergraphPage(Blueprint, NewGraph);
 	return NewGraph;
+}
+
+// Pin type utilities
+auto FCommonUtils::ParsePinType(const FString& TypeString, FEdGraphPinType& OutPinType) -> bool {
+	if (TypeString.Equals(TEXT("bool"), ESearchCase::IgnoreCase) ||
+	    TypeString.Equals(TEXT("boolean"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Boolean;
+	}
+	else if (TypeString.Equals(TEXT("int"), ESearchCase::IgnoreCase) ||
+	         TypeString.Equals(TEXT("integer"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Int;
+	}
+	else if (TypeString.Equals(TEXT("float"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Real;
+		OutPinType.PinSubCategory = UEdGraphSchema_K2::PC_Float;
+	}
+	else if (TypeString.Equals(TEXT("string"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_String;
+	}
+	else if (TypeString.Equals(TEXT("name"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Name;
+	}
+	else if (TypeString.Equals(TEXT("vector"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+		OutPinType.PinSubCategoryObject = TBaseStructure<FVector>::Get();
+	}
+	else if (TypeString.Equals(TEXT("rotator"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+		OutPinType.PinSubCategoryObject = TBaseStructure<FRotator>::Get();
+	}
+	else if (TypeString.Equals(TEXT("transform"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+		OutPinType.PinSubCategoryObject = TBaseStructure<FTransform>::Get();
+	}
+	else {
+		return false;
+	}
+
+	return true;
 }
 
 // Blueprint node utilities
@@ -539,9 +578,7 @@ bool FCommonUtils::SetObjectProperty(
 			if (const UEnum* EnumDef = ByteProp->GetIntPropertyEnum()) {
 				return PropertyHandlers::FEnumByteHandler{ByteProp, EnumDef, PropertyAddr, PropertyName};
 			}
-			else {
-				return PropertyHandlers::FByteHandler{ByteProp, PropertyAddr, PropertyName};
-			}
+			return PropertyHandlers::FByteHandler{ByteProp, PropertyAddr, PropertyName};
 		}
 
 		if (const FEnumProperty* EnumProp = CastField<FEnumProperty>(Property)) {

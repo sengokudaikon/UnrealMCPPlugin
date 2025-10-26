@@ -549,4 +549,4 @@ namespace UnrealMCP {
 		return false;
 	}
 
-} // namespace UnrealMCP
+}

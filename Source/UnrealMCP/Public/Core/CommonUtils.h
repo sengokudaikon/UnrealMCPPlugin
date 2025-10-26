@@ -54,6 +54,9 @@ public:
 
 	static auto FindOrCreateEventGraph(UBlueprint* Blueprint) -> UEdGraph*;
 
+	// Pin type utilities
+	static auto ParsePinType(const FString& TypeString, FEdGraphPinType& OutPinType) -> bool;
+
 	static auto CreateEventNode(UEdGraph* Graph, const FString& EventName, const FVector2D& Position) -> UK2Node_Event*;
 
 	static auto CreateFunctionCallNode(

@@ -1,19 +1,21 @@
-#include "Commands/UMG/AddButtonToWidget.h"
+#include "Commands/Widget/AddButtonToWidget.h"
 #include "Core/CommonUtils.h"
 #include "Services/WidgetService.h"
 #include "Core/MCPTypes.h"
 #include "Components/Button.h"
 
+namespace UnrealMCP {
+
 auto FAddButtonToWidget::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
-	UnrealMCP::TResult<UnrealMCP::FButtonParams> ParamsResult = UnrealMCP::FButtonParams::FromJson(Params);
+	TResult<FButtonParams> ParamsResult = FButtonParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	if (const auto Result = UnrealMCP::FWidgetService::AddButton(ParamsResult.GetValue()); Result.IsFailure()) {
+	if (const auto Result = FWidgetService::AddButton(ParamsResult.GetValue()); Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
@@ -23,4 +25,4 @@ auto FAddButtonToWidget::Handle(
 		Data->SetStringField(TEXT("widget_name"), ParsedParams.ButtonName);
 		Data->SetStringField(TEXT("text"), ParsedParams.Text);
 	});
-}
+}}

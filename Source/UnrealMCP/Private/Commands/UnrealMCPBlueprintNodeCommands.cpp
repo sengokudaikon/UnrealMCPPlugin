@@ -10,6 +10,8 @@
 #include "Commands/BlueprintNode/FindBlueprintNodes.h"
 #include "Core/CommonUtils.h"
 
+namespace UnrealMCP {
+
 FUnrealMCPBlueprintNodeCommands::FUnrealMCPBlueprintNodeCommands() {
 	CommandHandlers.Add(TEXT("connect_blueprint_nodes"), &FConnectBlueprintNodes::Handle);
 	CommandHandlers.Add(TEXT("add_blueprint_get_self_component_reference"), &FAddBlueprintGetSelfComponentReference::Handle);
@@ -31,4 +33,4 @@ TSharedPtr<FJsonObject> FUnrealMCPBlueprintNodeCommands::HandleCommand(
 
 	return FCommonUtils::CreateErrorResponse(
 		FString::Printf(TEXT("Unknown blueprint node command: %s"), *CommandType));
-}
+}}

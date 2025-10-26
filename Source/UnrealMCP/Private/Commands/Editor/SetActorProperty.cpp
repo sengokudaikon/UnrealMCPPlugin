@@ -4,6 +4,8 @@
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 
+namespace UnrealMCP {
+
 auto FSetActorProperty::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
@@ -24,7 +26,7 @@ auto FSetActorProperty::Handle(
 
 	const TSharedPtr<FJsonValue> PropertyValue = Params->Values.FindRef(TEXT("property_value"));
 
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorProperty(
+	const FVoidResult Result = FActorService::SetActorProperty(
 		ActorName,
 		PropertyName,
 		PropertyValue
@@ -40,4 +42,4 @@ auto FSetActorProperty::Handle(
 		Data->SetStringField(TEXT("property"), PropertyName);
 		Data->SetBoolField(TEXT("success"), true);
 	});
-}
+}}

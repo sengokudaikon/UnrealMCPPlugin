@@ -3,13 +3,13 @@
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FClearAllMappingContexts::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
-	// No parameter parsing needed for this command
-
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FInputService::ClearAllMappingContexts();
+	const FVoidResult Result =
+		FInputService::ClearAllMappingContexts();
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
@@ -19,4 +19,4 @@ auto FClearAllMappingContexts::Handle(
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 		Data->SetBoolField(TEXT("success"), true);
 	});
-}
+}}

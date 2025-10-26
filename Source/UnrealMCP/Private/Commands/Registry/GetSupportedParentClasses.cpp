@@ -4,7 +4,7 @@
 
 namespace UnrealMCP {
 
-	TSharedPtr<FJsonObject> FGetSupportedParentClassesCommand::Execute(const TSharedPtr<FJsonObject>& Params) {
+	TSharedPtr<FJsonObject> FGetSupportedParentClassesCommand::Handle(const TSharedPtr<FJsonObject>& Params) {
 		TArray<FString> ClassNames;
 
 		if (const FVoidResult Result = FMCPRegistry::GetSupportedParentClasses(ClassNames); !Result.IsSuccess()) {
@@ -21,4 +21,4 @@ namespace UnrealMCP {
 		});
 	}
 
-} // namespace UnrealMCP
+}

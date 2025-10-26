@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+namespace UnrealMCP {
+
 /**
  * Handles adding key mappings to Input Mapping Context assets
  */
@@ -18,3 +20,5 @@ public:
 	 */
 	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 };
+
+}

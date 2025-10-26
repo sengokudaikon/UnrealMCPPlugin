@@ -4,31 +4,34 @@
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 
-auto FFindActorsByName::Handle(
-	const TSharedPtr<FJsonObject>& Params
-) -> TSharedPtr<FJsonObject> {
+namespace UnrealMCP {
 
-	FString Pattern;
-	if (!Params->TryGetStringField(TEXT("pattern"), Pattern)) {
-		return FCommonUtils::CreateErrorResponse(TEXT("Missing 'pattern' parameter"));
+	auto FFindActorsByName::Handle(
+		const TSharedPtr<FJsonObject>& Params
+	) -> TSharedPtr<FJsonObject> {
+
+		FString Pattern;
+		if (!Params->TryGetStringField(TEXT("pattern"), Pattern)) {
+			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'pattern' parameter"));
+		}
+
+		TArray<FString> ActorNames;
+
+		if (const FVoidResult Result = FActorService::FindActorsByName(Pattern, ActorNames);
+			Result.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(Result.GetError());
+		}
+
+
+		TArray<TSharedPtr<FJsonValue>> ActorArray;
+		for (const FString& ActorName : ActorNames) {
+			TSharedPtr<FJsonObject> ActorObj = MakeShared<FJsonObject>();
+			ActorObj->SetStringField(TEXT("name"), ActorName);
+			ActorArray.Add(MakeShared<FJsonValueObject>(ActorObj));
+		}
+
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			Data->SetArrayField(TEXT("actors"), ActorArray);
+		});
 	}
-
-	TArray<FString> ActorNames;
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::FindActorsByName(Pattern, ActorNames);
-
-	if (Result.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(Result.GetError());
-	}
-
-
-	TArray<TSharedPtr<FJsonValue>> ActorArray;
-	for (const FString& ActorName : ActorNames) {
-		TSharedPtr<FJsonObject> ActorObj = MakeShared<FJsonObject>();
-		ActorObj->SetStringField(TEXT("name"), ActorName);
-		ActorArray.Add(MakeShared<FJsonValueObject>(ActorObj));
-	}
-
-	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetArrayField(TEXT("actors"), ActorArray);
-	});
 }

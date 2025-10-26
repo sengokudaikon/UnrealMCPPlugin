@@ -10,7 +10,7 @@ namespace UnrealMCP {
 	 */
 	class UNREALMCP_API FGetSupportedComponentTypesCommand {
 	public:
-		static TSharedPtr<FJsonObject> Execute(const TSharedPtr<FJsonObject>& Params);
+		static TSharedPtr<FJsonObject> Handle(const TSharedPtr<FJsonObject>& Params);
 	};
 
-} // namespace UnrealMCP
+}

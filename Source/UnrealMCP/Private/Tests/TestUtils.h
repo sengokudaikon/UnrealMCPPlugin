@@ -16,11 +16,14 @@ namespace UnrealMCPTest
     public:
         /**
          * Generate a unique test name to avoid conflicts
+         * Uses GUIDs to ensure uniqueness across parallel test runs
          */
         static FString GenerateUniqueTestName(const FString& BaseName)
         {
-            static int32 TestCounter = 0;
-            return FString::Printf(TEXT("%s_%d_%f"), *BaseName, TestCounter++, FPlatformTime::Seconds());
+            const FGuid UniqueId = FGuid::NewGuid();
+            // Use only the first 8 characters of the GUID for readability
+            const FString ShortGuid = UniqueId.ToString(EGuidFormats::DigitsWithHyphens).Left(8);
+            return FString::Printf(TEXT("%s_%s"), *BaseName, *ShortGuid);
         }
 
         /**
@@ -49,6 +52,15 @@ namespace UnrealMCPTest
                 return UEditorAssetLibrary::DeleteAsset(AssetPath);
             }
             return true; // Asset doesn't exist, so it's "clean"
+        }
+
+        /**
+         * Clean up all test blueprints in the test package path
+         */
+        static void CleanupAllTestBlueprints()
+        {
+            // Delete all assets in the test package path
+            UEditorAssetLibrary::DeleteDirectory(GetTestPackagePath());
         }
 
         /**

@@ -3,31 +3,32 @@
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FCreateEnhancedInputAction::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
-
-	UnrealMCP::TResult<UnrealMCP::FInputActionParams> ParamsResult =
-		UnrealMCP::FInputActionParams::FromJson(Params);
-
+	// Parse and validate parameters
+	TResult<FInputActionParams> ParamsResult = FInputActionParams::FromJson(Params);
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::TResult<UInputAction*> Result =
-		UnrealMCP::FInputService::CreateInputAction(ParamsResult.GetValue());
-
-	if (Result.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(Result.GetError());
+	// Delegate to service layer for business logic (includes validation and asset creation)
+	const TResult<UInputAction*> ServiceResult = FInputService::CreateInputAction(ParamsResult.GetValue());
+	if (ServiceResult.IsFailure()) {
+		return FCommonUtils::CreateErrorResponse(ServiceResult.GetError());
 	}
 
+	// Create structured response from service result
+	const auto& [Name, ValueType, Path] = ParamsResult.GetValue();
 
-	const UnrealMCP::FInputActionParams& ParsedParams = ParamsResult.GetValue();
-	const UInputAction* InputAction = Result.GetValue();
+	FCreateInputActionResult Result;
+	Result.Name = Name;
+	Result.ValueType = ValueType;
+	Result.AssetPath = Path / FString::Printf(TEXT("IA_%s"), *Name);
 
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("name"), ParsedParams.Name);
-		Data->SetStringField(TEXT("value_type"), ParsedParams.ValueType);
-		Data->SetStringField(TEXT("asset_path"), ParsedParams.Path / FString::Printf(TEXT("IA_%s"), *ParsedParams.Name));
+		Data->SetObjectField(TEXT("result"), Result.ToJson());
 	});
-}
+}}

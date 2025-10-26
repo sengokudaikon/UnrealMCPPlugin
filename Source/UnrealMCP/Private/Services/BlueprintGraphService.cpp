@@ -354,24 +354,7 @@ namespace UnrealMCP {
 		}
 
 		FEdGraphPinType PinType;
-
-		if (VariableType == TEXT("Boolean")) {
-			PinType.PinCategory = UEdGraphSchema_K2::PC_Boolean;
-		}
-		else if (VariableType == TEXT("Integer") || VariableType == TEXT("Int")) {
-			PinType.PinCategory = UEdGraphSchema_K2::PC_Int;
-		}
-		else if (VariableType == TEXT("Float")) {
-			PinType.PinCategory = UEdGraphSchema_K2::PC_Float;
-		}
-		else if (VariableType == TEXT("String")) {
-			PinType.PinCategory = UEdGraphSchema_K2::PC_String;
-		}
-		else if (VariableType == TEXT("Vector")) {
-			PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
-			PinType.PinSubCategoryObject = TBaseStructure<FVector>::Get();
-		}
-		else {
+		if (!FCommonUtils::ParsePinType(VariableType, PinType)) {
 			return FVoidResult::Failure(FString::Printf(TEXT("Unsupported variable type: %s"), *VariableType));
 		}
 
@@ -492,4 +475,4 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-} // namespace UnrealMCP
+}

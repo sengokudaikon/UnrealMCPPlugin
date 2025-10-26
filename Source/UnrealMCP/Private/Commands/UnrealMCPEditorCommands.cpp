@@ -11,6 +11,8 @@
 #include "Commands/Editor/FocusViewport.h"
 #include "Commands/Editor/TakeScreenshot.h"
 
+namespace UnrealMCP {
+
 FUnrealMCPEditorCommands::FUnrealMCPEditorCommands() {
 	CommandHandlers.Add(TEXT("get_actors_in_level"), &FGetActorsInLevel::Handle);
 	CommandHandlers.Add(TEXT("find_actors_by_name"), &FFindActorsByName::Handle);
@@ -42,4 +44,4 @@ auto FUnrealMCPEditorCommands::HandleCommand(
 	}
 
 	return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown editor command: %s"), *CommandType));
-}
+}}

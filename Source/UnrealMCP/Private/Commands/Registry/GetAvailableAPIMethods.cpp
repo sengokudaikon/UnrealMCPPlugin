@@ -4,7 +4,7 @@
 
 namespace UnrealMCP {
 
-	TSharedPtr<FJsonObject> FGetAvailableAPIMethodsCommand::Execute(const TSharedPtr<FJsonObject>& Params) {
+	TSharedPtr<FJsonObject> FGetAvailableAPIMethodsCommand::Handle(const TSharedPtr<FJsonObject>& Params) {
 		TMap<FString, TArray<FString>> Methods;
 
 		if (const FVoidResult Result = FMCPRegistry::GetAvailableAPIMethods(Methods); !Result.IsSuccess()) {
@@ -30,4 +30,4 @@ namespace UnrealMCP {
 		});
 	}
 
-} // namespace UnrealMCP
+}

@@ -3,11 +3,7 @@
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
 #include "Sockets.h"
-#include "SocketSubsystem.h"
-#include "Http.h"
-#include "Json.h"
 #include "Interfaces/IPv4/IPv4Address.h"
-#include "Interfaces/IPv4/IPv4Endpoint.h"
 #include "Commands/UnrealMCPEditorCommands.h"
 #include "Commands/UnrealMCPBlueprintCommands.h"
 #include "Commands/UnrealMCPBlueprintNodeCommands.h"
@@ -25,22 +21,27 @@ class FMCPServerRunnable;
  * routed to appropriate command handlers.
  */
 UCLASS()
-class UNREALMCP_API UUnrealMCPBridge : public UEditorSubsystem
-{
+class UNREALMCP_API UUnrealMCPBridge : public UEditorSubsystem {
 	GENERATED_BODY()
 
 public:
 	UUnrealMCPBridge();
+
 	virtual ~UUnrealMCPBridge() override;
 
 	// UEditorSubsystem implementation
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+
 	virtual void Deinitialize() override;
 
 	// Server functions
 	void StartServer();
+
 	void StopServer();
-	bool IsRunning() const { return bIsRunning; }
+
+	bool IsRunning() const {
+		return bIsRunning;
+	}
 
 	// Command execution
 	FString ExecuteCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
@@ -57,15 +58,16 @@ private:
 	uint16 Port;
 
 	// Command handler instances
-	TSharedPtr<FUnrealMCPEditorCommands> EditorCommands;
-	TSharedPtr<FUnrealMCPBlueprintCommands> BlueprintCommands;
-	TSharedPtr<FUnrealMCPBlueprintNodeCommands> BlueprintNodeCommands;
-	TSharedPtr<FUnrealMCPInputCommands> InputCommands;
-	TSharedPtr<FUnrealMCPWidgetCommands> UMGCommands;
-	TSharedPtr<FUnrealMCPRegistryCommands> RegistryCommands;
+	TSharedPtr<UnrealMCP::FUnrealMCPEditorCommands> EditorCommands;
+	TSharedPtr<UnrealMCP::FUnrealMCPBlueprintCommands> BlueprintCommands;
+	TSharedPtr<UnrealMCP::FUnrealMCPBlueprintNodeCommands> BlueprintNodeCommands;
+	TSharedPtr<UnrealMCP::FUnrealMCPInputCommands> InputCommands;
+	TSharedPtr<UnrealMCP::FUnrealMCPWidgetCommands> UMGCommands;
+	TSharedPtr<UnrealMCP::FUnrealMCPRegistryCommands> RegistryCommands;
 
-	// Command routing map for O(1) lookups
 	enum class ECommandHandlerType { Editor, Blueprint, BlueprintNode, Input, Widget, Registry, Ping };
+
 	TMap<FString, ECommandHandlerType> CommandRoutingMap;
+
 	void InitializeCommandRouting();
-}; 
+};

@@ -4,6 +4,8 @@
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 
+namespace UnrealMCP {
+
 auto FSpawnActor::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
@@ -28,7 +30,7 @@ auto FSpawnActor::Handle(
 		Rotation = FCommonUtils::GetRotatorFromJson(Params, TEXT("rotation"));
 	}
 
-	const UnrealMCP::TResult<AActor*> Result = UnrealMCP::FActorService::SpawnActor(
+	const TResult<AActor*> Result = FActorService::SpawnActor(
 		ActorClass,
 		ActorName,
 		Location,
@@ -52,4 +54,4 @@ auto FSpawnActor::Handle(
 		LocationObj->SetNumberField(TEXT("z"), ActorLocation.Z);
 		Data->SetObjectField(TEXT("location"), LocationObj);
 	});
-}
+}}

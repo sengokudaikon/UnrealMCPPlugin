@@ -147,4 +147,4 @@ namespace UnrealMCP {
 		static bool ShouldExcludeClass(const UClass* Class);
 	};
 
-} // namespace UnrealMCP
+}

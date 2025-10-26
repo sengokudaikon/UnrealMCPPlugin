@@ -3,6 +3,13 @@
 #include "Engine/SimpleConstructionScript.h"
 #include "Engine/SCS_Node.h"
 #include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Components/LightComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Kismet2/KismetEditorUtilities.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/UObjectIterator.h"
 
@@ -112,28 +119,39 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	auto FBlueprintIntrospectionService::GetBlueprintVariables(
-		const FString& BlueprintName,
-		TArray<TMap<FString, FString>>& OutVariables
-	) -> FVoidResult {
+	auto FBlueprintIntrospectionService::GetBlueprintVariables(const FString& BlueprintName) -> TResult<FGetBlueprintVariablesResult> {
 		UBlueprint* Blueprint = FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return TResult<FGetBlueprintVariablesResult>::Failure(
+				FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName)
+			);
 		}
 
-		OutVariables.Empty();
+		FGetBlueprintVariablesResult Result;
+		Result.Variables.Reserve(Blueprint->NewVariables.Num());
 
 		for (const FBPVariableDescription& Variable : Blueprint->NewVariables) {
-			TMap<FString, FString> VarInfo;
-			VarInfo.Add(TEXT("name"), Variable.VarName.ToString());
-			VarInfo.Add(TEXT("type"), Variable.VarType.PinCategory.ToString());
-			VarInfo.Add(TEXT("category"), Variable.Category.ToString());
-			VarInfo.Add(TEXT("tooltip"), Variable.FriendlyName.IsEmpty() ? TEXT("") : Variable.FriendlyName);
+			FBlueprintVariableInfo VariableInfo;
+			VariableInfo.Name = Variable.VarName.ToString();
+			VariableInfo.Type = Variable.VarType.PinCategory.ToString();
+			VariableInfo.Category = Variable.Category.ToString();
+			VariableInfo.Tooltip = Variable.FriendlyName.IsEmpty() ? TEXT("") : Variable.FriendlyName;
+			VariableInfo.bIsArray = Variable.VarType.IsArray();
+			VariableInfo.bIsReference = Variable.VarType.bIsReference;
+			VariableInfo.bInstanceEditable = !(Variable.PropertyFlags & CPF_DisableEditOnInstance);
+			VariableInfo.bBlueprintReadOnly = (Variable.PropertyFlags & CPF_BlueprintReadOnly) != 0;
+			VariableInfo.bExposeOnSpawn = (Variable.PropertyFlags & CPF_ExposeOnSpawn) != 0;
 
-			OutVariables.Add(VarInfo);
+			// Get default value if available
+			if (!Variable.DefaultValue.IsEmpty()) {
+				VariableInfo.DefaultValue = Variable.DefaultValue;
+			}
+
+			Result.Variables.Add(VariableInfo);
 		}
 
-		return FVoidResult::Success();
+		Result.Count = Result.Variables.Num();
+		return TResult<FGetBlueprintVariablesResult>::Success(MoveTemp(Result));
 	}
 
 	auto FBlueprintIntrospectionService::GetBlueprintPath(const FString& BlueprintName) -> FString {
@@ -275,4 +293,267 @@ namespace UnrealMCP {
 		return NodeObj;
 	}
 
-} // namespace UnrealMCP
+	auto FBlueprintIntrospectionService::GetComponentProperties(const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult> {
+		// Validate input parameters
+		if (Params.BlueprintName.IsEmpty()) {
+			return TResult<FComponentPropertiesResult>::Failure(TEXT("Blueprint name cannot be empty"));
+		}
+
+		if (Params.ComponentName.IsEmpty()) {
+			return TResult<FComponentPropertiesResult>::Failure(TEXT("Component name cannot be empty"));
+		}
+
+		// Find blueprint
+		const UBlueprint* Blueprint = FindBlueprint(Params.BlueprintName);
+		if (!Blueprint) {
+			return TResult<FComponentPropertiesResult>::Failure(
+				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
+			);
+		}
+
+		// Find the component in the blueprint
+		const USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
+		if (!SCS) {
+			return TResult<FComponentPropertiesResult>::Failure(TEXT("Blueprint has no construction script"));
+		}
+
+		const USCS_Node* TargetNode = nullptr;
+		for (const USCS_Node* Node : SCS->GetAllNodes()) {
+			if (Node && Node->GetVariableName().ToString() == Params.ComponentName) {
+				TargetNode = Node;
+				break;
+			}
+		}
+
+		if (!TargetNode || !TargetNode->ComponentTemplate) {
+			return TResult<FComponentPropertiesResult>::Failure(
+				FString::Printf(TEXT("Component '%s' not found in blueprint"), *Params.ComponentName)
+			);
+		}
+
+		// Build properties object
+		FComponentPropertiesResult Result;
+		Result.Properties = MakeShared<FJsonObject>();
+		UActorComponent* ComponentTemplate = TargetNode->ComponentTemplate;
+
+		// Basic info
+		Result.Properties->SetStringField(TEXT("name"), TargetNode->GetVariableName().ToString());
+		Result.Properties->SetStringField(TEXT("type"), ComponentTemplate->GetClass()->GetName());
+		Result.Properties->SetStringField(TEXT("class_path"), ComponentTemplate->GetClass()->GetPathName());
+
+		// Transform properties (if SceneComponent)
+		if (const USceneComponent* SceneComp = Cast<USceneComponent>(ComponentTemplate)) {
+			const auto TransformObj = MakeShared<FJsonObject>();
+
+			FVector Location = SceneComp->GetRelativeLocation();
+			auto LocationArray = TArray<TSharedPtr<FJsonValue>>();
+			LocationArray.Add(MakeShared<FJsonValueNumber>(Location.X));
+			LocationArray.Add(MakeShared<FJsonValueNumber>(Location.Y));
+			LocationArray.Add(MakeShared<FJsonValueNumber>(Location.Z));
+			TransformObj->SetArrayField(TEXT("location"), LocationArray);
+
+			FRotator Rotation = SceneComp->GetRelativeRotation();
+			auto RotationArray = TArray<TSharedPtr<FJsonValue>>();
+			RotationArray.Add(MakeShared<FJsonValueNumber>(Rotation.Pitch));
+			RotationArray.Add(MakeShared<FJsonValueNumber>(Rotation.Yaw));
+			RotationArray.Add(MakeShared<FJsonValueNumber>(Rotation.Roll));
+			TransformObj->SetArrayField(TEXT("rotation"), RotationArray);
+
+			FVector Scale = SceneComp->GetRelativeScale3D();
+			auto ScaleArray = TArray<TSharedPtr<FJsonValue>>();
+			ScaleArray.Add(MakeShared<FJsonValueNumber>(Scale.X));
+			ScaleArray.Add(MakeShared<FJsonValueNumber>(Scale.Y));
+			ScaleArray.Add(MakeShared<FJsonValueNumber>(Scale.Z));
+			TransformObj->SetArrayField(TEXT("scale"), ScaleArray);
+
+			Result.Properties->SetObjectField(TEXT("transform"), TransformObj);
+			Result.Properties->SetBoolField(TEXT("mobility"), SceneComp->Mobility == EComponentMobility::Movable);
+		}
+
+		// Mesh properties (if StaticMeshComponent)
+		if (const UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(ComponentTemplate)) {
+			if (MeshComp->GetStaticMesh()) {
+				Result.Properties->SetStringField(TEXT("static_mesh"), MeshComp->GetStaticMesh()->GetPathName());
+			}
+			Result.Properties->SetBoolField(TEXT("cast_shadow"), MeshComp->CastShadow);
+		}
+
+		// Skeletal mesh properties
+		if (const USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(ComponentTemplate)) {
+			if (SkelComp->GetSkeletalMeshAsset()) {
+				Result.Properties->SetStringField(TEXT("skeletal_mesh"), SkelComp->GetSkeletalMeshAsset()->GetPathName());
+			}
+		}
+
+		// Physics properties (if PrimitiveComponent)
+		if (const UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(ComponentTemplate)) {
+			const auto PhysicsObj = MakeShared<FJsonObject>();
+			PhysicsObj->SetBoolField(TEXT("simulate_physics"), PrimComp->IsSimulatingPhysics());
+			PhysicsObj->SetBoolField(TEXT("enable_gravity"), PrimComp->IsGravityEnabled());
+			PhysicsObj->SetNumberField(TEXT("mass"), PrimComp->GetMass());
+			PhysicsObj->SetNumberField(TEXT("linear_damping"), PrimComp->GetLinearDamping());
+			PhysicsObj->SetNumberField(TEXT("angular_damping"), PrimComp->GetAngularDamping());
+			PhysicsObj->SetStringField(TEXT("collision_profile"), PrimComp->GetCollisionProfileName().ToString());
+			Result.Properties->SetObjectField(TEXT("physics"), PhysicsObj);
+		}
+
+		// Light properties (if LightComponent)
+		if (const ULightComponent* LightComp = Cast<ULightComponent>(ComponentTemplate)) {
+			const auto LightObj = MakeShared<FJsonObject>();
+			LightObj->SetNumberField(TEXT("intensity"), LightComp->Intensity);
+
+			FLinearColor Color = LightComp->GetLightColor();
+			auto ColorArray = TArray<TSharedPtr<FJsonValue>>();
+			ColorArray.Add(MakeShared<FJsonValueNumber>(Color.R));
+			ColorArray.Add(MakeShared<FJsonValueNumber>(Color.G));
+			ColorArray.Add(MakeShared<FJsonValueNumber>(Color.B));
+			ColorArray.Add(MakeShared<FJsonValueNumber>(Color.A));
+			LightObj->SetArrayField(TEXT("color"), ColorArray);
+
+			LightObj->SetBoolField(TEXT("cast_shadows"), LightComp->CastShadows);
+			Result.Properties->SetObjectField(TEXT("light"), LightObj);
+		}
+
+		// Movement properties (if CharacterMovementComponent)
+		if (const UCharacterMovementComponent* MovementComp = Cast<UCharacterMovementComponent>(ComponentTemplate)) {
+			const auto MovementObj = MakeShared<FJsonObject>();
+			MovementObj->SetNumberField(TEXT("max_walk_speed"), MovementComp->MaxWalkSpeed);
+			MovementObj->SetNumberField(TEXT("max_acceleration"), MovementComp->MaxAcceleration);
+			MovementObj->SetNumberField(TEXT("jump_z_velocity"), MovementComp->JumpZVelocity);
+			MovementObj->SetNumberField(TEXT("gravity_scale"), MovementComp->GravityScale);
+			Result.Properties->SetObjectField(TEXT("movement"), MovementObj);
+		}
+
+		return TResult<FComponentPropertiesResult>::Success(MoveTemp(Result));
+	}
+
+	auto FBlueprintIntrospectionService::removeComponent(const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult> {
+		// Validate input parameters
+		if (Params.BlueprintName.IsEmpty()) {
+			return TResult<FRemoveComponentResult>::Failure(TEXT("Blueprint name cannot be empty"));
+		}
+
+		if (Params.ComponentName.IsEmpty()) {
+			return TResult<FRemoveComponentResult>::Failure(TEXT("Component name cannot be empty"));
+		}
+
+		// Find blueprint
+		UBlueprint* Blueprint = FindBlueprint(Params.BlueprintName);
+		if (!Blueprint) {
+			return TResult<FRemoveComponentResult>::Failure(
+				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
+			);
+		}
+
+		// Find the component in the blueprint
+		USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
+		if (!SCS) {
+			return TResult<FRemoveComponentResult>::Failure(TEXT("Blueprint has no construction script"));
+		}
+
+		USCS_Node* NodeToRemove = nullptr;
+		for (USCS_Node* Node : SCS->GetAllNodes()) {
+			if (Node && Node->GetVariableName().ToString() == Params.ComponentName) {
+				NodeToRemove = Node;
+				break;
+			}
+		}
+
+		if (!NodeToRemove) {
+			return TResult<FRemoveComponentResult>::Failure(
+				FString::Printf(TEXT("Component '%s' not found in blueprint"), *Params.ComponentName)
+			);
+		}
+
+		// Remove the node
+		SCS->RemoveNode(NodeToRemove);
+
+		// Mark the blueprint as modified
+		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+
+		// Compile the blueprint
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+
+		// Create result
+		FRemoveComponentResult Result;
+		Result.BlueprintName = Params.BlueprintName;
+		Result.ComponentName = Params.ComponentName;
+		Result.Message = FString::Printf(
+			TEXT("Component '%s' removed from blueprint '%s'"),
+			*Params.ComponentName,
+			*Params.BlueprintName
+		);
+
+		return TResult<FRemoveComponentResult>::Success(MoveTemp(Result));
+	}
+
+	auto FBlueprintIntrospectionService::renameComponent(const FRenameComponentParams& Params) -> TResult<FRenameComponentResult> {
+		// Validate input
+		if (Params.NewName.IsEmpty()) {
+			return TResult<FRenameComponentResult>::Failure(TEXT("New component name cannot be empty"));
+		}
+
+		// Find the blueprint
+		UBlueprint* Blueprint = FindBlueprint(Params.BlueprintName);
+		if (!Blueprint) {
+			return TResult<FRenameComponentResult>::Failure(
+				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
+			);
+		}
+
+		// Validate blueprint has construction script
+		const USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
+		if (!SCS) {
+			return TResult<FRenameComponentResult>::Failure(TEXT("Blueprint has no construction script"));
+		}
+
+		// Find the component to rename
+		USCS_Node* TargetNode = nullptr;
+		for (USCS_Node* Node : SCS->GetAllNodes()) {
+			if (Node && Node->GetVariableName().ToString() == Params.OldName) {
+				TargetNode = Node;
+				break;
+			}
+		}
+
+		if (!TargetNode) {
+			return TResult<FRenameComponentResult>::Failure(
+				FString::Printf(TEXT("Component '%s' not found in blueprint"), *Params.OldName)
+			);
+		}
+
+		// Check if new name already exists
+		for (const USCS_Node* Node : SCS->GetAllNodes()) {
+			if (Node && Node->GetVariableName().ToString() == Params.NewName) {
+				return TResult<FRenameComponentResult>::Failure(
+					FString::Printf(TEXT("Component with name '%s' already exists"), *Params.NewName)
+				);
+			}
+		}
+
+		// Rename the component
+		const auto NewFName = FName(*Params.NewName);
+		FBlueprintEditorUtils::RenameComponentMemberVariable(Blueprint, TargetNode, NewFName);
+
+		// Mark the blueprint as modified
+		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+
+		// Compile the blueprint
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+
+		// Create result
+		FRenameComponentResult Result;
+		Result.BlueprintName = Params.BlueprintName;
+		Result.OldName = Params.OldName;
+		Result.NewName = Params.NewName;
+		Result.Message = FString::Printf(
+			TEXT("Component renamed from '%s' to '%s' in blueprint '%s'"),
+			*Params.OldName,
+			*Params.NewName,
+			*Params.BlueprintName
+		);
+
+		return TResult<FRenameComponentResult>::Success(MoveTemp(Result));
+	}
+
+}

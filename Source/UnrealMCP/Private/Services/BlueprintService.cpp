@@ -1,5 +1,6 @@
 #include "Services/BlueprintService.h"
 #include "Core/CommonUtils.h"
+#include "Services/BlueprintIntrospectionService.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -675,7 +676,7 @@ namespace UnrealMCP {
 		}
 
 		// Find blueprint
-		UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *FCommonUtils::GetBlueprintPath(Params.BlueprintName));
+		UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *FBlueprintIntrospectionService::GetBlueprintPath(Params.BlueprintName));
 		if (!Blueprint) {
 			return TResult<FComponentTransformResult>::Failure(
 				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
@@ -748,7 +749,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the blueprint
-		const FString BlueprintPath = FCommonUtils::GetBlueprintPath(Params.BlueprintName);
+		const FString BlueprintPath = FBlueprintIntrospectionService::GetBlueprintPath(Params.BlueprintName);
 		if (BlueprintPath.IsEmpty()) {
 			return TResult<FDeleteBlueprintResult>::Failure(
 				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
@@ -790,4 +791,4 @@ namespace UnrealMCP {
 		);
 	}
 
-} // namespace UnrealMCP
+}

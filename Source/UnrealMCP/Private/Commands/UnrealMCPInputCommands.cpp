@@ -10,6 +10,8 @@
 #include "Commands/Input/ClearAllMappingContexts.h"
 #include "Core/CommonUtils.h"
 
+namespace UnrealMCP {
+
 FUnrealMCPInputCommands::FUnrealMCPInputCommands()
 {
     CommandHandlers.Add(TEXT("create_input_mapping"), &FCreateLegacyInputMapping::Handle);
@@ -31,4 +33,4 @@ TSharedPtr<FJsonObject> FUnrealMCPInputCommands::HandleCommand(const FString& Co
     }
 
     return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown input command: %s"), *CommandType));
-}
+}}

@@ -1,21 +1,23 @@
-#include "Commands/UMG/AddWidgetToViewport.h"
+#include "Commands/Widget/AddWidgetToViewport.h"
 #include "Core/CommonUtils.h"
 #include "Services/WidgetService.h"
 #include "Core/MCPTypes.h"
 #include "UObject/Class.h"
 
+namespace UnrealMCP {
+
 auto FAddWidgetToViewport::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
-	UnrealMCP::TResult<UnrealMCP::FAddWidgetToViewportParams> ParamsResult =
-		UnrealMCP::FAddWidgetToViewportParams::FromJson(Params);
+	TResult<FAddWidgetToViewportParams> ParamsResult =
+		FAddWidgetToViewportParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	UnrealMCP::TResult<UClass*> Result =
-		UnrealMCP::FWidgetService::GetWidgetClass(ParamsResult.GetValue());
+	TResult<UClass*> Result =
+		FWidgetService::GetWidgetClass(ParamsResult.GetValue());
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
@@ -33,4 +35,4 @@ auto FAddWidgetToViewport::Handle(
 			TEXT("Widget class ready. Use CreateWidget and AddToViewport nodes in Blueprint to display in game.")
 		);
 	});
-}
+}}

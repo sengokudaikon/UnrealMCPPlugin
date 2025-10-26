@@ -3,19 +3,21 @@
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FCreateLegacyInputMapping::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
 
-	UnrealMCP::TResult<UnrealMCP::FLegacyInputMappingParams> ParamsResult =
-		UnrealMCP::FLegacyInputMappingParams::FromJson(Params);
+	TResult<FLegacyInputMappingParams> ParamsResult =
+		FLegacyInputMappingParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FInputService::CreateLegacyInputMapping(ParamsResult.GetValue());
+	const FVoidResult Result =
+		FInputService::CreateLegacyInputMapping(ParamsResult.GetValue());
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
@@ -32,4 +34,4 @@ auto FCreateLegacyInputMapping::Handle(
 		Data->SetBoolField(TEXT("alt"), bAlt);
 		Data->SetBoolField(TEXT("cmd"), bCmd);
 	});
-}
+}}

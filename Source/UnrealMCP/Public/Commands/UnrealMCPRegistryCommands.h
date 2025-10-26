@@ -2,30 +2,31 @@
 
 #include "CoreMinimal.h"
 #include "Json.h"
-
-/**
- * Handler class for Registry-related MCP commands.
- *
- * This class routes registry queries to their appropriate handlers.
- * Registry commands allow querying what's available and supported in the API.
- */
-class UNREALMCP_API FUnrealMCPRegistryCommands {
-public:
-	FUnrealMCPRegistryCommands();
-
+namespace UnrealMCP {
 	/**
-	 * Route a registry command to the appropriate handler.
+	 * Handler class for Registry-related MCP commands.
 	 *
-	 * @param CommandType The type of command to execute
-	 * @param Params JSON parameters for the command
-	 * @return JSON response object
+	 * This class routes registry queries to their appropriate handlers.
+	 * Registry commands allow querying what's available and supported in the API.
 	 */
-	TSharedPtr<FJsonObject> HandleCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
+	class UNREALMCP_API FUnrealMCPRegistryCommands {
+	public:
+		FUnrealMCPRegistryCommands();
 
-private:
-	/** Type definition for command handler function pointers */
-	using FCommandHandler = TSharedPtr<FJsonObject> (*)(const TSharedPtr<FJsonObject>&);
+		/**
+		 * Route a registry command to the appropriate handler.
+		 *
+		 * @param CommandType The type of command to execute
+		 * @param Params JSON parameters for the command
+		 * @return JSON response object
+		 */
+		TSharedPtr<FJsonObject> HandleCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
 
-	/** Registry mapping command types to their handler functions */
-	TMap<FString, FCommandHandler> CommandHandlers;
-};
+	private:
+		/** Type definition for command handler function pointers */
+		using FCommandHandler = TSharedPtr<FJsonObject> (*)(const TSharedPtr<FJsonObject>&);
+
+		/** Registry mapping command types to their handler functions */
+		TMap<FString, FCommandHandler> CommandHandlers;
+	};
+}

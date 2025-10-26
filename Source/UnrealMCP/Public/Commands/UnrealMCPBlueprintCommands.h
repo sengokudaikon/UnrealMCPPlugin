@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 
+namespace UnrealMCP {
+
 /**
  * Handler class for Blueprint-related MCP commands.
  *
@@ -28,3 +30,5 @@ private:
 	/** Registry mapping command types to their handler functions */
 	TMap<FString, FCommandHandler> CommandHandlers;
 };
+
+}

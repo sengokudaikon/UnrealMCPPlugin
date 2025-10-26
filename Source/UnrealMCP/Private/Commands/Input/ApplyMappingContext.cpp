@@ -3,29 +3,31 @@
 #include "Services/InputService.h"
 #include "Core/MCPTypes.h"
 
+namespace UnrealMCP {
+
 auto FApplyMappingContext::Handle(
 	const TSharedPtr<FJsonObject>& Params
 ) -> TSharedPtr<FJsonObject> {
 
-	UnrealMCP::TResult<UnrealMCP::FApplyMappingContextParams> ParamsResult =
-		UnrealMCP::FApplyMappingContextParams::FromJson(Params);
+	TResult<FApplyMappingContextParams> ParamsResult =
+		FApplyMappingContextParams::FromJson(Params);
 
 	if (ParamsResult.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
 	}
 
-	const UnrealMCP::FVoidResult Result =
-		UnrealMCP::FInputService::ApplyMappingContext(ParamsResult.GetValue());
+	const FVoidResult Result =
+		FInputService::ApplyMappingContext(ParamsResult.GetValue());
 
 	if (Result.IsFailure()) {
 		return FCommonUtils::CreateErrorResponse(Result.GetError());
 	}
 
 
-	const UnrealMCP::FApplyMappingContextParams& ParsedParams = ParamsResult.GetValue();
+	const auto& [ContextPath, Priority] = ParamsResult.GetValue();
 
 	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("context_path"), ParsedParams.ContextPath);
-		Data->SetNumberField(TEXT("priority"), ParsedParams.Priority);
+		Data->SetStringField(TEXT("context_path"), ContextPath);
+		Data->SetNumberField(TEXT("priority"), Priority);
 	});
-}
+}}
