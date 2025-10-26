@@ -18,7 +18,7 @@ namespace UnrealMCP {
 		 *   - blueprint_name: Name of the blueprint
 		 * @return JSON object with success status and array of function info
 		 */
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

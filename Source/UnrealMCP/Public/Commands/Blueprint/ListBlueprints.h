@@ -7,7 +7,7 @@ namespace UnrealMCP {
 
 	class UNREALMCP_API FListBlueprintsCommand {
 	public:
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

@@ -22,7 +22,7 @@ namespace UnrealMCP {
 		 *   - is_reference (optional): Whether the parameter is passed by reference (default: false)
 		 * @return JSON object with success status
 		 */
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

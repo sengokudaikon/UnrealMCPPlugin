@@ -22,7 +22,7 @@ namespace UnrealMCP {
 		 *   - scale: Optional [x, y, z] array for scale
 		 * @return JSON object with success status
 		 */
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

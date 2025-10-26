@@ -18,7 +18,7 @@ namespace UnrealMCP {
 		 *   - blueprint_name: Name or path of the blueprint to delete
 		 * @return JSON object with success status
 		 */
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

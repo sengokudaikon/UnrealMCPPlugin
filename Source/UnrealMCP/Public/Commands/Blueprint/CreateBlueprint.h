@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Json.h"
+
+namespace UnrealMCP {
 
 /**
  * Handles operations for creating blueprints dynamically.
@@ -18,3 +21,5 @@ public:
 	 */
 	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 };
+
+}

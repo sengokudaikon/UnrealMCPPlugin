@@ -20,7 +20,7 @@ namespace UnrealMCP {
 		 *   - new_name: New name for the component
 		 * @return JSON object with success status
 		 */
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}

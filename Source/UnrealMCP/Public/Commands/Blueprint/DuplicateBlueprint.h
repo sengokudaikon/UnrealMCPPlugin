@@ -20,7 +20,7 @@ namespace UnrealMCP {
 		 *   - path: Optional package path (defaults to /Game/Blueprints/)
 		 * @return JSON object with success status and new blueprint path
 		 */
-		static auto Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
-} // namespace UnrealMCP
+}
