@@ -4,7 +4,7 @@
 
 namespace UnrealMCP {
 
-	auto FListBlueprintsCommand::Execute(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
+	auto FListBlueprintsCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		const FString Path = Params->HasField(TEXT("path")) ? Params->GetStringField(TEXT("path")) : TEXT("/Game/");
 		const bool bRecursive = Params->HasField(TEXT("recursive")) ? Params->GetBoolField(TEXT("recursive")) : true;
 
@@ -24,4 +24,4 @@ namespace UnrealMCP {
 		});
 	}
 
-} // namespace UnrealMCP
+}
