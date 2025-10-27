@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Functional tests for InputService
  *
  * These tests verify the actual behavior of Enhanced Input System operations:
@@ -11,18 +11,18 @@
  * Tests run in the Unreal Editor with real world context.
  */
 
-#include "Services/InputService.h"
-#include "Core/MCPTypes.h"
-#include "Misc/AutomationTest.h"
+#include "Editor.h"
+#include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
 #include "InputMappingContext.h"
-#include "EnhancedInputSubsystems.h"
+#include "Core/MCPTypes.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
-#include "Editor.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/AutomationTest.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Services/InputService.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FInputServiceCreateInputActionTest,
@@ -30,8 +30,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateInputActionTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateInputActionTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a basic boolean input action
 
 	UnrealMCP::FInputActionParams Params;
@@ -45,21 +44,22 @@ bool FInputServiceCreateInputActionTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("CreateInputAction should succeed"), Result.IsSuccess());
 	UInputAction* InputAction = Result.GetValue();
 	TestTrue(TEXT("InputAction should not be null"), InputAction != nullptr);
-	if (InputAction)
-	{
+	if (InputAction) {
 		TestEqual(TEXT("Action name should be prefixed with IA_"), InputAction->GetFName().ToString(), TEXT("IA_Jump"));
-		TestEqual(TEXT("Value type should be Boolean"), static_cast<uint8>(InputAction->ValueType), static_cast<uint8>(EInputActionValueType::Boolean));
+		TestEqual(TEXT("Value type should be Boolean"),
+		          static_cast<uint8>(InputAction->ValueType),
+		          static_cast<uint8>(EInputActionValueType::Boolean));
 	}
 
 	// Cleanup - delete the created asset
-	if (InputAction)
-	{
+	if (InputAction) {
 		const UPackage* Package = InputAction->GetOutermost();
-		if (Package)
-		{
+		if (Package) {
 			IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 			const FString PackagePath = Package->GetPathName();
-			const FString FilePath = FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension());
+			const FString FilePath = FPackageName::LongPackageNameToFilename(
+				PackagePath,
+				FPackageName::GetAssetPackageExtension());
 
 			// Try to delete the file
 			PlatformFile.DeleteFile(*FilePath);
@@ -75,12 +75,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateInvalidInputActionTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateInvalidInputActionTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating input action with empty name should fail
 
 	UnrealMCP::FInputActionParams Params;
-	Params.Name = TEXT("");  // Empty name
+	Params.Name = TEXT(""); // Empty name
 	Params.ValueType = TEXT("Boolean");
 	Params.Path = TEXT("/Game/Input");
 
@@ -89,7 +88,7 @@ bool FInputServiceCreateInvalidInputActionTest::RunTest(const FString& Parameter
 	// Verify failure
 	TestTrue(TEXT("CreateInputAction should fail with empty name"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention name cannot be empty"),
-		Result.GetError().Contains(TEXT("cannot be empty")));
+	         Result.GetError().Contains(TEXT("cannot be empty")));
 
 	return true;
 }
@@ -100,8 +99,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateInputMappingContextTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateInputMappingContextTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create an input mapping context
 
 	UnrealMCP::FInputMappingContextParams Params;
@@ -114,20 +112,21 @@ bool FInputServiceCreateInputMappingContextTest::RunTest(const FString& Paramete
 	TestTrue(TEXT("CreateInputMappingContext should succeed"), Result.IsSuccess());
 	const UInputMappingContext* MappingContext = Result.GetValue();
 	TestTrue(TEXT("MappingContext should not be null"), MappingContext != nullptr);
-	if (MappingContext)
-	{
-		TestEqual(TEXT("Context name should be prefixed with IMC_"), MappingContext->GetFName().ToString(), TEXT("IMC_Gameplay"));
+	if (MappingContext) {
+		TestEqual(TEXT("Context name should be prefixed with IMC_"),
+		          MappingContext->GetFName().ToString(),
+		          TEXT("IMC_Gameplay"));
 	}
 
 	// Cleanup - delete the created asset
-	if (MappingContext)
-	{
+	if (MappingContext) {
 		const UPackage* Package = MappingContext->GetOutermost();
-		if (Package)
-		{
+		if (Package) {
 			IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 			const FString PackagePath = Package->GetPathName();
-			const FString FilePath = FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension());
+			const FString FilePath = FPackageName::LongPackageNameToFilename(
+				PackagePath,
+				FPackageName::GetAssetPackageExtension());
 
 			// Try to delete the file
 			PlatformFile.DeleteFile(*FilePath);
@@ -143,20 +142,20 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateInvalidMappingContextTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateInvalidMappingContextTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating mapping context with empty name should fail
 
 	UnrealMCP::FInputMappingContextParams Params;
-	Params.Name = TEXT("");  // Empty name
+	Params.Name = TEXT(""); // Empty name
 	Params.Path = TEXT("/Game/Input");
 
-	const UnrealMCP::TResult<UInputMappingContext*> Result = UnrealMCP::FInputService::CreateInputMappingContext(Params);
+	const UnrealMCP::TResult<UInputMappingContext*> Result =
+		UnrealMCP::FInputService::CreateInputMappingContext(Params);
 
 	// Verify failure
 	TestTrue(TEXT("CreateInputMappingContext should fail with empty name"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention name cannot be empty"),
-		Result.GetError().Contains(TEXT("cannot be empty")));
+	         Result.GetError().Contains(TEXT("cannot be empty")));
 
 	return true;
 }
@@ -167,8 +166,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceAddMappingToInvalidContextTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceAddMappingToInvalidContextTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding mapping to non-existent context should fail
 
 	UnrealMCP::FAddMappingParams Params;
@@ -181,7 +179,7 @@ bool FInputServiceAddMappingToInvalidContextTest::RunTest(const FString& Paramet
 	// Verify failure
 	TestTrue(TEXT("AddMappingToContext should fail for non-existent context"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention failed to load"),
-		Result.GetError().Contains(TEXT("Failed to load")));
+	         Result.GetError().Contains(TEXT("Failed to load")));
 
 	return true;
 }
@@ -192,12 +190,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceAddMappingWithEmptyParametersTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceAddMappingWithEmptyParametersTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding mapping with empty context path should fail
 
 	UnrealMCP::FAddMappingParams Params;
-	Params.ContextPath = TEXT("");  // Empty context path
+	Params.ContextPath = TEXT(""); // Empty context path
 	Params.ActionPath = TEXT("/Game/Input/TestAction");
 	Params.Key = TEXT("Space");
 
@@ -206,7 +203,7 @@ bool FInputServiceAddMappingWithEmptyParametersTest::RunTest(const FString& Para
 	// Verify failure
 	TestTrue(TEXT("AddMappingToContext should fail with empty context path"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention path cannot be empty"),
-		Result.GetError().Contains(TEXT("cannot be empty")));
+	         Result.GetError().Contains(TEXT("cannot be empty")));
 
 	return true;
 }
@@ -217,8 +214,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceRemoveMappingFromInvalidContextTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceRemoveMappingFromInvalidContextTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Removing mapping from non-existent context should fail
 
 	UnrealMCP::FAddMappingParams Params;
@@ -231,7 +227,7 @@ bool FInputServiceRemoveMappingFromInvalidContextTest::RunTest(const FString& Pa
 	// Verify failure
 	TestTrue(TEXT("RemoveMappingFromContext should fail for non-existent context"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention failed to load"),
-		Result.GetError().Contains(TEXT("Failed to load")));
+	         Result.GetError().Contains(TEXT("Failed to load")));
 
 	return true;
 }
@@ -242,8 +238,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceApplyInvalidMappingContextTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceApplyInvalidMappingContextTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Applying non-existent mapping context should fail
 
 	UnrealMCP::FApplyMappingContextParams Params;
@@ -255,7 +250,7 @@ bool FInputServiceApplyInvalidMappingContextTest::RunTest(const FString& Paramet
 	// Verify failure
 	TestTrue(TEXT("ApplyMappingContext should fail for non-existent context"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention failed to load"),
-		Result.GetError().Contains(TEXT("Failed to load")));
+	         Result.GetError().Contains(TEXT("Failed to load")));
 
 	return true;
 }
@@ -266,12 +261,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceApplyMappingContextWithEmptyPathTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceApplyMappingContextWithEmptyPathTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Applying mapping context with empty path should fail
 
 	UnrealMCP::FApplyMappingContextParams Params;
-	Params.ContextPath = TEXT("");  // Empty path
+	Params.ContextPath = TEXT(""); // Empty path
 	Params.Priority = 1;
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FInputService::ApplyMappingContext(Params);
@@ -279,7 +273,7 @@ bool FInputServiceApplyMappingContextWithEmptyPathTest::RunTest(const FString& P
 	// Verify failure
 	TestTrue(TEXT("ApplyMappingContext should fail with empty path"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention path cannot be empty"),
-		Result.GetError().Contains(TEXT("cannot be empty")));
+	         Result.GetError().Contains(TEXT("cannot be empty")));
 
 	return true;
 }
@@ -290,8 +284,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceRemoveInvalidMappingContextTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceRemoveInvalidMappingContextTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Removing non-existent mapping context should fail
 
 	UnrealMCP::FRemoveMappingContextParams Params;
@@ -302,7 +295,7 @@ bool FInputServiceRemoveInvalidMappingContextTest::RunTest(const FString& Parame
 	// Verify failure
 	TestTrue(TEXT("RemoveMappingContext should fail for non-existent context"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention failed to load"),
-		Result.GetError().Contains(TEXT("Failed to load")));
+	         Result.GetError().Contains(TEXT("Failed to load")));
 
 	return true;
 }
@@ -313,24 +306,21 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceClearAllMappingContextsTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceClearAllMappingContextsTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Clear all mapping contexts (should succeed even if no contexts exist)
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FInputService::ClearAllMappingContexts();
 
 	// This might fail if we're not in play mode with a player controller,
 	// but let's check the result appropriately
-	if (Result.IsFailure())
-	{
+	if (Result.IsFailure()) {
 		// It's okay if it fails due to world/subsystem not being available
 		TestTrue(TEXT("If it fails, should be due to world/subsystem issues"),
-			Result.GetError().Contains(TEXT("world")) ||
-			Result.GetError().Contains(TEXT("player controller")) ||
-			Result.GetError().Contains(TEXT("subsystem")));
+		         Result.GetError().Contains(TEXT("world")) ||
+		         Result.GetError().Contains(TEXT("player controller")) ||
+		         Result.GetError().Contains(TEXT("subsystem")));
 	}
-	else
-	{
+	else {
 		// If it succeeds, that's also fine
 		TestTrue(TEXT("ClearAllMappingContexts should succeed"), Result.IsSuccess());
 	}
@@ -344,8 +334,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateLegacyInputMappingTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateLegacyInputMappingTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a legacy input mapping
 
 	UnrealMCP::FLegacyInputMappingParams Params;
@@ -373,12 +362,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateLegacyInputMappingWithEmptyNameTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateLegacyInputMappingWithEmptyNameTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating legacy input mapping with empty action name should fail
 
 	UnrealMCP::FLegacyInputMappingParams Params;
-	Params.ActionName = TEXT("");  // Empty action name
+	Params.ActionName = TEXT(""); // Empty action name
 	Params.Key = TEXT("Space");
 	Params.bShift = false;
 	Params.bCtrl = false;
@@ -390,7 +378,7 @@ bool FInputServiceCreateLegacyInputMappingWithEmptyNameTest::RunTest(const FStri
 	// Verify failure
 	TestTrue(TEXT("CreateLegacyInputMapping should fail with empty action name"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention action name cannot be empty"),
-		Result.GetError().Contains(TEXT("Action name cannot be empty")));
+	         Result.GetError().Contains(TEXT("Action name cannot be empty")));
 
 	return true;
 }
@@ -401,13 +389,12 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateLegacyInputMappingWithEmptyKeyTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateLegacyInputMappingWithEmptyKeyTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating legacy input mapping with empty key should fail
 
 	UnrealMCP::FLegacyInputMappingParams Params;
 	Params.ActionName = TEXT("TestAction");
-	Params.Key = TEXT("");  // Empty key
+	Params.Key = TEXT(""); // Empty key
 	Params.bShift = false;
 	Params.bCtrl = false;
 	Params.bAlt = false;
@@ -418,7 +405,7 @@ bool FInputServiceCreateLegacyInputMappingWithEmptyKeyTest::RunTest(const FStrin
 	// Verify failure
 	TestTrue(TEXT("CreateLegacyInputMapping should fail with empty key"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention key cannot be empty"),
-		Result.GetError().Contains(TEXT("Key cannot be empty")));
+	         Result.GetError().Contains(TEXT("Key cannot be empty")));
 
 	return true;
 }
@@ -429,11 +416,10 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FInputServiceCreateInputActionWithDifferentValueTypesTest::RunTest(const FString& Parameters)
-{
+auto FInputServiceCreateInputActionWithDifferentValueTypesTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create input actions with different value types
 
-	TArray<FString> ValueTypes = { TEXT("Boolean"), TEXT("Axis1D"), TEXT("Axis2D"), TEXT("Axis3D") };
+	TArray<FString> ValueTypes = {TEXT("Boolean"), TEXT("Axis1D"), TEXT("Axis2D"), TEXT("Axis3D")};
 	TArray<EInputActionValueType> ExpectedTypes = {
 		EInputActionValueType::Boolean,
 		EInputActionValueType::Axis1D,
@@ -441,8 +427,7 @@ bool FInputServiceCreateInputActionWithDifferentValueTypesTest::RunTest(const FS
 		EInputActionValueType::Axis3D
 	};
 
-	for (int32 i = 0; i < ValueTypes.Num(); ++i)
-	{
+	for (int32 i = 0; i < ValueTypes.Num(); ++i) {
 		UnrealMCP::FInputActionParams Params;
 		Params.Name = FString::Printf(TEXT("TestAction_%d"), i);
 		Params.ValueType = ValueTypes[i];
@@ -451,24 +436,26 @@ bool FInputServiceCreateInputActionWithDifferentValueTypesTest::RunTest(const FS
 		UnrealMCP::TResult<UInputAction*> Result = UnrealMCP::FInputService::CreateInputAction(Params);
 
 		// Verify success
-		TestTrue(FString::Printf(TEXT("CreateInputAction should succeed for type %s"), *ValueTypes[i]), Result.IsSuccess());
+		TestTrue(FString::Printf(TEXT("CreateInputAction should succeed for type %s"), *ValueTypes[i]),
+		         Result.IsSuccess());
 		UInputAction* InputAction = Result.GetValue();
-		TestTrue(FString::Printf(TEXT("InputAction should not be null for type %s"), *ValueTypes[i]), InputAction != nullptr);
-		if (InputAction)
-		{
+		TestTrue(FString::Printf(TEXT("InputAction should not be null for type %s"), *ValueTypes[i]),
+		         InputAction != nullptr);
+		if (InputAction) {
 			TestEqual(FString::Printf(TEXT("Value type should be %s"), *ValueTypes[i]),
-				static_cast<uint8>(InputAction->ValueType), static_cast<uint8>(ExpectedTypes[i]));
+			          static_cast<uint8>(InputAction->ValueType),
+			          static_cast<uint8>(ExpectedTypes[i]));
 		}
 
 		// Cleanup
-		if (InputAction)
-		{
+		if (InputAction) {
 			const UPackage* Package = InputAction->GetOutermost();
-			if (Package)
-			{
+			if (Package) {
 				IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 				FString PackagePath = Package->GetPathName();
-				FString FilePath = FPackageName::LongPackageNameToFilename(PackagePath, FPackageName::GetAssetPackageExtension());
+				FString FilePath = FPackageName::LongPackageNameToFilename(
+					PackagePath,
+					FPackageName::GetAssetPackageExtension());
 				PlatformFile.DeleteFile(*FilePath);
 			}
 		}

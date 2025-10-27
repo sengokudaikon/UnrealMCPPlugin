@@ -1,24 +1,25 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
 namespace UnrealMCP {
 
-/**
- * Handles adding key mappings to Input Mapping Context assets
- */
-class UNREALMCP_API FAddEnhancedInputMapping {
-public:
-	FAddEnhancedInputMapping() = default;
-	~FAddEnhancedInputMapping() = default;
-
 	/**
-	 * Processes the provided JSON parameters to add a key mapping to a context and returns a JSON response.
-	 *
-	 * @param Params The JSON object containing parameters (context_path, action_path, key)
-	 * @return A JSON object confirming the mapping was added or an error response
+	 * Handles adding key mappings to Input Mapping Context assets
 	 */
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+	class UNREALMCP_API FAddEnhancedInputMapping {
+	public:
+		FAddEnhancedInputMapping() = default;
+
+		~FAddEnhancedInputMapping() = default;
+
+		/**
+		 * Processes the provided JSON parameters to add a key mapping to a context and returns a JSON response.
+		 *
+		 * @param Params The JSON object containing parameters (context_path, action_path, key)
+		 * @return A JSON object confirming the mapping was added or an error response
+		 */
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 
 }

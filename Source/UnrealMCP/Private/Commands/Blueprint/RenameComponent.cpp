@@ -1,7 +1,7 @@
-#include "Commands/Blueprint/RenameComponent.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Commands/Blueprint/RenameComponent.h"
 #include "Core/CommonUtils.h"
 #include "Core/MCPTypes.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 
@@ -12,7 +12,7 @@ namespace UnrealMCP {
 		}
 
 		const FRenameComponentParams& RenameParams = ParseResult.GetValue();
-		auto Result = FBlueprintIntrospectionService::renameComponent(RenameParams);
+		auto Result = FBlueprintIntrospectionService::RenameComponent(RenameParams);
 		if (Result.IsFailure()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}

@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles operations for adding Text Block widgets to UMG Widget Blueprints.
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FAddTextBlockToWidget {
 	public:
 		FAddTextBlockToWidget() = default;
+
 		~FAddTextBlockToWidget() = default;
 
 		/**

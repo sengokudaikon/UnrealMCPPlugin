@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handler class for Blueprint Node-related MCP commands.
@@ -20,7 +21,8 @@ namespace UnrealMCP {
 		 * @param Params JSON parameters for the command
 		 * @return JSON response object
 		 */
-		TSharedPtr<FJsonObject> HandleCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
+		auto HandleCommand(const FString& CommandType,
+		                   const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 
 	private:
 		/** Type definition for command handler function pointers */

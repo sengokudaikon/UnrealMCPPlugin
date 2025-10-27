@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
+
 namespace UnrealMCP {
 	/**
 	 * Retrieves the path of a specified blueprint.
@@ -9,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FGetBlueprintPathCommand {
 	public:
 		FGetBlueprintPathCommand() = default;
+
 		~FGetBlueprintPathCommand() = default;
 
 		/**

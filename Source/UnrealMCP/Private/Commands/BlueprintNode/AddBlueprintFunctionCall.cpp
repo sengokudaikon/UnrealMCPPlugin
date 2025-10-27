@@ -1,7 +1,7 @@
-#include "Commands/BlueprintNode/AddBlueprintFunctionCall.h"
+﻿#include "Commands/BlueprintNode/AddBlueprintFunctionCall.h"
+#include "K2Node_CallFunction.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
-#include "K2Node_CallFunction.h"
 
 namespace UnrealMCP {
 	auto FAddBlueprintFunctionCall::Handle(

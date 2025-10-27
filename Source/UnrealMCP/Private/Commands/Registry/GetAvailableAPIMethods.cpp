@@ -1,10 +1,10 @@
-#include "Commands/Registry/GetAvailableAPIMethods.h"
-#include "Core/MCPRegistry.h"
+﻿#include "Commands/Registry/GetAvailableAPIMethods.h"
 #include "Core/CommonUtils.h"
+#include "Core/MCPRegistry.h"
 
 namespace UnrealMCP {
 
-	TSharedPtr<FJsonObject> FGetAvailableAPIMethodsCommand::Handle(const TSharedPtr<FJsonObject>& Params) {
+	auto FGetAvailableAPIMethodsCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		TMap<FString, TArray<FString>> Methods;
 
 		if (const FVoidResult Result = FMCPRegistry::GetAvailableAPIMethods(Methods); !Result.IsSuccess()) {

@@ -1,7 +1,7 @@
-#include "Commands/BlueprintNode/AddBlueprintEvent.h"
+﻿#include "Commands/BlueprintNode/AddBlueprintEvent.h"
+#include "K2Node_Event.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
-#include "K2Node_Event.h"
 
 namespace UnrealMCP {
 	auto FAddBlueprintEvent::Handle(

@@ -1,21 +1,16 @@
-#include "UnrealMCPModule.h"
-#include "UnrealMCPBridge.h"
+﻿#include "UnrealMCPModule.h"
 #include "Modules/ModuleManager.h"
-#include "EditorSubsystem.h"
-#include "Editor.h"
 
 #define LOCTEXT_NAMESPACE "FUnrealMCPModule"
 
-void FUnrealMCPModule::StartupModule()
-{
+auto FUnrealMCPModule::StartupModule() -> void {
 	UE_LOG(LogTemp, Display, TEXT("Unreal MCP Module has started"));
 }
 
-void FUnrealMCPModule::ShutdownModule()
-{
+auto FUnrealMCPModule::ShutdownModule() -> void {
 	UE_LOG(LogTemp, Display, TEXT("Unreal MCP Module has shut down"));
 }
 
 #undef LOCTEXT_NAMESPACE
-	
-IMPLEMENT_MODULE(FUnrealMCPModule, UnrealMCP) 
+
+IMPLEMENT_MODULE(FUnrealMCPModule, UnrealMCP)

@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles removing key mappings from Input Mapping Context assets
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FRemoveEnhancedInputMapping {
 	public:
 		FRemoveEnhancedInputMapping() = default;
+
 		~FRemoveEnhancedInputMapping() = default;
 
 		/**

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Core/Result.h"
@@ -14,7 +14,7 @@ namespace UnrealMCP {
 		/**
 		 * Initialize all registries. Called on module startup.
 		 */
-		static void Initialize();
+		static auto Initialize() -> void;
 
 		/**
 		 * Get all supported parent classes for Blueprint creation.
@@ -31,7 +31,7 @@ namespace UnrealMCP {
 		 * @param ClassName Name of the class to validate
 		 * @return True if the class can be used as a Blueprint parent
 		 */
-		static bool IsValidParentClass(const FString& ClassName);
+		static auto IsValidParentClass(const FString& ClassName) -> bool;
 
 		/**
 		 * Get detailed information about a parent class.
@@ -57,7 +57,7 @@ namespace UnrealMCP {
 		 * @param ComponentType Name of the component type to validate
 		 * @return True if the component type is valid
 		 */
-		static bool IsValidComponentType(const FString& ComponentType);
+		static auto IsValidComponentType(const FString& ComponentType) -> bool;
 
 		/**
 		 * Get detailed information about a component type.
@@ -99,7 +99,7 @@ namespace UnrealMCP {
 		 * @param WidgetType Name of the widget type to validate
 		 * @return True if the widget type is valid
 		 */
-		static bool IsValidWidgetType(const FString& WidgetType);
+		static auto IsValidWidgetType(const FString& WidgetType) -> bool;
 
 		/**
 		 * Get all supported property types for Blueprint variables.
@@ -115,7 +115,7 @@ namespace UnrealMCP {
 		 * @param PropertyType Name of the property type to validate
 		 * @return True if the property type is valid
 		 */
-		static bool IsValidPropertyType(const FString& PropertyType);
+		static auto IsValidPropertyType(const FString& PropertyType) -> bool;
 
 		/**
 		 * Get all supported Blueprint node types.
@@ -135,16 +135,20 @@ namespace UnrealMCP {
 		static auto GetNodeTypeInfo(const FString& NodeType, TMap<FString, FString>& OutInfo) -> FVoidResult;
 
 	private:
-		static TArray<UClass*> ParentClassCache;
-		static TArray<UClass*> ComponentTypeCache;
-		static TArray<UClass*> WidgetTypeCache;
+		static TArray<UClass*>* ParentClassCache;
+		static TArray<UClass*>* ComponentTypeCache;
+		static TArray<UClass*>* WidgetTypeCache;
 		static bool bRegistriesInitialized;
 
-		static void BuildParentClassCache();
-		static void BuildComponentTypeCache();
-		static void BuildWidgetTypeCache();
+		static auto BuildParentClassCache() -> void;
+
+		static auto BuildComponentTypeCache() -> void;
+
+		static auto BuildWidgetTypeCache() -> void;
+
 		static auto ResolveClassName(const FString& ClassName, const UClass* BaseClass = nullptr) -> UClass*;
-		static bool ShouldExcludeClass(const UClass* Class);
+
+		static auto ShouldExcludeClass(const UClass* Class) -> bool;
 	};
 
 }

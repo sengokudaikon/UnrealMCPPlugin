@@ -1,63 +1,63 @@
-#include "UnrealMCPBridge.h"
+﻿#include "UnrealMCPBridge.h"
+#include "EditorAssetLibrary.h"
+#include "JsonObjectConverter.h"
 #include "MCPServerRunnable.h"
-#include "Sockets.h"
 #include "SocketSubsystem.h"
+#include "Sockets.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Async/Async.h"
+#include "Camera/CameraActor.h"
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
+#include "Engine/DirectionalLight.h"
+#include "Engine/PointLight.h"
+#include "Engine/Selection.h"
+#include "Engine/SpotLight.h"
+#include "Engine/StaticMeshActor.h"
+#include "GameFramework/Actor.h"
 #include "HAL/RunnableThread.h"
 #include "Interfaces/IPv4/IPv4Address.h"
 #include "Interfaces/IPv4/IPv4Endpoint.h"
-#include "Dom/JsonObject.h"
-#include "Dom/JsonValue.h"
-#include "Serialization/JsonSerializer.h"
-#include "Serialization/JsonReader.h"
-#include "Serialization/JsonWriter.h"
-#include "Engine/StaticMeshActor.h"
-#include "Engine/DirectionalLight.h"
-#include "Engine/PointLight.h"
-#include "Engine/SpotLight.h"
-#include "Camera/CameraActor.h"
-#include "EditorAssetLibrary.h"
-#include "AssetRegistry/AssetRegistryModule.h"
-#include "JsonObjectConverter.h"
-#include "GameFramework/Actor.h"
-#include "Engine/Selection.h"
 #include "Kismet/GameplayStatics.h"
-#include "Async/Async.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+#include "Serialization/JsonWriter.h"
 // Add Blueprint related includes
-#include "Engine/Blueprint.h"
-#include "Engine/BlueprintGeneratedClass.h"
-#include "Factories/BlueprintFactory.h"
 #include "EdGraphSchema_K2.h"
 #include "K2Node_Event.h"
 #include "K2Node_VariableGet.h"
 #include "K2Node_VariableSet.h"
-#include "Components/StaticMeshComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/Blueprint.h"
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Factories/BlueprintFactory.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
 // UE5.5 correct includes
-#include "Engine/SimpleConstructionScript.h"
 #include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
 #include "UObject/Field.h"
 #include "UObject/FieldPath.h"
 // Blueprint Graph specific includes
-#include "EdGraph/EdGraph.h"
-#include "EdGraph/EdGraphNode.h"
-#include "EdGraph/EdGraphPin.h"
+#include "EditorSubsystem.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_InputAction.h"
 #include "K2Node_Self.h"
+#include "EdGraph/EdGraph.h"
+#include "EdGraph/EdGraphNode.h"
+#include "EdGraph/EdGraphPin.h"
 #include "GameFramework/InputSettings.h"
-#include "EditorSubsystem.h"
 #include "Subsystems/EditorActorSubsystem.h"
 // Include our new command handler classes
-#include "Commands/UnrealMCPEditorCommands.h"
 #include "Commands/UnrealMCPBlueprintCommands.h"
 #include "Commands/UnrealMCPBlueprintNodeCommands.h"
-#include "Core/CommonUtils.h"
+#include "Commands/UnrealMCPEditorCommands.h"
 #include "Commands/UnrealMCPInputCommands.h"
-#include "Commands/UnrealMCPWidgetCommands.h"
 #include "Commands/UnrealMCPRegistryCommands.h"
+#include "Commands/UnrealMCPWidgetCommands.h"
+#include "Core/CommonUtils.h"
 #include "Core/MCPRegistry.h"
 
 // Default settings
@@ -84,7 +84,7 @@ UUnrealMCPBridge::~UUnrealMCPBridge() {
 }
 
 // Initialize subsystem
-void UUnrealMCPBridge::Initialize(FSubsystemCollectionBase& Collection) {
+auto UUnrealMCPBridge::Initialize(FSubsystemCollectionBase& Collection) -> void {
 	UE_LOG(LogTemp, Display, TEXT("UnrealMCPBridge: Initializing"));
 
 	// Initialize the MCP Registry
@@ -102,13 +102,13 @@ void UUnrealMCPBridge::Initialize(FSubsystemCollectionBase& Collection) {
 }
 
 // Clean up resources when subsystem is destroyed
-void UUnrealMCPBridge::Deinitialize() {
+auto UUnrealMCPBridge::Deinitialize() -> void {
 	UE_LOG(LogTemp, Display, TEXT("UnrealMCPBridge: Shutting down"));
 	StopServer();
 }
 
 // Start the MCP server
-void UUnrealMCPBridge::StartServer() {
+auto UUnrealMCPBridge::StartServer() -> void {
 	if (bIsRunning) {
 		UE_LOG(LogTemp, Warning, TEXT("UnrealMCPBridge: Server is already running"));
 		return;
@@ -165,12 +165,11 @@ void UUnrealMCPBridge::StartServer() {
 	if (!ServerThread) {
 		UE_LOG(LogTemp, Error, TEXT("UnrealMCPBridge: Failed to create server thread"));
 		StopServer();
-		return;
 	}
 }
 
 // Stop the MCP server
-void UUnrealMCPBridge::StopServer() {
+auto UUnrealMCPBridge::StopServer() -> void {
 	if (!bIsRunning) {
 		return;
 	}
@@ -198,7 +197,7 @@ void UUnrealMCPBridge::StopServer() {
 	UE_LOG(LogTemp, Display, TEXT("UnrealMCPBridge: Server stopped"));
 }
 
-void UUnrealMCPBridge::InitializeCommandRouting() {
+auto UUnrealMCPBridge::InitializeCommandRouting() -> void {
 	// Ping command
 	CommandRoutingMap.Add(TEXT("ping"), ECommandHandlerType::Ping);
 
@@ -267,7 +266,7 @@ void UUnrealMCPBridge::InitializeCommandRouting() {
 }
 
 // Execute a command received from a client
-FString UUnrealMCPBridge::ExecuteCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params) {
+auto UUnrealMCPBridge::ExecuteCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params) -> FString {
 	UE_LOG(LogTemp, Display, TEXT("UnrealMCPBridge: Executing command: %s"), *CommandType);
 
 	// Create a promise to wait for the result

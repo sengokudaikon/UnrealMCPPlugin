@@ -1,10 +1,10 @@
-#include "Commands/Registry/GetSupportedComponentTypes.h"
-#include "Core/MCPRegistry.h"
+﻿#include "Commands/Registry/GetSupportedComponentTypes.h"
 #include "Core/CommonUtils.h"
+#include "Core/MCPRegistry.h"
 
 namespace UnrealMCP {
 
-	TSharedPtr<FJsonObject> FGetSupportedComponentTypesCommand::Handle(const TSharedPtr<FJsonObject>& Params) {
+	auto FGetSupportedComponentTypesCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		TArray<FString> ComponentTypes;
 
 		if (const FVoidResult Result = FMCPRegistry::GetSupportedComponentTypes(ComponentTypes); !Result.IsSuccess()) {

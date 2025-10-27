@@ -1,7 +1,7 @@
-#include "Commands/Blueprint/RemoveComponent.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Commands/Blueprint/RemoveComponent.h"
 #include "Core/CommonUtils.h"
 #include "Core/MCPTypes.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 
@@ -11,7 +11,7 @@ namespace UnrealMCP {
 			return FCommonUtils::CreateErrorResponse(RemoveParams.GetError());
 		}
 
-		const auto Result = FBlueprintIntrospectionService::removeComponent(RemoveParams.GetValue());
+		const auto Result = FBlueprintIntrospectionService::RemoveComponent(RemoveParams.GetValue());
 		if (!Result.IsSuccess()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}

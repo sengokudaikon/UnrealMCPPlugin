@@ -5,13 +5,13 @@
 
 namespace UnrealMCP {
 
-class UNREALMCP_API FAddComponent {
-public:
-	FAddComponent() = default;
+	class UNREALMCP_API FAddComponent {
+	public:
+		FAddComponent() = default;
 
-	~FAddComponent() = default;
+		~FAddComponent() = default;
 
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 
 }

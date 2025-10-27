@@ -5,12 +5,12 @@
 
 namespace UnrealMCP {
 
-class UNREALMCP_API FSetStaticMeshProperties {
-public:
-	FSetStaticMeshProperties() = default;
+	class UNREALMCP_API FSetStaticMeshProperties {
+	public:
+		FSetStaticMeshProperties() = default;
 
-	~FSetStaticMeshProperties() = default;
+		~FSetStaticMeshProperties() = default;
 
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 }

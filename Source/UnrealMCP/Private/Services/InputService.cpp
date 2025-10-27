@@ -1,15 +1,15 @@
-#include "Services/InputService.h"
-#include "InputAction.h"
-#include "InputMappingContext.h"
+﻿#include "Services/InputService.h"
+#include "Editor.h"
 #include "EnhancedInputLibrary.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputAction.h"
+#include "InputMappingContext.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "UObject/SavePackage.h"
-#include "Misc/Paths.h"
-#include "Editor.h"
 #include "Engine/World.h"
-#include "GameFramework/PlayerController.h"
 #include "GameFramework/InputSettings.h"
+#include "GameFramework/PlayerController.h"
+#include "Misc/Paths.h"
+#include "UObject/SavePackage.h"
 
 namespace UnrealMCP {
 
@@ -150,10 +150,10 @@ namespace UnrealMCP {
 		if (ValueTypeStr == TEXT("Axis1D")) {
 			return static_cast<uint8>(EInputActionValueType::Axis1D);
 		}
-		else if (ValueTypeStr == TEXT("Axis2D")) {
+		if (ValueTypeStr == TEXT("Axis2D")) {
 			return static_cast<uint8>(EInputActionValueType::Axis2D);
 		}
-		else if (ValueTypeStr == TEXT("Axis3D")) {
+		if (ValueTypeStr == TEXT("Axis3D")) {
 			return static_cast<uint8>(EInputActionValueType::Axis3D);
 		}
 		return static_cast<uint8>(EInputActionValueType::Boolean);

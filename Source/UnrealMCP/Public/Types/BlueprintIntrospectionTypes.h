@@ -1,16 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
 #include "Core/Result.h"
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Information about a blueprint function parameter
 	 */
-	struct FBlueprintFunctionParam
-	{
+	struct FBlueprintFunctionParam {
 		FString Name;
 		FString Type;
 		TOptional<FString> SubType;
@@ -18,14 +16,13 @@ namespace UnrealMCP
 		bool bIsReference;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Information about a blueprint function
 	 */
-	struct FBlueprintFunctionInfo
-	{
+	struct FBlueprintFunctionInfo {
 		FString Name;
 		TArray<FBlueprintFunctionParam> Parameters;
 		TArray<FBlueprintFunctionParam> Returns;
@@ -36,26 +33,24 @@ namespace UnrealMCP
 		int32 NodeCount;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Result structure for getting blueprint functions
 	 */
-	struct FGetBlueprintFunctionsResult
-	{
+	struct FGetBlueprintFunctionsResult {
 		TArray<FBlueprintFunctionInfo> Functions;
 		int32 Count;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Information about a blueprint variable
 	 */
-	struct FBlueprintVariableInfo
-	{
+	struct FBlueprintVariableInfo {
 		FString Name;
 		FString Type;
 		FString Category;
@@ -68,18 +63,17 @@ namespace UnrealMCP
 		FString DefaultValue;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Result structure for getting blueprint variables
 	 */
-	struct FGetBlueprintVariablesResult
-	{
+	struct FGetBlueprintVariablesResult {
 		TArray<FBlueprintVariableInfo> Variables;
 		int32 Count;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 }

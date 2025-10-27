@@ -1,7 +1,7 @@
-#include "Commands/Blueprint/GetComponentHierarchy.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Commands/Blueprint/GetComponentHierarchy.h"
 #include "Core/CommonUtils.h"
 #include "Core/MCPTypes.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 

@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles finding nodes in a blueprint graph by type and criteria
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FFindBlueprintNodes {
 	public:
 		FFindBlueprintNodes() = default;
+
 		~FFindBlueprintNodes() = default;
 
 		/**

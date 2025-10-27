@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Core/Result.h"
@@ -104,16 +104,16 @@ namespace UnrealMCP {
 		/**
 		 * Helper to get the current editor world
 		 */
-		static UWorld* GetEditorWorld();
+		static auto GetEditorWorld() -> UWorld*;
 
 		/**
 		 * Helper to find an actor by name in the current world
 		 */
-		static AActor* FindActorByName(const FString& ActorName);
+		static auto FindActorByName(const FString& ActorName) -> AActor*;
 
 		/**
 		 * Helper to map actor class string to UClass
 		 */
-		static UClass* GetActorClassByName(const FString& ClassName);
+		static auto GetActorClassByName(const FString& ClassName) -> UClass*;
 	};
 }

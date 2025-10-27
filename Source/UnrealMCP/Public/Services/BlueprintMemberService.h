@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Core/Result.h"
 #include "Core/MCPTypes.h"
+#include "Core/Result.h"
 
 class UBlueprint;
 
@@ -124,6 +124,25 @@ namespace UnrealMCP {
 		static auto GetFunctions(const FString& BlueprintName) -> TResult<FGetBlueprintFunctionsResult>;
 
 		// ============ Variable Operations ============
+
+		/**
+		 * Add a variable to a blueprint.
+		 *
+		 * Creates a new member variable with specified type and visibility.
+		 * The blueprint is marked as modified and compiled after variable creation.
+		 *
+		 * @param BlueprintName Name of the blueprint
+		 * @param VariableName Name of the variable to add
+		 * @param VariableType Type of the variable (bool, int, float, string, name, vector, rotator, transform)
+		 * @param bIsExposed Whether the variable is exposed to the editor (optional, default false)
+		 * @return Success or error if variable creation fails
+		 */
+		static auto AddVariable(
+			const FString& BlueprintName,
+			const FString& VariableName,
+			const FString& VariableType,
+			bool bIsExposed = false
+		) -> FVoidResult;
 
 		/**
 		 * Remove a variable from a blueprint.

@@ -5,12 +5,12 @@
 
 namespace UnrealMCP {
 
-class UNREALMCP_API FSetPhysicsProperties {
-public:
-	FSetPhysicsProperties() = default;
+	class UNREALMCP_API FSetPhysicsProperties {
+	public:
+		FSetPhysicsProperties() = default;
 
-	~FSetPhysicsProperties() = default;
+		~FSetPhysicsProperties() = default;
 
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 }

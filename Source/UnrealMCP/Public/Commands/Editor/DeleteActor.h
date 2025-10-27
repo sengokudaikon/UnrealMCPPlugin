@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles deleting actors from the level
@@ -9,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FDeleteActor {
 	public:
 		FDeleteActor() = default;
+
 		~FDeleteActor() = default;
 
 		/**

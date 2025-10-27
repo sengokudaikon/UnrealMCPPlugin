@@ -5,13 +5,13 @@
 
 namespace UnrealMCP {
 
-class UNREALMCP_API FSetBlueprintProperty {
-public:
-	FSetBlueprintProperty() = default;
+	class UNREALMCP_API FSetBlueprintProperty {
+	public:
+		FSetBlueprintProperty() = default;
 
-	~FSetBlueprintProperty() = default;
+		~FSetBlueprintProperty() = default;
 
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 
 }

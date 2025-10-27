@@ -1,6 +1,6 @@
-#include "Commands/Blueprint/ListBlueprints.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Commands/Blueprint/ListBlueprints.h"
 #include "Core/CommonUtils.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 
@@ -10,7 +10,8 @@ namespace UnrealMCP {
 
 		TArray<FString> Blueprints;
 
-		if (const FVoidResult Result = FBlueprintIntrospectionService::ListBlueprints(Path, bRecursive, Blueprints); !Result.IsSuccess()) {
+		if (const FVoidResult Result = FBlueprintIntrospectionService::ListBlueprints(Path, bRecursive, Blueprints); !
+			Result.IsSuccess()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 

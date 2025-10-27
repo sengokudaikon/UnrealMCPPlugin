@@ -1,14 +1,14 @@
-#include "Commands/Blueprint/DuplicateBlueprint.h"
-#include "AssetRegistry/AssetRegistryModule.h"
+﻿#include "Commands/Blueprint/DuplicateBlueprint.h"
 #include "AssetToolsModule.h"
-#include "Core/CommonUtils.h"
-#include "Engine/Blueprint.h"
 #include "IAssetTools.h"
 #include "ObjectTools.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Core/CommonUtils.h"
+#include "Engine/Blueprint.h"
+#include "Misc/PackageName.h"
 #include "Services/BlueprintIntrospectionService.h"
 #include "UObject/Package.h"
 #include "UObject/SavePackage.h"
-#include "Misc/PackageName.h"
 
 namespace UnrealMCP {
 

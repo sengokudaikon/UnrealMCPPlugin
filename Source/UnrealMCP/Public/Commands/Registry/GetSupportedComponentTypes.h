@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
@@ -10,7 +10,7 @@ namespace UnrealMCP {
 	 */
 	class UNREALMCP_API FGetSupportedComponentTypesCommand {
 	public:
-		static TSharedPtr<FJsonObject> Handle(const TSharedPtr<FJsonObject>& Params);
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
 }

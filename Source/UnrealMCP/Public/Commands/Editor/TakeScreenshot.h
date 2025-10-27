@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles taking screenshots of the editor viewport
@@ -9,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FTakeScreenshot {
 	public:
 		FTakeScreenshot() = default;
+
 		~FTakeScreenshot() = default;
 
 		/**

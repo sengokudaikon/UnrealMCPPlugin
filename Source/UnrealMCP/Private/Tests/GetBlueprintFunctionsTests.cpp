@@ -1,9 +1,9 @@
+﻿#include "Engine/Blueprint.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Kismet2/KismetEditorUtilities.h"
+#include "Misc/AutomationTest.h"
 #include "Services/BlueprintMemberService.h"
 #include "Types/BlueprintIntrospectionTypes.h"
-#include "Engine/Blueprint.h"
-#include "Kismet2/KismetEditorUtilities.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Misc/AutomationTest.h"
 
 #if WITH_AUTOMATION_TESTS
 
@@ -12,7 +12,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsErrorHandlin
                                  "UnrealMCP.BlueprintMemberService.GetFunctions.ErrorHandling",
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
-bool FBlueprintMemberServiceGetFunctionsErrorHandling::RunTest(const FString& Parameters) {
+auto FBlueprintMemberServiceGetFunctionsErrorHandling::RunTest(const FString& Parameters) -> bool {
 	// Test 1: Empty blueprint name
 	{
 		auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT(""));
@@ -35,7 +35,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsEmptyBluepri
                                  "UnrealMCP.BlueprintMemberService.GetFunctions.EmptyBlueprint",
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
-bool FBlueprintMemberServiceGetFunctionsEmptyBlueprint::RunTest(const FString& Parameters) {
+auto FBlueprintMemberServiceGetFunctionsEmptyBlueprint::RunTest(const FString& Parameters) -> bool {
 	// Create a simple Actor blueprint with no custom functions
 	UBlueprint* EmptyBlueprint = FKismetEditorUtilities::CreateBlueprint(
 		AActor::StaticClass(),
@@ -76,7 +76,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsWithCustomFu
                                  "UnrealMCP.BlueprintMemberService.GetFunctions.WithCustomFunctions",
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
-bool FBlueprintMemberServiceGetFunctionsWithCustomFunctions::RunTest(const FString& Parameters) {
+auto FBlueprintMemberServiceGetFunctionsWithCustomFunctions::RunTest(const FString& Parameters) -> bool {
 	// Create a test blueprint
 	UBlueprint* TestBlueprint = FKismetEditorUtilities::CreateBlueprint(
 		AActor::StaticClass(),
@@ -162,7 +162,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsMetadataExtr
                                  "UnrealMCP.BlueprintMemberService.GetFunctions.MetadataExtraction",
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
-bool FBlueprintMemberServiceGetFunctionsMetadataExtraction::RunTest(const FString& Parameters) {
+auto FBlueprintMemberServiceGetFunctionsMetadataExtraction::RunTest(const FString& Parameters) -> bool {
 	// Create a test blueprint
 	UBlueprint* MetadataBlueprint = FKismetEditorUtilities::CreateBlueprint(
 		AActor::StaticClass(),
@@ -236,7 +236,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsParameterAnd
                                  "UnrealMCP.BlueprintMemberService.GetFunctions.ParameterAndReturnTypes",
                                  EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
 
-bool FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const FString& Parameters) {
+auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const FString& Parameters) -> bool {
 	// Create a test blueprint
 	UBlueprint* ParamBlueprint = FKismetEditorUtilities::CreateBlueprint(
 		AActor::StaticClass(),

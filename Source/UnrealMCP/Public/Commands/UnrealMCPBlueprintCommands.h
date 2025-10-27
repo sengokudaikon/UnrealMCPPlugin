@@ -1,34 +1,35 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
 namespace UnrealMCP {
 
-/**
- * Handler class for Blueprint-related MCP commands.
- *
- * This class acts as a command router, delegating to specialized
- * command handler classes for each blueprint operation using a registry pattern.
- */
-class UNREALMCP_API FUnrealMCPBlueprintCommands {
-public:
-	FUnrealMCPBlueprintCommands();
-
 	/**
-	 * Route a blueprint command to the appropriate handler.
+	 * Handler class for Blueprint-related MCP commands.
 	 *
-	 * @param CommandType The type of command to execute
-	 * @param Params JSON parameters for the command
-	 * @return JSON response object
+	 * This class acts as a command router, delegating to specialized
+	 * command handler classes for each blueprint operation using a registry pattern.
 	 */
-	TSharedPtr<FJsonObject> HandleCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
+	class UNREALMCP_API FUnrealMCPBlueprintCommands {
+	public:
+		FUnrealMCPBlueprintCommands();
 
-private:
-	/** Type definition for command handler function pointers */
-	using FCommandHandler = TSharedPtr<FJsonObject> (*)(const TSharedPtr<FJsonObject>&);
+		/**
+		 * Route a blueprint command to the appropriate handler.
+		 *
+		 * @param CommandType The type of command to execute
+		 * @param Params JSON parameters for the command
+		 * @return JSON response object
+		 */
+		auto HandleCommand(const FString& CommandType,
+		                   const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 
-	/** Registry mapping command types to their handler functions */
-	TMap<FString, FCommandHandler> CommandHandlers;
-};
+	private:
+		/** Type definition for command handler function pointers */
+		using FCommandHandler = TSharedPtr<FJsonObject> (*)(const TSharedPtr<FJsonObject>&);
+
+		/** Registry mapping command types to their handler functions */
+		TMap<FString, FCommandHandler> CommandHandlers;
+	};
 
 }

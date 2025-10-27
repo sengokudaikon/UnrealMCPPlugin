@@ -1,15 +1,15 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
 #include "Sockets.h"
-#include "Interfaces/IPv4/IPv4Address.h"
-#include "Commands/UnrealMCPEditorCommands.h"
 #include "Commands/UnrealMCPBlueprintCommands.h"
 #include "Commands/UnrealMCPBlueprintNodeCommands.h"
+#include "Commands/UnrealMCPEditorCommands.h"
 #include "Commands/UnrealMCPInputCommands.h"
-#include "Commands/UnrealMCPWidgetCommands.h"
 #include "Commands/UnrealMCPRegistryCommands.h"
+#include "Commands/UnrealMCPWidgetCommands.h"
+#include "Interfaces/IPv4/IPv4Address.h"
 #include "UnrealMCPBridge.generated.h"
 
 class FMCPServerRunnable;
@@ -30,21 +30,21 @@ public:
 	virtual ~UUnrealMCPBridge() override;
 
 	// UEditorSubsystem implementation
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual auto Initialize(FSubsystemCollectionBase& Collection) -> void override;
 
-	virtual void Deinitialize() override;
+	virtual auto Deinitialize() -> void override;
 
 	// Server functions
-	void StartServer();
+	auto StartServer() -> void;
 
-	void StopServer();
+	auto StopServer() -> void;
 
-	bool IsRunning() const {
+	auto IsRunning() const -> bool {
 		return bIsRunning;
 	}
 
 	// Command execution
-	FString ExecuteCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
+	auto ExecuteCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params) -> FString;
 
 private:
 	// Server state
@@ -69,5 +69,5 @@ private:
 
 	TMap<FString, ECommandHandlerType> CommandRoutingMap;
 
-	void InitializeCommandRouting();
+	auto InitializeCommandRouting() -> void;
 };

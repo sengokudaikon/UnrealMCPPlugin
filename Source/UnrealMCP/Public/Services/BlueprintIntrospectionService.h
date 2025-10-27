@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Core/Result.h"
 #include "Core/MCPTypes.h"
+#include "Core/Result.h"
 
 class UBlueprint;
 
@@ -34,7 +34,7 @@ namespace UnrealMCP {
 		 * @param BlueprintName Name or path of the blueprint
 		 * @return True if the blueprint exists
 		 */
-		static bool BlueprintExists(const FString& BlueprintName);
+		static auto BlueprintExists(const FString& BlueprintName) -> bool;
 
 		/**
 		 * Get comprehensive information about a blueprint.
@@ -82,7 +82,8 @@ namespace UnrealMCP {
 		 * @param Params Parameters containing blueprint name
 		 * @return Component hierarchy result or error
 		 */
-		static auto GetComponentHierarchy(const FComponentHierarchyParams& Params) -> TResult<FComponentHierarchyResult>;
+		static auto GetComponentHierarchy(
+			const FComponentHierarchyParams& Params) -> TResult<FComponentHierarchyResult>;
 
 		/**
 		 * Get properties for a specific component in a blueprint.
@@ -90,7 +91,8 @@ namespace UnrealMCP {
 		 * @param Params Parameters containing blueprint and component names
 		 * @return Component properties result or error
 		 */
-		static auto GetComponentProperties(const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult>;
+		static auto GetComponentProperties(
+			const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult>;
 
 		/**
 		 * Remove a component from a blueprint.
@@ -98,7 +100,7 @@ namespace UnrealMCP {
 		 * @param Params Parameters containing blueprint and component names
 		 * @return Component removal result or error
 		 */
-		static auto removeComponent(const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult>;
+		static auto RemoveComponent(const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult>;
 
 		/**
 		 * Rename a component in a blueprint.
@@ -106,7 +108,7 @@ namespace UnrealMCP {
 		 * @param Params Parameters containing blueprint name, old component name, and new component name
 		 * @return Component rename result or error
 		 */
-		static auto renameComponent(const FRenameComponentParams& Params) -> TResult<FRenameComponentResult>;
+		static auto RenameComponent(const FRenameComponentParams& Params) -> TResult<FRenameComponentResult>;
 
 	private:
 		/**

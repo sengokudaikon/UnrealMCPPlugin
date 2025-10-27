@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
@@ -16,7 +16,7 @@ namespace UnrealMCP {
 		 * @param Params Empty JSON object (no parameters needed)
 		 * @return JSON response with array of class names
 		 */
-		static TSharedPtr<FJsonObject> Handle(const TSharedPtr<FJsonObject>& Params);
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 	};
 
 }

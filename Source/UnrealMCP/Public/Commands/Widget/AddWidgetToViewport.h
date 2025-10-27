@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles operations for adding widget instances to the game viewport.
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FAddWidgetToViewport {
 	public:
 		FAddWidgetToViewport() = default;
+
 		~FAddWidgetToViewport() = default;
 
 		/**

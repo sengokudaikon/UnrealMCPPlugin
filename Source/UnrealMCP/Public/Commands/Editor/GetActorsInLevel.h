@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles getting all actors in the current level
@@ -9,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FGetActorsInLevel {
 	public:
 		FGetActorsInLevel() = default;
+
 		~FGetActorsInLevel() = default;
 
 		/**

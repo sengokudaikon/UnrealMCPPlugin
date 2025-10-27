@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles creation of legacy input action mappings
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FCreateLegacyInputMapping {
 	public:
 		FCreateLegacyInputMapping() = default;
+
 		~FCreateLegacyInputMapping() = default;
 
 		/**

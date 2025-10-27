@@ -1,6 +1,6 @@
-#include "Commands/Blueprint/GetBlueprintVariables.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Commands/Blueprint/GetBlueprintVariables.h"
 #include "Core/CommonUtils.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 

@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles finding actors by name pattern
@@ -9,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FFindActorsByName {
 	public:
 		FFindActorsByName() = default;
+
 		~FFindActorsByName() = default;
 
 		/**

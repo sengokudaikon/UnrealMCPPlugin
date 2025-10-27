@@ -1,16 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
 #include "Core/Result.h"
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Parameters for creating a UMG widget blueprint
 	 */
-	struct FWidgetCreationParams
-	{
+	struct FWidgetCreationParams {
 		FString Name;
 		FString ParentClass = TEXT("UserWidget");
 		FString PackagePath = TEXT("/Game/UI");
@@ -22,8 +20,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for adding a text block to a widget
 	 */
-	struct FTextBlockParams
-	{
+	struct FTextBlockParams {
 		FString WidgetName;
 		FString TextBlockName;
 		FString Text = TEXT("");
@@ -39,8 +36,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for adding a button to a widget
 	 */
-	struct FButtonParams
-	{
+	struct FButtonParams {
 		FString WidgetName;
 		FString ButtonName;
 		FString Text = TEXT("");
@@ -57,8 +53,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for binding a widget event
 	 */
-	struct FWidgetEventBindingParams
-	{
+	struct FWidgetEventBindingParams {
 		FString WidgetName;
 		FString WidgetComponentName;
 		FString EventName;
@@ -71,8 +66,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for setting a text block binding
 	 */
-	struct FTextBlockBindingParams
-	{
+	struct FTextBlockBindingParams {
 		FString WidgetName;
 		FString TextBlockName;
 		FString BindingProperty;
@@ -85,8 +79,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for adding a widget to viewport
 	 */
-	struct FAddWidgetToViewportParams
-	{
+	struct FAddWidgetToViewportParams {
 		FString WidgetName;
 		int32 ZOrder = 0;
 

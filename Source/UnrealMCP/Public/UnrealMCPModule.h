@@ -1,22 +1,20 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
-class FUnrealMCPModule : public IModuleInterface
-{
+class FUnrealMCPModule : public IModuleInterface {
 public:
 	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+	virtual auto StartupModule() -> void override;
 
-	static inline FUnrealMCPModule& Get()
-	{
+	virtual auto ShutdownModule() -> void override;
+
+	static inline auto Get() -> FUnrealMCPModule& {
 		return FModuleManager::LoadModuleChecked<FUnrealMCPModule>("UnrealMCP");
 	}
 
-	static inline bool IsAvailable()
-	{
+	static inline auto IsAvailable() -> bool {
 		return FModuleManager::Get().IsModuleLoaded("UnrealMCP");
 	}
-}; 
+};

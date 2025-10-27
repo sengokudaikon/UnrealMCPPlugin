@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Core/Result.h"
@@ -142,21 +142,22 @@ namespace UnrealMCP {
 			bool bIsExposed
 		) -> FVoidResult;
 
-	private:
 		/**
 		 * Helper to find a blueprint by name
+		 * Note: This is primarily for internal use and testing
 		 */
-		static UBlueprint* FindBlueprint(const FString& BlueprintName, FString& OutError);
+		static auto FindBlueprint(const FString& BlueprintName, FString& OutError) -> UBlueprint*;
 
+	private:
 		/**
 		 * Helper to get or create the event graph for a blueprint
 		 */
-		static UEdGraph* GetEventGraph(UBlueprint* Blueprint, FString& OutError);
+		static auto GetEventGraph(UBlueprint* Blueprint, FString& OutError) -> UEdGraph*;
 
 		/**
 		 * Helper to find a node by GUID in a graph
 		 */
-		static UEdGraphNode* FindNodeByGuid(UEdGraph* Graph, const FString& NodeGuid);
+		static auto FindNodeByGuid(UEdGraph* Graph, const FString& NodeGuid) -> UEdGraphNode*;
 
 		/**
 		 * Helper to set function node parameters from JSON

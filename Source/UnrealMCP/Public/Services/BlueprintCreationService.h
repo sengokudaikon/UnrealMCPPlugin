@@ -1,20 +1,18 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Core/Result.h"
 #include "Core/MCPTypes.h"
+#include "Core/Result.h"
 
 class UBlueprint;
 class UClass;
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Service for blueprint creation and compilation operations
 	 * Handles the complete lifecycle of blueprint assets from creation to compilation
 	 */
-	class UNREALMCP_API FBlueprintCreationService
-	{
+	class UNREALMCP_API FBlueprintCreationService {
 	public:
 		/**
 		 * Create a new blueprint with the specified parent class

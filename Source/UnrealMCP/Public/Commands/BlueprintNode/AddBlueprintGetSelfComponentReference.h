@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles adding a self component reference node to a blueprint graph
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FAddBlueprintGetSelfComponentReference {
 	public:
 		FAddBlueprintGetSelfComponentReference() = default;
+
 		~FAddBlueprintGetSelfComponentReference() = default;
 
 		/**

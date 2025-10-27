@@ -1,10 +1,10 @@
-#include "Commands/Registry/GetSupportedParentClasses.h"
-#include "Core/MCPRegistry.h"
+﻿#include "Commands/Registry/GetSupportedParentClasses.h"
 #include "Core/CommonUtils.h"
+#include "Core/MCPRegistry.h"
 
 namespace UnrealMCP {
 
-	TSharedPtr<FJsonObject> FGetSupportedParentClassesCommand::Handle(const TSharedPtr<FJsonObject>& Params) {
+	auto FGetSupportedParentClassesCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		TArray<FString> ClassNames;
 
 		if (const FVoidResult Result = FMCPRegistry::GetSupportedParentClasses(ClassNames); !Result.IsSuccess()) {

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
@@ -25,18 +25,21 @@ public:
 	static auto CreateErrorResponse(const FString& Message) -> TSharedPtr<FJsonObject>;
 
 	static auto CreateSuccessResponse(const TSharedPtr<FJsonObject>& Data = nullptr) -> TSharedPtr<FJsonObject>;
-	static auto CreateSuccessResponse(const TFunction<void(TSharedPtr<FJsonObject>&)>& DataBuilder) -> TSharedPtr<FJsonObject>;
-	static void GetIntArrayFromJson(
+
+	static auto CreateSuccessResponse(
+		const TFunction<void(TSharedPtr<FJsonObject>&)>& DataBuilder) -> TSharedPtr<FJsonObject>;
+
+	static auto GetIntArrayFromJson(
 		const TSharedPtr<FJsonObject>& JsonObject,
 		const FString& FieldName,
 		TArray<int32>& OutArray
-	);
+	) -> void;
 
-	static void GetFloatArrayFromJson(
+	static auto GetFloatArrayFromJson(
 		const TSharedPtr<FJsonObject>& JsonObject,
 		const FString& FieldName,
 		TArray<float>& OutArray
-	);
+	) -> void;
 
 	static auto GetVector2DFromJson(const TSharedPtr<FJsonObject>& JsonObject, const FString& FieldName) -> FVector2D;
 
@@ -87,13 +90,13 @@ public:
 
 	static auto CreateSelfReferenceNode(UEdGraph* Graph, const FVector2D& Position) -> UK2Node_Self*;
 
-	static bool ConnectGraphNodes(
+	static auto ConnectGraphNodes(
 		const UEdGraph* Graph,
 		UEdGraphNode* SourceNode,
 		const FString& SourcePinName,
 		UEdGraphNode* TargetNode,
 		const FString& TargetPinName
-	);
+	) -> bool;
 
 	static auto FindPin(
 		UEdGraphNode* Node,
@@ -104,10 +107,10 @@ public:
 	static auto FindExistingEventNode(UEdGraph* Graph, const FString& EventName) -> UK2Node_Event*;
 
 	// Property utilities
-	static bool SetObjectProperty(
+	static auto SetObjectProperty(
 		UObject* Object,
 		const FString& PropertyName,
 		const TSharedPtr<FJsonValue>& Value,
 		FString& OutErrorMessage
-	);
+	) -> bool;
 };

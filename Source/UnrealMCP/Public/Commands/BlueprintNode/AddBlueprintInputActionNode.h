@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles adding legacy input action nodes to a blueprint graph
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FAddBlueprintInputActionNode {
 	public:
 		FAddBlueprintInputActionNode() = default;
+
 		~FAddBlueprintInputActionNode() = default;
 
 		/**

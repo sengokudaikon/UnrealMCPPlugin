@@ -1,52 +1,45 @@
-#include "Services/BlueprintCreationService.h"
+﻿#include "Services/BlueprintCreationService.h"
+#include "EditorAssetLibrary.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Core/CommonUtils.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Factories/BlueprintFactory.h"
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "GameFramework/Actor.h"
-#include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
-#include "EditorAssetLibrary.h"
+#include "GameFramework/Pawn.h"
 #include "Kismet2/KismetEditorUtilities.h"
 
-namespace UnrealMCP
-{
-	auto FBlueprintCreationService::CreateBlueprint(const FBlueprintCreationParams& Params) -> TResult<UBlueprint*>
-	{
-		if (Params.Name.IsEmpty())
-		{
+namespace UnrealMCP {
+	auto FBlueprintCreationService::CreateBlueprint(const FBlueprintCreationParams& Params) -> TResult<UBlueprint*> {
+		if (Params.Name.IsEmpty()) {
 			return TResult<UBlueprint*>::Failure(TEXT("Blueprint name cannot be empty"));
 		}
 
 		const FString FullAssetPath = Params.PackagePath + Params.Name;
 
-		if (UEditorAssetLibrary::DoesAssetExist(FullAssetPath))
-		{
+		if (UEditorAssetLibrary::DoesAssetExist(FullAssetPath)) {
 			return TResult<UBlueprint*>::Failure(
 				FString::Printf(TEXT("Blueprint already exists at: %s"), *FullAssetPath)
 			);
 		}
 
 		UClass* ParentClass = ResolveParentClass(Params.ParentClass);
-		if (!ParentClass)
-		{
+		if (!ParentClass) {
 			return TResult<UBlueprint*>::Failure(
 				FString::Printf(TEXT("Unable to resolve parent class: %s"), *Params.ParentClass)
 			);
 		}
 
 		UBlueprintFactory* Factory = NewObject<UBlueprintFactory>();
-		if (!Factory)
-		{
+		if (!Factory) {
 			return TResult<UBlueprint*>::Failure(TEXT("Failed to create blueprint factory"));
 		}
 
 		Factory->ParentClass = ParentClass;
 
 		UPackage* Package = CreatePackage(*FullAssetPath);
-		if (!Package)
-		{
+		if (!Package) {
 			return TResult<UBlueprint*>::Failure(
 				FString::Printf(TEXT("Failed to create package: %s"), *FullAssetPath)
 			);
@@ -63,8 +56,7 @@ namespace UnrealMCP
 			)
 		);
 
-		if (!NewBlueprint)
-		{
+		if (!NewBlueprint) {
 			return TResult<UBlueprint*>::Failure(TEXT("Failed to create blueprint asset"));
 		}
 
@@ -83,16 +75,13 @@ namespace UnrealMCP
 		return TResult<UBlueprint*>::Success(NewBlueprint);
 	}
 
-	auto FBlueprintCreationService::CompileBlueprint(const FString& BlueprintName) -> FVoidResult
-	{
-		if (BlueprintName.IsEmpty())
-		{
+	auto FBlueprintCreationService::CompileBlueprint(const FString& BlueprintName) -> FVoidResult {
+		if (BlueprintName.IsEmpty()) {
 			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
-		if (!Blueprint)
-		{
+		if (!Blueprint) {
 			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
 		}
 
@@ -108,44 +97,36 @@ namespace UnrealMCP
 		return FVoidResult::Success();
 	}
 
-	auto FBlueprintCreationService::ResolveParentClass(const FString& ParentClassName) -> UClass*
-	{
-		if (ParentClassName.IsEmpty() || ParentClassName == TEXT("Actor"))
-		{
+	auto FBlueprintCreationService::ResolveParentClass(const FString& ParentClassName) -> UClass* {
+		if (ParentClassName.IsEmpty() || ParentClassName == TEXT("Actor")) {
 			return AActor::StaticClass();
 		}
 
-		if (ParentClassName == TEXT("Pawn"))
-		{
+		if (ParentClassName == TEXT("Pawn")) {
 			return APawn::StaticClass();
 		}
 
-		if (ParentClassName == TEXT("Character"))
-		{
+		if (ParentClassName == TEXT("Character")) {
 			return ACharacter::StaticClass();
 		}
 
 		FString NormalizedClassName = ParentClassName;
 
 		// Add 'A' prefix if not present (Unreal Engine convention for Actor-derived classes)
-		if (!NormalizedClassName.StartsWith(TEXT("A")))
-		{
+		if (!NormalizedClassName.StartsWith(TEXT("A"))) {
 			NormalizedClassName = TEXT("A") + NormalizedClassName;
 		}
 
 		// Handle common cases directly
-		if (NormalizedClassName == TEXT("AActor"))
-		{
+		if (NormalizedClassName == TEXT("AActor")) {
 			return AActor::StaticClass();
 		}
 
-		if (NormalizedClassName == TEXT("APawn"))
-		{
+		if (NormalizedClassName == TEXT("APawn")) {
 			return APawn::StaticClass();
 		}
 
-		if (NormalizedClassName == TEXT("ACharacter"))
-		{
+		if (NormalizedClassName == TEXT("ACharacter")) {
 			return ACharacter::StaticClass();
 		}
 
@@ -153,8 +134,7 @@ namespace UnrealMCP
 		const FString EngineClassPath = FString::Printf(TEXT("/Script/Engine.%s"), *NormalizedClassName);
 		UClass* FoundClass = LoadClass<AActor>(nullptr, *EngineClassPath);
 
-		if (FoundClass)
-		{
+		if (FoundClass) {
 			UE_LOG(
 				LogTemp,
 				Verbose,
@@ -168,8 +148,7 @@ namespace UnrealMCP
 		const FString GameClassPath = FString::Printf(TEXT("/Script/Game.%s"), *NormalizedClassName);
 		FoundClass = LoadClass<AActor>(nullptr, *GameClassPath);
 
-		if (FoundClass)
-		{
+		if (FoundClass) {
 			UE_LOG(
 				LogTemp,
 				Verbose,

@@ -1,33 +1,34 @@
-#include "Commands/Input/CreateInputMappingContext.h"
+﻿#include "Commands/Input/CreateInputMappingContext.h"
 #include "Core/CommonUtils.h"
-#include "Services/InputService.h"
 #include "Core/MCPTypes.h"
+#include "Services/InputService.h"
 
 namespace UnrealMCP {
 
-auto FCreateInputMappingContext::Handle(
-	const TSharedPtr<FJsonObject>& Params
-) -> TSharedPtr<FJsonObject> {
+	auto FCreateInputMappingContext::Handle(
+		const TSharedPtr<FJsonObject>& Params
+	) -> TSharedPtr<FJsonObject> {
 
-	TResult<FInputMappingContextParams> ParamsResult =
-		FInputMappingContextParams::FromJson(Params);
+		TResult<FInputMappingContextParams> ParamsResult =
+			FInputMappingContextParams::FromJson(Params);
 
-	if (ParamsResult.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
+		if (ParamsResult.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
+		}
+
+		const TResult<UInputMappingContext*> Result =
+			FInputService::CreateInputMappingContext(ParamsResult.GetValue());
+
+		if (Result.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(Result.GetError());
+		}
+
+
+		const auto& [Name, Path] = ParamsResult.GetValue();
+
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			Data->SetStringField(TEXT("name"), Name);
+			Data->SetStringField(TEXT("asset_path"), Path / FString::Printf(TEXT("IMC_%s"), *Name));
+		});
 	}
-
-	const TResult<UInputMappingContext*> Result =
-		FInputService::CreateInputMappingContext(ParamsResult.GetValue());
-
-	if (Result.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(Result.GetError());
-	}
-
-
-	const auto& [Name, Path] = ParamsResult.GetValue();
-
-	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("name"), Name);
-		Data->SetStringField(TEXT("asset_path"), Path / FString::Printf(TEXT("IMC_%s"), *Name));
-	});
-}}
+}

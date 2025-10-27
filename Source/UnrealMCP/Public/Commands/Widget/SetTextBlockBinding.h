@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles operations for setting up text block bindings in UMG Widget Blueprints.
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FSetTextBlockBinding {
 	public:
 		FSetTextBlockBinding() = default;
+
 		~FSetTextBlockBinding() = default;
 
 		/**

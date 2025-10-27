@@ -5,16 +5,16 @@
 
 namespace UnrealMCP {
 
-/**
- * Handles operations for compiling blueprints dynamically.
- */
-class UNREALMCP_API FCompileBlueprint {
-public:
-	FCompileBlueprint() = default;
+	/**
+	 * Handles operations for compiling blueprints dynamically.
+	 */
+	class UNREALMCP_API FCompileBlueprint {
+	public:
+		FCompileBlueprint() = default;
 
-	~FCompileBlueprint() = default;
+		~FCompileBlueprint() = default;
 
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 
 }

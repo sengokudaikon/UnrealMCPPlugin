@@ -1,23 +1,23 @@
-#include "Services/BlueprintService.h"
-#include "Core/CommonUtils.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Services/BlueprintService.h"
+#include "Editor.h"
+#include "EditorAssetLibrary.h"
+#include "ObjectTools.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SceneComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "Editor.h"
-#include "EditorAssetLibrary.h"
+#include "Core/CommonUtils.h"
 #include "Engine/Blueprint.h"
-#include "Engine/SimpleConstructionScript.h"
 #include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
-#include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
-#include "AssetRegistry/AssetRegistryModule.h"
-#include "ObjectTools.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 	auto FBlueprintService::SpawnActorBlueprint(const FBlueprintSpawnParams& Params) -> TResult<AActor*> {
@@ -112,7 +112,8 @@ namespace UnrealMCP {
 		FString ComplexityInfo;
 
 		if (Blueprint->SimpleConstructionScript) {
-			if (const int32 ComponentCount = Blueprint->SimpleConstructionScript->GetAllNodes().Num(); ComponentCount > 10) {
+			if (const int32 ComponentCount = Blueprint->SimpleConstructionScript->GetAllNodes().Num(); ComponentCount >
+				10) {
 				bIsComplexBlueprint = true;
 				ComplexityInfo = FString::Printf(TEXT("High component count: %d"), ComponentCount);
 			}
@@ -255,7 +256,7 @@ namespace UnrealMCP {
 		if (!NewNode) {
 			return TResult<UBlueprint*>::Failure(TEXT("Failed to create component node"));
 		}
-		
+
 		if (USceneComponent* SceneComponent = Cast<USceneComponent>(NewNode->ComponentTemplate)) {
 			if (Params.Location.IsSet()) {
 				SceneComponent->SetRelativeLocation(Params.Location.GetValue());
@@ -270,7 +271,8 @@ namespace UnrealMCP {
 
 		// Apply static mesh if specified
 		if (Params.MeshType.IsSet()) {
-			if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(NewNode->ComponentTemplate); MeshComponent && !Params.MeshType.GetValue().IsEmpty()) {
+			if (UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(NewNode->ComponentTemplate);
+				MeshComponent && !Params.MeshType.GetValue().IsEmpty()) {
 				if (UStaticMesh* Mesh = Cast<UStaticMesh>(UEditorAssetLibrary::LoadAsset(Params.MeshType.GetValue()))) {
 					MeshComponent->SetStaticMesh(Mesh);
 				}
@@ -621,7 +623,7 @@ namespace UnrealMCP {
 		return nullptr;
 	}
 
-	FString FBlueprintService::ValidateBlueprintForComponentOps(const UBlueprint* Blueprint) {
+	auto FBlueprintService::ValidateBlueprintForComponentOps(const UBlueprint* Blueprint) -> FString {
 		if (!Blueprint) {
 			return TEXT("Blueprint is invalid");
 		}
@@ -633,7 +635,7 @@ namespace UnrealMCP {
 		return FString();
 	}
 
-	UClass* FBlueprintService::ResolveComponentClass(const FString& ComponentType) {
+	auto FBlueprintService::ResolveComponentClass(const FString& ComponentType) -> UClass* {
 		UClass* ComponentClass = FindFirstObject<UClass>(*ComponentType, EFindFirstObjectOptions::NativeFirst);
 		if (ComponentClass && ComponentClass->IsChildOf(UActorComponent::StaticClass())) {
 			return ComponentClass;
@@ -666,7 +668,8 @@ namespace UnrealMCP {
 		return nullptr;
 	}
 
-	auto FBlueprintService::SetComponentTransform(const FComponentTransformParams& Params) -> TResult<FComponentTransformResult> {
+	auto FBlueprintService::SetComponentTransform(
+		const FComponentTransformParams& Params) -> TResult<FComponentTransformResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
 			return TResult<FComponentTransformResult>::Failure(TEXT("Blueprint name cannot be empty"));
@@ -676,7 +679,9 @@ namespace UnrealMCP {
 		}
 
 		// Find blueprint
-		UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *FBlueprintIntrospectionService::GetBlueprintPath(Params.BlueprintName));
+		UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr,
+		                                               *FBlueprintIntrospectionService::GetBlueprintPath(
+			                                               Params.BlueprintName));
 		if (!Blueprint) {
 			return TResult<FComponentTransformResult>::Failure(
 				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
@@ -777,7 +782,8 @@ namespace UnrealMCP {
 
 		if (NumDeleted > 0) {
 			// Notify asset registry
-			const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+			const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(
+				"AssetRegistry");
 			AssetRegistryModule.Get().AssetDeleted(Blueprint);
 
 			// Return success result

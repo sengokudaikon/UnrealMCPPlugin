@@ -1,26 +1,26 @@
-#include "Core/CommonUtils.h"
-#include "Services/BlueprintIntrospectionService.h"
-#include "GameFramework/Actor.h"
-#include "Engine/Blueprint.h"
+﻿#include "Core/CommonUtils.h"
+#include "EdGraphSchema_K2.h"
+#include "K2Node_CallFunction.h"
+#include "K2Node_Event.h"
+#include "K2Node_InputAction.h"
+#include "K2Node_Self.h"
+#include "K2Node_VariableGet.h"
+#include "K2Node_VariableSet.h"
+#include "MCPPropertyHandlers.h"
+#include "Components/PrimitiveComponent.h"
+#include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Dom/JsonObject.h"
+#include "Dom/JsonValue.h"
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
 #include "EdGraph/EdGraphPin.h"
-#include "K2Node_Event.h"
-#include "K2Node_CallFunction.h"
-#include "K2Node_VariableGet.h"
-#include "K2Node_VariableSet.h"
-#include "K2Node_InputAction.h"
-#include "K2Node_Self.h"
-#include "EdGraphSchema_K2.h"
-#include "MCPPropertyHandlers.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/PrimitiveComponent.h"
-#include "Components/SceneComponent.h"
-#include "UObject/UObjectIterator.h"
+#include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
-#include "Dom/JsonObject.h"
-#include "Dom/JsonValue.h"
+#include "GameFramework/Actor.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Services/BlueprintIntrospectionService.h"
+#include "UObject/UObjectIterator.h"
 
 // JSON Utilities
 auto FCommonUtils::CreateErrorResponse(const FString& Message) -> TSharedPtr<FJsonObject> {
@@ -56,11 +56,11 @@ auto FCommonUtils::CreateSuccessResponse(
 	return ResponseObject;
 }
 
-void FCommonUtils::GetIntArrayFromJson(
+auto FCommonUtils::GetIntArrayFromJson(
 	const TSharedPtr<FJsonObject>& JsonObject,
 	const FString& FieldName,
 	TArray<int32>& OutArray
-) {
+) -> void {
 	OutArray.Reset();
 
 	if (!JsonObject->HasField(FieldName)) {
@@ -75,11 +75,11 @@ void FCommonUtils::GetIntArrayFromJson(
 	}
 }
 
-void FCommonUtils::GetFloatArrayFromJson(
+auto FCommonUtils::GetFloatArrayFromJson(
 	const TSharedPtr<FJsonObject>& JsonObject,
 	const FString& FieldName,
 	TArray<float>& OutArray
-) {
+) -> void {
 	OutArray.Reset();
 
 	if (!JsonObject->HasField(FieldName)) {
@@ -234,7 +234,7 @@ auto FCommonUtils::FindBlueprintByName(const FString& BlueprintName) -> UBluepri
 	return Blueprint;
 }
 
-UEdGraph* FCommonUtils::FindOrCreateEventGraph(UBlueprint* Blueprint) {
+auto FCommonUtils::FindOrCreateEventGraph(UBlueprint* Blueprint) -> UEdGraph* {
 	if (!Blueprint) {
 		return nullptr;
 	}
@@ -258,11 +258,11 @@ UEdGraph* FCommonUtils::FindOrCreateEventGraph(UBlueprint* Blueprint) {
 // Pin type utilities
 auto FCommonUtils::ParsePinType(const FString& TypeString, FEdGraphPinType& OutPinType) -> bool {
 	if (TypeString.Equals(TEXT("bool"), ESearchCase::IgnoreCase) ||
-	    TypeString.Equals(TEXT("boolean"), ESearchCase::IgnoreCase)) {
+		TypeString.Equals(TEXT("boolean"), ESearchCase::IgnoreCase)) {
 		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Boolean;
 	}
 	else if (TypeString.Equals(TEXT("int"), ESearchCase::IgnoreCase) ||
-	         TypeString.Equals(TEXT("integer"), ESearchCase::IgnoreCase)) {
+		TypeString.Equals(TEXT("integer"), ESearchCase::IgnoreCase)) {
 		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Int;
 	}
 	else if (TypeString.Equals(TEXT("float"), ESearchCase::IgnoreCase)) {
@@ -295,7 +295,9 @@ auto FCommonUtils::ParsePinType(const FString& TypeString, FEdGraphPinType& OutP
 }
 
 // Blueprint node utilities
-UK2Node_Event* FCommonUtils::CreateEventNode(UEdGraph* Graph, const FString& EventName, const FVector2D& Position) {
+auto FCommonUtils::CreateEventNode(UEdGraph* Graph,
+                                   const FString& EventName,
+                                   const FVector2D& Position) -> UK2Node_Event* {
 	if (!Graph) {
 		return nullptr;
 	}
@@ -342,9 +344,9 @@ UK2Node_Event* FCommonUtils::CreateEventNode(UEdGraph* Graph, const FString& Eve
 	return EventNode;
 }
 
-UK2Node_CallFunction* FCommonUtils::CreateFunctionCallNode(UEdGraph* Graph,
-                                                           const UFunction* Function,
-                                                           const FVector2D& Position) {
+auto FCommonUtils::CreateFunctionCallNode(UEdGraph* Graph,
+                                          const UFunction* Function,
+                                          const FVector2D& Position) -> UK2Node_CallFunction* {
 	if (!Graph || !Function) {
 		return nullptr;
 	}
@@ -361,10 +363,10 @@ UK2Node_CallFunction* FCommonUtils::CreateFunctionCallNode(UEdGraph* Graph,
 	return FunctionNode;
 }
 
-UK2Node_VariableGet* FCommonUtils::CreateVariableGetNode(UEdGraph* Graph,
-                                                         const UBlueprint* Blueprint,
-                                                         const FString& VariableName,
-                                                         const FVector2D& Position) {
+auto FCommonUtils::CreateVariableGetNode(UEdGraph* Graph,
+                                         const UBlueprint* Blueprint,
+                                         const FString& VariableName,
+                                         const FVector2D& Position) -> UK2Node_VariableGet* {
 	if (!Graph || !Blueprint) {
 		return nullptr;
 	}
@@ -387,10 +389,10 @@ UK2Node_VariableGet* FCommonUtils::CreateVariableGetNode(UEdGraph* Graph,
 	return nullptr;
 }
 
-UK2Node_VariableSet* FCommonUtils::CreateVariableSetNode(UEdGraph* Graph,
-                                                         const UBlueprint* Blueprint,
-                                                         const FString& VariableName,
-                                                         const FVector2D& Position) {
+auto FCommonUtils::CreateVariableSetNode(UEdGraph* Graph,
+                                         const UBlueprint* Blueprint,
+                                         const FString& VariableName,
+                                         const FVector2D& Position) -> UK2Node_VariableSet* {
 	if (!Graph || !Blueprint) {
 		return nullptr;
 	}
@@ -413,9 +415,9 @@ UK2Node_VariableSet* FCommonUtils::CreateVariableSetNode(UEdGraph* Graph,
 	return nullptr;
 }
 
-UK2Node_InputAction* FCommonUtils::CreateInputActionNode(UEdGraph* Graph,
-                                                         const FString& ActionName,
-                                                         const FVector2D& Position) {
+auto FCommonUtils::CreateInputActionNode(UEdGraph* Graph,
+                                         const FString& ActionName,
+                                         const FVector2D& Position) -> UK2Node_InputAction* {
 	if (!Graph) {
 		return nullptr;
 	}
@@ -432,7 +434,7 @@ UK2Node_InputAction* FCommonUtils::CreateInputActionNode(UEdGraph* Graph,
 	return InputActionNode;
 }
 
-UK2Node_Self* FCommonUtils::CreateSelfReferenceNode(UEdGraph* Graph, const FVector2D& Position) {
+auto FCommonUtils::CreateSelfReferenceNode(UEdGraph* Graph, const FVector2D& Position) -> UK2Node_Self* {
 	if (!Graph) {
 		return nullptr;
 	}
@@ -448,11 +450,11 @@ UK2Node_Self* FCommonUtils::CreateSelfReferenceNode(UEdGraph* Graph, const FVect
 	return SelfNode;
 }
 
-bool FCommonUtils::ConnectGraphNodes(const UEdGraph* Graph,
+auto FCommonUtils::ConnectGraphNodes(const UEdGraph* Graph,
                                      UEdGraphNode* SourceNode,
                                      const FString& SourcePinName,
                                      UEdGraphNode* TargetNode,
-                                     const FString& TargetPinName) {
+                                     const FString& TargetPinName) -> bool {
 	if (!Graph || !SourceNode || !TargetNode) {
 		return false;
 	}
@@ -468,7 +470,9 @@ bool FCommonUtils::ConnectGraphNodes(const UEdGraph* Graph,
 	return false;
 }
 
-UEdGraphPin* FCommonUtils::FindPin(UEdGraphNode* Node, const FString& PinName, const EEdGraphPinDirection Direction) {
+auto FCommonUtils::FindPin(UEdGraphNode* Node,
+                           const FString& PinName,
+                           const EEdGraphPinDirection Direction) -> UEdGraphPin* {
 	if (!Node) {
 		return nullptr;
 	}
@@ -521,7 +525,7 @@ UEdGraphPin* FCommonUtils::FindPin(UEdGraphNode* Node, const FString& PinName, c
 	return nullptr;
 }
 
-UK2Node_Event* FCommonUtils::FindExistingEventNode(UEdGraph* Graph, const FString& EventName) {
+auto FCommonUtils::FindExistingEventNode(UEdGraph* Graph, const FString& EventName) -> UK2Node_Event* {
 	if (!Graph) {
 		return nullptr;
 	}
@@ -538,12 +542,12 @@ UK2Node_Event* FCommonUtils::FindExistingEventNode(UEdGraph* Graph, const FStrin
 	return nullptr;
 }
 
-bool FCommonUtils::SetObjectProperty(
+auto FCommonUtils::SetObjectProperty(
 	UObject* Object,
 	const FString& PropertyName,
 	const TSharedPtr<FJsonValue>& Value,
 	FString& OutErrorMessage
-) {
+) -> bool {
 	if (!Object) {
 		OutErrorMessage = TEXT("Invalid object");
 		return false;

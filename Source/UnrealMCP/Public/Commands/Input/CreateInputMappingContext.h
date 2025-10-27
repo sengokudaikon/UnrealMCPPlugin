@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles creation of Input Mapping Context assets
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FCreateInputMappingContext {
 	public:
 		FCreateInputMappingContext() = default;
+
 		~FCreateInputMappingContext() = default;
 
 		/**

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Functional tests for ActorService
  *
  * These tests verify the actual behavior of actor operations:
@@ -11,19 +11,17 @@
  * Tests run in the Unreal Editor with real world context.
  */
 
-#include "Services/ActorService.h"
-#include "Misc/AutomationTest.h"
-#include "Engine/StaticMeshActor.h"
-#include "Engine/PointLight.h"
-#include "Engine/DirectionalLight.h"
-#include "GameFramework/Actor.h"
 #include "Editor.h"
-#include "Editor/UnrealEdEngine.h"
-#include "UnrealEdGlobals.h"
-#include "Engine/Selection.h"
-#include "Kismet/GameplayStatics.h"
-#include "Dom/JsonObject.h"
 #include "Components/StaticMeshComponent.h"
+#include "Dom/JsonObject.h"
+#include "Engine/PointLight.h"
+#include "Engine/StaticMeshActor.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
+#include "Misc/AutomationTest.h"
+#include "Services/ActorService.h"
+#include "Tests/GlobalTestCleanup.h"
+#include "Tests/TestUtils.h"
 #include "UObject/ConstructorHelpers.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -32,13 +30,14 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceGetActorsInLevelTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceGetActorsInLevelTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Get all actors in the current level
+	CREATE_TEST_CLEANUP_GUARD();
 
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
 	TArray<FString> ActorNames;
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::GetActorsInLevel(ActorNames);
@@ -49,10 +48,8 @@ bool FActorServiceGetActorsInLevelTest::RunTest(const FString& Parameters)
 
 	// Verify we have some expected actor types
 	bool bHasDefaultActor = false;
-	for (const FString& Name : ActorNames)
-	{
-		if (Name.Contains(TEXT("Default")) || Name.Contains(TEXT("Camera")))
-		{
+	for (const FString& Name : ActorNames) {
+		if (Name.Contains(TEXT("Default")) || Name.Contains(TEXT("Camera"))) {
 			bHasDefaultActor = true;
 			break;
 		}
@@ -68,17 +65,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceFindActorsByNameTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceFindActorsByNameTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Find actors by name pattern
+	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
-	// Spawn a test actor with a specific name
+	// Spawn a test actor with unique name
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("FindTestActor"));
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = FName(TEXT("FindTestActor_123"));
+	SpawnParams.Name = FName(TestActorName);
 	AActor* TestActor = World->SpawnActor<AActor>(
 		AActor::StaticClass(),
 		FVector(100.0f, 200.0f, 300.0f),
@@ -86,19 +85,21 @@ bool FActorServiceFindActorsByNameTest::RunTest(const FString& Parameters)
 		SpawnParams
 	);
 	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
-	if (!TestActor) return false;
+	if (!TestActor)
+		return false;
 
 	// Find actors with partial match
 	TArray<FString> FoundActors;
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::FindActorsByName(TEXT("FindTest"), FoundActors);
+	const UnrealMCP::FVoidResult Result =
+		UnrealMCP::FActorService::FindActorsByName(TEXT("FindTestActor"), FoundActors);
 
 	// Verify success
 	TestTrue(TEXT("FindActorsByName should succeed"), Result.IsSuccess());
 	TestTrue(TEXT("Should find at least one matching actor"), FoundActors.Num() > 0);
-	TestTrue(TEXT("Should contain our test actor"), FoundActors.Contains(TEXT("FindTestActor_123")));
+	TestTrue(TEXT("Should contain our test actor"), FoundActors.Contains(TestActorName));
 
-	// Cleanup
-	World->DestroyActor(TestActor);
+	// Cleanup using utility
+	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
 
 	return true;
 }
@@ -109,38 +110,43 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceSpawnActorTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceSpawnActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Spawn different types of actors
+	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
-	// Test spawning a PointLight
+	// Test spawning a PointLight with unique name
+	const FString TestLightName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("TestPointLight"));
 	const FVector SpawnLocation(100.0f, 200.0f, 300.0f);
 	const FRotator SpawnRotation(0.0f, 45.0f, 0.0f);
 
 	UnrealMCP::TResult<AActor*> Result = UnrealMCP::FActorService::SpawnActor(
 		TEXT("PointLight"),
-		TEXT("TestPointLight"),
-		TOptional<FVector>(SpawnLocation),
-		TOptional<FRotator>(SpawnRotation)
+		TestLightName,
+		TOptional(SpawnLocation),
+		TOptional(SpawnRotation)
 	);
 
 	// Verify success
 	TestTrue(TEXT("SpawnActor should succeed for PointLight"), Result.IsSuccess());
 	AActor* SpawnedActor = Result.GetValue();
 	TestNotNull(TEXT("Spawned actor should not be null"), SpawnedActor);
-	if (SpawnedActor)
-	{
-		TestEqual(TEXT("Actor name should match requested name"), SpawnedActor->GetName(), TEXT("TestPointLight"));
-		TestEqual(TEXT("Actor location should match requested location"), SpawnedActor->GetActorLocation(), SpawnLocation);
-		TestEqual(TEXT("Actor rotation should match requested rotation"), SpawnedActor->GetActorRotation(), SpawnRotation);
+	if (SpawnedActor) {
+		TestEqual(TEXT("Actor name should match requested name"), SpawnedActor->GetName(), TestLightName);
+		TestEqual(TEXT("Actor location should match requested location"),
+		          SpawnedActor->GetActorLocation(),
+		          SpawnLocation);
+		TestEqual(TEXT("Actor rotation should match requested rotation"),
+		          SpawnedActor->GetActorRotation(),
+		          SpawnRotation);
 		TestTrue(TEXT("Actor should be a PointLight"), SpawnedActor->IsA(APointLight::StaticClass()));
 
-		// Cleanup
-		World->DestroyActor(SpawnedActor);
+		// Cleanup using utility
+		UnrealMCPTest::FTestUtils::DestroyTestActor(World, SpawnedActor);
 	}
 
 	return true;
@@ -152,9 +158,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceSpawnInvalidActorTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceSpawnInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Spawning an invalid actor class should fail
+	CREATE_TEST_CLEANUP_GUARD();
 
 	const UnrealMCP::TResult<AActor*> Result = UnrealMCP::FActorService::SpawnActor(
 		TEXT("NonExistentActorClass_XYZ123"),
@@ -166,7 +172,7 @@ bool FActorServiceSpawnInvalidActorTest::RunTest(const FString& Parameters)
 	// Verify failure
 	TestTrue(TEXT("SpawnActor should fail for invalid class"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention unknown class"),
-		Result.GetError().Contains(TEXT("Unknown actor class")));
+	         Result.GetError().Contains(TEXT("Unknown actor class")));
 
 	return true;
 }
@@ -177,17 +183,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceDeleteActorTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceDeleteActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Delete an actor
+	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
-	// Spawn a test actor
+	// Spawn a test actor with unique name
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("DeleteTestActor"));
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = FName(TEXT("DeleteTestActor"));
+	SpawnParams.Name = FName(TestActorName);
 	const AActor* TestActor = World->SpawnActor<AActor>(
 		AActor::StaticClass(),
 		FVector(100.0f, 200.0f, 300.0f),
@@ -195,16 +203,15 @@ bool FActorServiceDeleteActorTest::RunTest(const FString& Parameters)
 		SpawnParams
 	);
 	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
-	if (!TestActor) return false;
+	if (!TestActor)
+		return false;
 
 	// Verify actor exists
 	TArray<AActor*> AllActors;
 	UGameplayStatics::GetAllActorsOfClass(World, AActor::StaticClass(), AllActors);
 	bool bActorFound = false;
-	for (const AActor* Actor : AllActors)
-	{
-		if (Actor && Actor->GetName() == TEXT("DeleteTestActor"))
-		{
+	for (const AActor* Actor : AllActors) {
+		if (Actor && Actor->GetName() == TestActorName) {
 			bActorFound = true;
 			break;
 		}
@@ -212,7 +219,7 @@ bool FActorServiceDeleteActorTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Actor should exist before deletion"), bActorFound);
 
 	// Delete the actor
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::DeleteActor(TEXT("DeleteTestActor"));
+	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::DeleteActor(TestActorName);
 
 	// Verify success
 	TestTrue(TEXT("DeleteActor should succeed"), Result.IsSuccess());
@@ -221,10 +228,8 @@ bool FActorServiceDeleteActorTest::RunTest(const FString& Parameters)
 	TArray<AActor*> AllActorsAfter;
 	UGameplayStatics::GetAllActorsOfClass(World, AActor::StaticClass(), AllActorsAfter);
 	bool bActorFoundAfter = false;
-	for (const AActor* Actor : AllActorsAfter)
-	{
-		if (Actor && Actor->GetName() == TEXT("DeleteTestActor"))
-		{
+	for (const AActor* Actor : AllActorsAfter) {
+		if (Actor && Actor->GetName() == TestActorName) {
 			bActorFoundAfter = true;
 			break;
 		}
@@ -240,16 +245,16 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceDeleteInvalidActorTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceDeleteInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Deleting a non-existent actor should fail gracefully
+	CREATE_TEST_CLEANUP_GUARD();
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::DeleteActor(TEXT("NonExistentActor_XYZ123"));
 
 	// Verify failure
 	TestTrue(TEXT("DeleteActor should fail for non-existent actor"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }
@@ -260,17 +265,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceSetActorTransformTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceSetActorTransformTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Set actor transform (location, rotation, scale)
+	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
-	// Spawn a StaticMeshActor test actor (better transform support than basic AActor)
+	// Spawn a StaticMeshActor test actor with unique name (better transform support than basic AActor)
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("TransformTestActor"));
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = FName(TEXT("TransformTestActor"));
+	SpawnParams.Name = FName(TestActorName);
 	AStaticMeshActor* TestActor = World->SpawnActor<AStaticMeshActor>(
 		AStaticMeshActor::StaticClass(),
 		FVector::ZeroVector,
@@ -278,10 +285,11 @@ bool FActorServiceSetActorTransformTest::RunTest(const FString& Parameters)
 		SpawnParams
 	);
 	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
-	if (!TestActor) return false;
+	if (!TestActor)
+		return false;
 
 	// Verify the actor has the expected name
-	TestEqual(TEXT("Actor should have expected name"), TestActor->GetName(), TEXT("TransformTestActor"));
+	TestEqual(TEXT("Actor should have expected name"), TestActor->GetName(), TestActorName);
 
 	// Verify initial transform
 	TestEqual(TEXT("Initial location should be zero"), TestActor->GetActorLocation(), FVector::ZeroVector);
@@ -291,8 +299,8 @@ bool FActorServiceSetActorTransformTest::RunTest(const FString& Parameters)
 	// Set new location
 	const FVector NewLocation(500.0f, 1000.0f, 250.0f);
 	UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorTransform(
-		TEXT("TransformTestActor"),
-		TOptional<FVector>(NewLocation),
+		TestActorName,
+		TOptional(NewLocation),
 		TOptional<FRotator>(),
 		TOptional<FVector>()
 	);
@@ -306,7 +314,7 @@ bool FActorServiceSetActorTransformTest::RunTest(const FString& Parameters)
 	// Set new rotation
 	const FRotator NewRotation(30.0f, 60.0f, 90.0f);
 	Result = UnrealMCP::FActorService::SetActorTransform(
-		TEXT("TransformTestActor"),
+		TestActorName,
 		TOptional<FVector>(),
 		TOptional<FRotator>(NewRotation),
 		TOptional<FVector>()
@@ -321,10 +329,10 @@ bool FActorServiceSetActorTransformTest::RunTest(const FString& Parameters)
 	// Set new scale
 	const FVector NewScale(2.0f, 3.0f, 4.0f);
 	Result = UnrealMCP::FActorService::SetActorTransform(
-		TEXT("TransformTestActor"),
+		TestActorName,
 		TOptional<FVector>(),
 		TOptional<FRotator>(),
-		TOptional<FVector>(NewScale)
+		TOptional(NewScale)
 	);
 
 	TestTrue(TEXT("SetActorTransform should succeed for scale"), Result.IsSuccess());
@@ -333,8 +341,8 @@ bool FActorServiceSetActorTransformTest::RunTest(const FString& Parameters)
 	TestEqual(TEXT("Location should remain unchanged"), TestActor->GetActorLocation(), NewLocation);
 	TestEqual(TEXT("Rotation should remain unchanged"), TestActor->GetActorRotation(), NewRotation);
 
-	// Cleanup
-	World->DestroyActor(TestActor);
+	// Cleanup using utility
+	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
 
 	return true;
 }
@@ -345,21 +353,23 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceGetActorPropertiesTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceGetActorPropertiesTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Get actor properties
+	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
-	// Spawn a StaticMeshActor test actor with known transform (better transform support than basic AActor)
+	// Spawn a StaticMeshActor test actor with known transform and unique name (better transform support than basic AActor)
 	FVector SpawnLocation(100.0f, 200.0f, 300.0f);
 	FRotator SpawnRotation(45.0f, 90.0f, 135.0f);
 	FVector SpawnScale(1.5f, 2.0f, 2.5f);
 
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("PropertiesTestActor"));
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = FName(TEXT("PropertiesTestActor"));
+	SpawnParams.Name = FName(TestActorName);
 	AStaticMeshActor* TestActor = World->SpawnActor<AStaticMeshActor>(
 		AStaticMeshActor::StaticClass(),
 		SpawnLocation,
@@ -367,13 +377,14 @@ bool FActorServiceGetActorPropertiesTest::RunTest(const FString& Parameters)
 		SpawnParams
 	);
 	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
-	if (!TestActor) return false;
+	if (!TestActor)
+		return false;
 
 	TestActor->SetActorScale3D(SpawnScale);
 
 	// Get properties
 	TMap<FString, FString> Properties;
-	UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::GetActorProperties(TEXT("PropertiesTestActor"), Properties);
+	UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::GetActorProperties(TestActorName, Properties);
 
 	// Verify success
 	TestTrue(TEXT("GetActorProperties should succeed"), Result.IsSuccess());
@@ -387,25 +398,32 @@ bool FActorServiceGetActorPropertiesTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("Should have scale property"), Properties.Contains(TEXT("scale")));
 
 	// Verify name matches exactly
-	TestEqual(TEXT("Name should match"), Properties[TEXT("name")], TEXT("PropertiesTestActor"));
+	TestEqual(TEXT("Name should match"), Properties[TEXT("name")], TestActorName);
 
 	// Verify class name should be "StaticMeshActor"
 	TestEqual(TEXT("Class should be StaticMeshActor"), Properties[TEXT("class")], TEXT("StaticMeshActor"));
 
 	// Verify location matches expected format and values
-	FString ExpectedLocation = FString::Printf(TEXT("X=%f,Y=%f,Z=%f"), SpawnLocation.X, SpawnLocation.Y, SpawnLocation.Z);
+	FString ExpectedLocation = FString::Printf(TEXT("X=%f,Y=%f,Z=%f"),
+	                                           SpawnLocation.X,
+	                                           SpawnLocation.Y,
+	                                           SpawnLocation.Z);
 	TestEqual(TEXT("Location should match exactly"), Properties[TEXT("location")], ExpectedLocation);
 
 	// Verify rotation matches expected format and values
-	FString ExpectedRotation = FString::Printf(TEXT("Pitch=%f,Yaw=%f,Roll=%f"), SpawnRotation.Pitch, SpawnRotation.Yaw, SpawnRotation.Roll);
+	FString ExpectedRotation = FString::Printf(
+		TEXT("Pitch=%f,Yaw=%f,Roll=%f"),
+		SpawnRotation.Pitch,
+		SpawnRotation.Yaw,
+		SpawnRotation.Roll);
 	TestEqual(TEXT("Rotation should match exactly"), Properties[TEXT("rotation")], ExpectedRotation);
 
 	// Verify scale matches expected format and values
 	FString ExpectedScale = FString::Printf(TEXT("X=%f,Y=%f,Z=%f"), SpawnScale.X, SpawnScale.Y, SpawnScale.Z);
 	TestEqual(TEXT("Scale should match exactly"), Properties[TEXT("scale")], ExpectedScale);
 
-	// Cleanup
-	World->DestroyActor(TestActor);
+	// Cleanup using utility
+	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
 
 	return true;
 }
@@ -416,17 +434,19 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Set actor property
+	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
-	// Spawn a test actor
+	// Spawn a test actor with unique name
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("SetPropertyTestActor"));
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Name = FName(TEXT("SetPropertyTestActor"));
+	SpawnParams.Name = FName(TestActorName);
 	AActor* TestActor = World->SpawnActor<AActor>(
 		AActor::StaticClass(),
 		FVector::ZeroVector,
@@ -434,7 +454,8 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 		SpawnParams
 	);
 	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
-	if (!TestActor) return false;
+	if (!TestActor)
+		return false;
 
 	// Test setting float property - use InitialLifeSpan which exists on all actors
 	// Note: InitialLifeSpan is a public property, not a method in UE
@@ -443,7 +464,7 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 
 	const TSharedPtr<FJsonValue> FloatValue = MakeShareable(new FJsonValueNumber(5.0f));
 	UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorProperty(
-		TEXT("SetPropertyTestActor"),
+		TestActorName,
 		TEXT("InitialLifeSpan"),
 		FloatValue
 	);
@@ -454,7 +475,7 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 	// Set it back to original value to verify we can change it
 	const TSharedPtr<FJsonValue> FloatValueZero = MakeShareable(new FJsonValueNumber(0.0f));
 	Result = UnrealMCP::FActorService::SetActorProperty(
-		TEXT("SetPropertyTestActor"),
+		TestActorName,
 		TEXT("InitialLifeSpan"),
 		FloatValueZero
 	);
@@ -469,7 +490,7 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 
 	const TSharedPtr<FJsonValue> BoolValue = MakeShareable(new FJsonValueBoolean(false));
 	Result = UnrealMCP::FActorService::SetActorProperty(
-		TEXT("SetPropertyTestActor"),
+		TestActorName,
 		TEXT("bCanBeDamaged"),
 		BoolValue
 	);
@@ -491,7 +512,7 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 
 	const TSharedPtr<FJsonValue> TimeDilationValue = MakeShareable(new FJsonValueNumber(0.5f));
 	Result = UnrealMCP::FActorService::SetActorProperty(
-		TEXT("SetPropertyTestActor"),
+		TestActorName,
 		TEXT("CustomTimeDilation"),
 		TimeDilationValue
 	);
@@ -504,19 +525,19 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 	// Test setting non-existent property fails properly
 	const TSharedPtr<FJsonValue> InvalidValue = MakeShareable(new FJsonValueBoolean(true));
 	Result = UnrealMCP::FActorService::SetActorProperty(
-		TEXT("SetPropertyTestActor"),
+		TestActorName,
 		TEXT("NonExistentProperty"),
 		InvalidValue
 	);
 
 	TestTrue(TEXT("SetActorProperty should fail for non-existent property"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention property not found"),
-		Result.GetError().Contains(TEXT("Property not found")));
+	         Result.GetError().Contains(TEXT("Property not found")));
 
 	// Test setting wrong type for existing property
 	const TSharedPtr<FJsonValue> WrongTypeValue = MakeShareable(new FJsonValueString(TEXT("not a number")));
 	Result = UnrealMCP::FActorService::SetActorProperty(
-		TEXT("SetPropertyTestActor"),
+		TestActorName,
 		TEXT("InitialLifeSpan"),
 		WrongTypeValue
 	);
@@ -524,8 +545,8 @@ bool FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters)
 	// This should fail because we're trying to set a string to a float property
 	TestTrue(TEXT("SetActorProperty should fail for wrong type"), Result.IsFailure());
 
-	// Cleanup
-	World->DestroyActor(TestActor);
+	// Cleanup using utility
+	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
 
 	return true;
 }
@@ -536,9 +557,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FActorServiceSetActorTransformInvalidActorTest::RunTest(const FString& Parameters)
-{
+auto FActorServiceSetActorTransformInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting transform on non-existent actor should fail
+	CREATE_TEST_CLEANUP_GUARD();
 
 	const FVector NewLocation(100.0f, 200.0f, 300.0f);
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorTransform(
@@ -551,7 +572,7 @@ bool FActorServiceSetActorTransformInvalidActorTest::RunTest(const FString& Para
 	// Verify failure
 	TestTrue(TEXT("SetActorTransform should fail for non-existent actor"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention actor not found"),
-		Result.GetError().Contains(TEXT("Actor not found")));
+	         Result.GetError().Contains(TEXT("Actor not found")));
 
 	return true;
 }

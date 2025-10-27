@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles operations for binding events to widgets in UMG Widget Blueprints.
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FBindWidgetEvent {
 	public:
 		FBindWidgetEvent() = default;
+
 		~FBindWidgetEvent() = default;
 
 		/**

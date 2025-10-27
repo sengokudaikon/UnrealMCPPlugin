@@ -1,4 +1,4 @@
-#include "Commands/Blueprint/RemoveFunction.h"
+﻿#include "Commands/Blueprint/RemoveFunction.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintMemberService.h"
 
@@ -14,8 +14,9 @@ namespace UnrealMCP {
 
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));
 		const FString FunctionName = Params->GetStringField(TEXT("function_name"));
-		
-		if (const FVoidResult Result = FBlueprintMemberService::RemoveFunction(BlueprintName, FunctionName); Result.IsFailure()) {
+
+		if (const FVoidResult Result = FBlueprintMemberService::RemoveFunction(BlueprintName, FunctionName); Result.
+			IsFailure()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 

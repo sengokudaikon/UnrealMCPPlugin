@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
@@ -10,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FGetActorProperties {
 	public:
 		FGetActorProperties() = default;
+
 		~FGetActorProperties() = default;
 
 		/**

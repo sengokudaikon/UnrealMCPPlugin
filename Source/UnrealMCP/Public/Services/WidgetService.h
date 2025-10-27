@@ -1,9 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Core/Result.h"
-#include "Core/MCPTypes.h"
 #include "Json.h"
+#include "Core/MCPTypes.h"
+#include "Core/Result.h"
 
 class UWidgetBlueprint;
 class UWidget;
@@ -11,8 +11,7 @@ class UTextBlock;
 class UButton;
 class UCanvasPanelSlot;
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * High-level service for UMG widget operations
 	 * Coordinates between widget creation, manipulation, and viewport integration
@@ -20,20 +19,19 @@ namespace UnrealMCP
 	 * All operations return TResult<T> for consistency. JSON conversion is handled
 	 * at the command handler layer, not within the service itself.
 	 */
-	class UNREALMCP_API FWidgetService
-	{
+	class UNREALMCP_API FWidgetService {
 	public:
-		static TResult<UWidgetBlueprint*> CreateWidget(const FWidgetCreationParams& Params);
+		static auto CreateWidget(const FWidgetCreationParams& Params) -> TResult<UWidgetBlueprint*>;
 
-		static TResult<UTextBlock*> AddTextBlock(const FTextBlockParams& Params);
+		static auto AddTextBlock(const FTextBlockParams& Params) -> TResult<UTextBlock*>;
 
-		static TResult<UButton*> AddButton(const FButtonParams& Params);
+		static auto AddButton(const FButtonParams& Params) -> TResult<UButton*>;
 
-		static FVoidResult BindWidgetEvent(const FWidgetEventBindingParams& Params);
+		static auto BindWidgetEvent(const FWidgetEventBindingParams& Params) -> FVoidResult;
 
-		static FVoidResult SetTextBlockBinding(const FTextBlockBindingParams& Params);
+		static auto SetTextBlockBinding(const FTextBlockBindingParams& Params) -> FVoidResult;
 
-		static TResult<UClass*> GetWidgetClass(const FAddWidgetToViewportParams& Params);
+		static auto GetWidgetClass(const FAddWidgetToViewportParams& Params) -> TResult<UClass*>;
 
 	private:
 		/**
@@ -42,24 +40,26 @@ namespace UnrealMCP
 		 * @param PackagePath The package path where the asset will be created
 		 * @return A unique asset name that doesn't conflict with existing assets
 		 */
-		static FString EnsureUniqueAssetName(const FString& BaseName, const FString& PackagePath);
+		static auto EnsureUniqueAssetName(const FString& BaseName, const FString& PackagePath) -> FString;
 
 		/**
 		 * Resolves a widget name to a full asset path
 		 * Supports both full paths (e.g., "/Game/UI/MyWidget") and short names (e.g., "MyWidget")
 		 * Short names are assumed to be in /Game/UI directory
 		 */
-		static FString ResolveWidgetPath(const FString& WidgetName);
+		static auto ResolveWidgetPath(const FString& WidgetName) -> FString;
 
 		/**
 		 * Validates that a widget blueprint has a valid Canvas Panel root
 		 * Required for adding widgets to the hierarchy
 		 */
-		static FVoidResult ValidateCanvasRoot(const UWidgetBlueprint* WidgetBlueprint);
+		static auto ValidateCanvasRoot(const UWidgetBlueprint* WidgetBlueprint) -> FVoidResult;
 
 		/**
 		 * Applies position and size properties to a canvas panel slot if parameters are set
 		 */
-		static void ApplyCanvasSlotTransform(UCanvasPanelSlot* Slot, const TOptional<FVector2D>& Position, const TOptional<FVector2D>& Size);
+		static auto ApplyCanvasSlotTransform(UCanvasPanelSlot* Slot,
+		                                     const TOptional<FVector2D>& Position,
+		                                     const TOptional<FVector2D>& Size) -> void;
 	};
 }

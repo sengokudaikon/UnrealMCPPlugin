@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Functional tests for ViewportService
  *
  * These tests verify the actual behavior of viewport operations:
@@ -9,17 +9,17 @@
  * Tests run in the Unreal Editor with real world context.
  */
 
-#include "Services/ViewportService.h"
-#include "Misc/AutomationTest.h"
+#include "Editor.h"
+#include "UnrealEdGlobals.h"
+#include "Editor/UnrealEdEngine.h"
+#include "Engine/Selection.h"
 #include "Engine/StaticMeshActor.h"
 #include "GameFramework/Actor.h"
-#include "Editor.h"
-#include "Editor/UnrealEdEngine.h"
-#include "UnrealEdGlobals.h"
-#include "Engine/Selection.h"
 #include "Kismet/GameplayStatics.h"
+#include "Misc/AutomationTest.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Services/ViewportService.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FViewportServiceFocusOnActorTest,
@@ -27,13 +27,13 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FViewportServiceFocusOnActorTest::RunTest(const FString& Parameters)
-{
+auto FViewportServiceFocusOnActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Focus viewport on a spawned actor
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
-	if (!World) return false;
+	if (!World)
+		return false;
 
 	// Spawn a test actor
 	FActorSpawnParameters SpawnParams;
@@ -45,7 +45,8 @@ bool FViewportServiceFocusOnActorTest::RunTest(const FString& Parameters)
 		SpawnParams
 	);
 	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
-	if (!TestActor) return false;
+	if (!TestActor)
+		return false;
 
 	// Set a recognizable name so we can find it
 	TestActor->Rename(TEXT("ViewportTestActor"));
@@ -75,8 +76,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FViewportServiceFocusOnLocationTest::RunTest(const FString& Parameters)
-{
+auto FViewportServiceFocusOnLocationTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Focus viewport on a specific location
 
 	const FVector TargetLocation(500.0f, 1000.0f, 250.0f);
@@ -102,8 +102,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FViewportServiceFocusOnInvalidActorTest::RunTest(const FString& Parameters)
-{
+auto FViewportServiceFocusOnInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Focus on non-existent actor should fail gracefully
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FViewportService::FocusViewport(
@@ -114,7 +113,7 @@ bool FViewportServiceFocusOnInvalidActorTest::RunTest(const FString& Parameters)
 	// Verify failure
 	TestTrue(TEXT("FocusViewport should fail for non-existent actor"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention 'not found'"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }
@@ -125,8 +124,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FViewportServiceFocusWithoutParametersTest::RunTest(const FString& Parameters)
-{
+auto FViewportServiceFocusWithoutParametersTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Focus without actor name or location should fail
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FViewportService::FocusViewport(
@@ -136,9 +134,9 @@ bool FViewportServiceFocusWithoutParametersTest::RunTest(const FString& Paramete
 
 	// Verify failure
 	TestTrue(TEXT("FocusViewport should fail when neither actor nor location provided"),
-		Result.IsFailure());
+	         Result.IsFailure());
 	TestTrue(TEXT("Error message should mention required parameters"),
-		Result.GetError().Contains(TEXT("must be provided")));
+	         Result.GetError().Contains(TEXT("must be provided")));
 
 	return true;
 }
@@ -149,8 +147,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FViewportServiceTakeScreenshotTest::RunTest(const FString& Parameters)
-{
+auto FViewportServiceTakeScreenshotTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Take a screenshot and verify file is created
 
 	// Use temp directory for test screenshot
@@ -159,14 +156,12 @@ bool FViewportServiceTakeScreenshotTest::RunTest(const FString& Parameters)
 	// Ensure directory exists
 	const FString DirectoryPath = FPaths::GetPath(ScreenshotPath);
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-	if (!PlatformFile.DirectoryExists(*DirectoryPath))
-	{
+	if (!PlatformFile.DirectoryExists(*DirectoryPath)) {
 		PlatformFile.CreateDirectoryTree(*DirectoryPath);
 	}
 
 	// Delete any existing test screenshot
-	if (PlatformFile.FileExists(*ScreenshotPath))
-	{
+	if (PlatformFile.FileExists(*ScreenshotPath)) {
 		PlatformFile.DeleteFile(*ScreenshotPath);
 	}
 
@@ -175,39 +170,35 @@ bool FViewportServiceTakeScreenshotTest::RunTest(const FString& Parameters)
 
 	// Verify success
 	TestTrue(TEXT("TakeScreenshot should succeed"), Result.IsSuccess());
-	if (Result.IsSuccess())
-	{
+	if (Result.IsSuccess()) {
 		TestEqual(TEXT("Returned path should match requested path"),
-			Result.GetValue(), ScreenshotPath);
+		          Result.GetValue(),
+		          ScreenshotPath);
 	}
 
 	// Verify file was created
 	TestTrue(TEXT("Screenshot file should exist on disk"),
-		PlatformFile.FileExists(*ScreenshotPath));
+	         PlatformFile.FileExists(*ScreenshotPath));
 
 	// Verify file has content
-	if (PlatformFile.FileExists(*ScreenshotPath))
-	{
+	if (PlatformFile.FileExists(*ScreenshotPath)) {
 		const int64 FileSize = PlatformFile.FileSize(*ScreenshotPath);
 		TestTrue(TEXT("Screenshot file should have content (size > 0)"), FileSize > 0);
 
 		// PNG files start with specific header bytes
 		TArray<uint8> FileHeader;
-		if (FFileHelper::LoadFileToArray(FileHeader, *ScreenshotPath))
-		{
-			if (FileHeader.Num() >= 8)
-			{
+		if (FFileHelper::LoadFileToArray(FileHeader, *ScreenshotPath)) {
+			if (FileHeader.Num() >= 8) {
 				// PNG signature: 137 80 78 71 13 10 26 10
 				TestTrue(TEXT("Screenshot should be valid PNG format"),
-					FileHeader[0] == 137 && FileHeader[1] == 80 &&
-					FileHeader[2] == 78 && FileHeader[3] == 71);
+				         FileHeader[0] == 137 && FileHeader[1] == 80 &&
+				         FileHeader[2] == 78 && FileHeader[3] == 71);
 			}
 		}
 	}
 
 	// Cleanup
-	if (PlatformFile.FileExists(*ScreenshotPath))
-	{
+	if (PlatformFile.FileExists(*ScreenshotPath)) {
 		PlatformFile.DeleteFile(*ScreenshotPath);
 	}
 
@@ -220,8 +211,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FViewportServiceScreenshotInvalidPathTest::RunTest(const FString& Parameters)
-{
+auto FViewportServiceScreenshotInvalidPathTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Taking screenshot to invalid/unwritable path should fail gracefully
 
 	// Use an invalid path (drive that likely doesn't exist or invalid characters)
@@ -232,7 +222,7 @@ bool FViewportServiceScreenshotInvalidPathTest::RunTest(const FString& Parameter
 	// Verify failure
 	TestTrue(TEXT("TakeScreenshot should fail for invalid path"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention save failure"),
-		Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }

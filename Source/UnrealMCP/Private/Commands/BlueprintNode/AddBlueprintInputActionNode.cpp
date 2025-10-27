@@ -1,7 +1,7 @@
-#include "Commands/BlueprintNode/AddBlueprintInputActionNode.h"
+﻿#include "Commands/BlueprintNode/AddBlueprintInputActionNode.h"
+#include "K2Node_InputAction.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
-#include "K2Node_InputAction.h"
 
 namespace UnrealMCP {
 	auto FAddBlueprintInputActionNode::Handle(

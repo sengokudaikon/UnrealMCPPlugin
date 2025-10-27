@@ -1,10 +1,11 @@
-#include "Services/BlueprintMemberService.h"
-#include "Core/CommonUtils.h"
-#include "Engine/Blueprint.h"
-#include "EdGraph/EdGraph.h"
+﻿#include "Services/BlueprintMemberService.h"
 #include "EdGraphSchema_K2.h"
 #include "K2Node_FunctionEntry.h"
 #include "K2Node_FunctionResult.h"
+#include "Core/CommonUtils.h"
+#include "EdGraph/EdGraph.h"
+#include "Engine/Blueprint.h"
+#include "Engine/Blueprint.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
 
@@ -68,7 +69,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the function graph
-		const FName FunctionFName = FName(*FunctionName);
+		const auto FunctionFName = FName(*FunctionName);
 		UEdGraph* FunctionGraph = nullptr;
 
 		for (UEdGraph* Graph : Blueprint->FunctionGraphs) {
@@ -110,7 +111,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the function graph
-		const FName FunctionFName = FName(*FunctionName);
+		const auto FunctionFName = FName(*FunctionName);
 		UEdGraph* FunctionGraph = nullptr;
 
 		for (UEdGraph* Graph : Blueprint->FunctionGraphs) {
@@ -153,7 +154,7 @@ namespace UnrealMCP {
 		}
 
 		// Add the parameter using user defined pins
-		const FName ParamFName = FName(*ParamName);
+		const auto ParamFName = FName(*ParamName);
 
 		// Create a user defined pin for the parameter
 		TSharedPtr<FUserPinInfo> NewParam = MakeShared<FUserPinInfo>();
@@ -185,7 +186,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the function graph
-		const FName FunctionFName = FName(*FunctionName);
+		const auto FunctionFName = FName(*FunctionName);
 		UEdGraph* FunctionGraph = nullptr;
 
 		for (UEdGraph* Graph : Blueprint->FunctionGraphs) {
@@ -233,7 +234,7 @@ namespace UnrealMCP {
 		}
 
 		// Add or update the return value pin
-		const FName ReturnValueName = FName(TEXT("ReturnValue"));
+		const auto ReturnValueName = FName(TEXT("ReturnValue"));
 
 		// Check if return value pin already exists
 		bool bPinExists = false;
@@ -282,7 +283,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the function graph
-		const FName FunctionFName = FName(*FunctionName);
+		const auto FunctionFName = FName(*FunctionName);
 		UEdGraph* FunctionGraph = nullptr;
 
 		for (UEdGraph* Graph : Blueprint->FunctionGraphs) {
@@ -345,6 +346,92 @@ namespace UnrealMCP {
 
 	// ============ Variable Operations ============
 
+	auto FBlueprintMemberService::AddVariable(
+		const FString& BlueprintName,
+		const FString& VariableName,
+		const FString& VariableType,
+		bool bIsExposed
+	) -> FVoidResult {
+		// Find the blueprint
+		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
+		if (!Blueprint) {
+			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+		}
+
+		// Check if variable already exists
+		const auto VarFName = FName(*VariableName);
+		for (const FBPVariableDescription& ExistingVar : Blueprint->NewVariables) {
+			if (ExistingVar.VarName == VarFName) {
+				return FVoidResult::Failure(
+					FString::Printf(TEXT("Variable '%s' already exists in blueprint"), *VariableName)
+				);
+			}
+		}
+
+		// Map string type to FEdGraphPinType
+		FEdGraphPinType PinType;
+		if (VariableType == TEXT("bool") || VariableType == TEXT("Boolean")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Boolean;
+		}
+		else if (VariableType == TEXT("int") || VariableType == TEXT("Integer")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Int;
+		}
+		else if (VariableType == TEXT("float") || VariableType == TEXT("Float") || VariableType == TEXT("Real")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Real;
+		}
+		else if (VariableType == TEXT("string") || VariableType == TEXT("String")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_String;
+		}
+		else if (VariableType == TEXT("name") || VariableType == TEXT("Name")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Name;
+		}
+		else if (VariableType == TEXT("vector") || VariableType == TEXT("Vector")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+			PinType.PinSubCategoryObject = TBaseStructure<FVector>::Get();
+		}
+		else if (VariableType == TEXT("rotator") || VariableType == TEXT("Rotator")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+			PinType.PinSubCategoryObject = TBaseStructure<FRotator>::Get();
+		}
+		else if (VariableType == TEXT("transform") || VariableType == TEXT("Transform")) {
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+			PinType.PinSubCategoryObject = TBaseStructure<FTransform>::Get();
+		}
+		else {
+			// Default to bool for unknown types
+			PinType.PinCategory = UEdGraphSchema_K2::PC_Boolean;
+		}
+
+		// Add the member variable using Blueprint Editor Utils
+		const bool bAdded = FBlueprintEditorUtils::AddMemberVariable(
+			Blueprint,
+			VarFName,
+			PinType
+		);
+
+		if (!bAdded) {
+			return FVoidResult::Failure(
+				FString::Printf(TEXT("Failed to add variable '%s' to blueprint"), *VariableName)
+			);
+		}
+
+		// Set exposure flag if requested
+		if (bIsExposed) {
+			// Get the property flags and set the instance editable flag
+			if (uint64* PropertyFlags = FBlueprintEditorUtils::GetBlueprintVariablePropertyFlags(Blueprint, VarFName)) {
+				*PropertyFlags &= ~CPF_DisableEditOnInstance; // Clear the disable edit flag
+			}
+		}
+
+		// Mark the blueprint as modified
+		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+
+		// Compile the blueprint
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
+
+		return FVoidResult::Success();
+	}
+
 	auto FBlueprintMemberService::RemoveVariable(
 		const FString& BlueprintName,
 		const FString& VariableName
@@ -356,7 +443,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the variable
-		const FName VarFName = FName(*VariableName);
+		const auto VarFName = FName(*VariableName);
 		const int32 VarIndex = FBlueprintEditorUtils::FindNewVariableIndex(Blueprint, VarFName);
 
 		if (VarIndex == INDEX_NONE) {
@@ -393,7 +480,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the old variable
-		const FName OldVarFName = FName(*OldName);
+		const auto OldVarFName = FName(*OldName);
 		const int32 OldVarIndex = FBlueprintEditorUtils::FindNewVariableIndex(Blueprint, OldVarFName);
 
 		if (OldVarIndex == INDEX_NONE) {
@@ -403,7 +490,7 @@ namespace UnrealMCP {
 		}
 
 		// Check if new name already exists
-		const FName NewVarFName = FName(*NewName);
+		const auto NewVarFName = FName(*NewName);
 		const int32 NewVarIndex = FBlueprintEditorUtils::FindNewVariableIndex(Blueprint, NewVarFName);
 
 		if (NewVarIndex != INDEX_NONE) {
@@ -436,7 +523,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the variable
-		const FName VarFName = FName(*VariableName);
+		const auto VarFName = FName(*VariableName);
 		const int32 VarIndex = FBlueprintEditorUtils::FindNewVariableIndex(Blueprint, VarFName);
 
 		if (VarIndex == INDEX_NONE) {
@@ -540,7 +627,7 @@ namespace UnrealMCP {
 		}
 
 		// Find the variable
-		const FName VarFName = FName(*VariableName);
+		const auto VarFName = FName(*VariableName);
 		const int32 VarIndex = FBlueprintEditorUtils::FindNewVariableIndex(Blueprint, VarFName);
 
 		if (VarIndex == INDEX_NONE) {
@@ -670,7 +757,7 @@ namespace UnrealMCP {
 
 			// Extract metadata from the compiled UFunction
 			if (Blueprint->GeneratedClass) {
-				const FName FunctionFName = FName(*Graph->GetName());
+				const auto FunctionFName = FName(*Graph->GetName());
 				UFunction* CompiledFunction = Blueprint->GeneratedClass->FindFunctionByName(FunctionFName);
 
 				if (CompiledFunction) {

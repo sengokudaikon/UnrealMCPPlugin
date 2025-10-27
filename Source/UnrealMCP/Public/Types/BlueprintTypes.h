@@ -1,16 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
 #include "Core/Result.h"
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Parameters for spawning a blueprint actor
 	 */
-	struct FBlueprintSpawnParams
-	{
+	struct FBlueprintSpawnParams {
 		FString BlueprintName;
 		FString ActorName;
 		TOptional<FVector> Location;
@@ -23,8 +21,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for creating a blueprint
 	 */
-	struct FBlueprintCreationParams
-	{
+	struct FBlueprintCreationParams {
 		FString Name;
 		FString ParentClass;
 		FString PackagePath = TEXT("/Game/Blueprints/");
@@ -36,8 +33,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for deleting a blueprint
 	 */
-	struct FDeleteBlueprintParams
-	{
+	struct FDeleteBlueprintParams {
 		FString BlueprintName;
 
 		/** Parse from JSON parameters */
@@ -47,11 +43,10 @@ namespace UnrealMCP
 	/**
 	 * Result structure for blueprint deletion operations
 	 */
-	struct FDeleteBlueprintResult
-	{
+	struct FDeleteBlueprintResult {
 		FString DeletedPath;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 }

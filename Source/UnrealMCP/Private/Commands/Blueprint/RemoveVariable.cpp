@@ -1,4 +1,4 @@
-#include "Commands/Blueprint/RemoveVariable.h"
+﻿#include "Commands/Blueprint/RemoveVariable.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintMemberService.h"
 
@@ -16,7 +16,8 @@ namespace UnrealMCP {
 		const FString VariableName = Params->GetStringField(TEXT("variable_name"));
 
 
-		if (const FVoidResult Result = FBlueprintMemberService::RemoveVariable(BlueprintName, VariableName); Result.IsFailure()) {
+		if (const FVoidResult Result = FBlueprintMemberService::RemoveVariable(BlueprintName, VariableName); Result.
+			IsFailure()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 

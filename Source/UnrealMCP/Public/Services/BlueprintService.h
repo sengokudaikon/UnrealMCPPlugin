@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
+#include "CoreMinimal.h"
 #include "Core/MCPTypes.h"
 #include "Core/Result.h"
-#include "CoreMinimal.h"
 
 class UBlueprint;
 class AActor;
@@ -30,7 +30,7 @@ namespace UnrealMCP {
 		 * @param Params Blueprint spawn parameters (name, location, rotation)
 		 * @return The spawned actor instance or an error
 		 */
-		static TResult<AActor*> SpawnActorBlueprint(const FBlueprintSpawnParams& Params);
+		static auto SpawnActorBlueprint(const FBlueprintSpawnParams& Params) -> TResult<AActor*>;
 
 		// ============ Component Operations ============
 
@@ -43,7 +43,7 @@ namespace UnrealMCP {
 		 * @param Params Component configuration (type, name, transform, mesh)
 		 * @return The modified blueprint or an error
 		 */
-		static TResult<UBlueprint*> AddComponent(const FComponentParams& Params);
+		static auto AddComponent(const FComponentParams& Params) -> TResult<UBlueprint*>;
 
 		/**
 		 * Set a property on a blueprint's component.
@@ -56,11 +56,11 @@ namespace UnrealMCP {
 		 * @param PropertyParams Property to set and its value
 		 * @return Success or an error
 		 */
-		static FVoidResult SetComponentProperty(
+		static auto SetComponentProperty(
 			const FString& BlueprintName,
 			const FString& ComponentName,
 			const FPropertyParams& PropertyParams
-		);
+		) -> FVoidResult;
 
 		/**
 		 * Set physics properties on a primitive component.
@@ -71,7 +71,7 @@ namespace UnrealMCP {
 		 * @param Params Physics configuration for the component
 		 * @return Success or an error
 		 */
-		static FVoidResult SetPhysicsProperties(const FPhysicsParams& Params);
+		static auto SetPhysicsProperties(const FPhysicsParams& Params) -> FVoidResult;
 
 		/**
 		 * Set static mesh and optional material on a component.
@@ -85,12 +85,12 @@ namespace UnrealMCP {
 		 * @param Material Optional path to material asset to load
 		 * @return Success or an error
 		 */
-		static FVoidResult SetStaticMeshProperties(
+		static auto SetStaticMeshProperties(
 			const FString& BlueprintName,
 			const FString& ComponentName,
 			const FString& StaticMesh,
 			const TOptional<FString>& Material = TOptional<FString>()
-		);
+		) -> FVoidResult;
 
 		/**
 		 * Set transform properties on a scene component.
@@ -102,7 +102,8 @@ namespace UnrealMCP {
 		 * @param Params Transform configuration for the component
 		 * @return The updated transform values or an error
 		 */
-		static TResult<FComponentTransformResult> SetComponentTransform(const FComponentTransformParams& Params);
+		static auto SetComponentTransform(
+			const FComponentTransformParams& Params) -> TResult<FComponentTransformResult>;
 
 		/**
 		 * Delete a blueprint asset.
@@ -113,7 +114,7 @@ namespace UnrealMCP {
 		 * @param Params Blueprint deletion parameters
 		 * @return Deletion result with deleted path or an error
 		 */
-		static TResult<FDeleteBlueprintResult> DeleteBlueprint(const FDeleteBlueprintParams& Params);
+		static auto DeleteBlueprint(const FDeleteBlueprintParams& Params) -> TResult<FDeleteBlueprintResult>;
 
 		// ============ Blueprint-Level Operations ============
 
@@ -127,7 +128,8 @@ namespace UnrealMCP {
 		 * @param PropertyParams Property to set and its value
 		 * @return Success or an error
 		 */
-		static FVoidResult SetBlueprintProperty(const FString& BlueprintName, const FPropertyParams& PropertyParams);
+		static auto SetBlueprintProperty(const FString& BlueprintName,
+		                                 const FPropertyParams& PropertyParams) -> FVoidResult;
 
 		/**
 		 * Set multiple properties on a Pawn blueprint.
@@ -139,8 +141,8 @@ namespace UnrealMCP {
 		 * @param PropertyParams JSON object containing pawn property mappings
 		 * @return Success or an error
 		 */
-		static FVoidResult
-		SetPawnProperties(const FString& BlueprintName, const TSharedPtr<FJsonObject>& PropertyParams);
+		static auto
+		SetPawnProperties(const FString& BlueprintName, const TSharedPtr<FJsonObject>& PropertyParams) -> FVoidResult;
 
 	private:
 		// ============ Component Node Lookup ============
@@ -152,7 +154,7 @@ namespace UnrealMCP {
 		 * @param ComponentName Name of the component to find
 		 * @return The node pointer or nullptr if not found
 		 */
-		static USCS_Node* FindComponentNode(const UBlueprint* Blueprint, const FString& ComponentName);
+		static auto FindComponentNode(const UBlueprint* Blueprint, const FString& ComponentName) -> USCS_Node*;
 
 		/**
 		 * Validate that a blueprint has a valid construction script.
@@ -160,7 +162,7 @@ namespace UnrealMCP {
 		 * @param Blueprint Blueprint to validate
 		 * @return Empty string if valid, error message if invalid
 		 */
-		static FString ValidateBlueprintForComponentOps(const UBlueprint* Blueprint);
+		static auto ValidateBlueprintForComponentOps(const UBlueprint* Blueprint) -> FString;
 
 		/**
 		 * Resolve a component type name to a UClass.
@@ -174,6 +176,6 @@ namespace UnrealMCP {
 		 * @param ComponentType The component type to resolve
 		 * @return Valid component class or nullptr if not found
 		 */
-		static UClass* ResolveComponentClass(const FString& ComponentType);
+		static auto ResolveComponentClass(const FString& ComponentType) -> UClass*;
 	};
 }

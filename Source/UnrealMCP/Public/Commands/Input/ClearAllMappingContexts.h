@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles clearing all Input Mapping Contexts from the player's input subsystem at runtime
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FClearAllMappingContexts {
 	public:
 		FClearAllMappingContexts() = default;
+
 		~FClearAllMappingContexts() = default;
 
 		/**

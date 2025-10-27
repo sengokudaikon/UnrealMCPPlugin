@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Functional tests for BlueprintCreationService
  *
  * These tests verify the actual behavior of blueprint creation:
@@ -10,28 +10,27 @@
  * Tests run in the Unreal Editor with real asset creation.
  */
 
-#include "Services/BlueprintCreationService.h"
-#include "Core/MCPTypes.h"
-#include "Misc/AutomationTest.h"
 #include "EditorAssetLibrary.h"
+#include "GlobalTestCleanup.h"
+#include "TestUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "Kismet2/KismetEditorUtilities.h"
+#include "Core/MCPTypes.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "GameFramework/Actor.h"
-#include "GameFramework/Pawn.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/Pawn.h"
+#include "Kismet2/KismetEditorUtilities.h"
+#include "Misc/AutomationTest.h"
+#include "Services/BlueprintCreationService.h"
 
-// Helper function to clean up test blueprints
-static void CleanupTestBlueprint(const FString& BlueprintName)
-{
-	const FString AssetPath = FString::Printf(TEXT("/Game/Tests/%s.%s"), *BlueprintName, *BlueprintName);
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
+// Register global cleanup for all tests in this file
+static struct FBlueprintTestCleanupRegistrar {
+	FBlueprintTestCleanupRegistrar() {
+		REGISTER_GLOBAL_CLEANUP();
 	}
-}
+} BlueprintTestCleanupRegistrar;
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBlueprintCreationActorTest,
@@ -39,12 +38,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCreationActorTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCreationActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create an Actor blueprint and verify it exists as a real asset
 
 	FString BlueprintName = TEXT("TestActorBP");
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	// Create blueprint parameters
 	UnrealMCP::FBlueprintCreationParams Params;
@@ -58,36 +56,35 @@ bool FBlueprintCreationActorTest::RunTest(const FString& Parameters)
 	// Verify creation succeeded
 	TestTrue(TEXT("Blueprint creation should succeed"), Result.IsSuccess());
 
-	if (Result.IsSuccess())
-	{
+	if (Result.IsSuccess()) {
 		const UBlueprint* Blueprint = Result.GetValue();
 		TestNotNull(TEXT("Created blueprint should not be null"), Blueprint);
 
-		if (Blueprint)
-		{
+		if (Blueprint) {
 			// Verify blueprint properties
 			TestTrue(TEXT("Blueprint name should match request"),
-				Blueprint->GetName().Contains(BlueprintName));
+			         Blueprint->GetName().Contains(BlueprintName));
 
 			TestNotNull(TEXT("Blueprint should have generated class"),
-				Blueprint->GeneratedClass.Get());
+			            Blueprint->GeneratedClass.Get());
 
 			TestTrue(TEXT("Blueprint should be child of AActor"),
-				Blueprint->GeneratedClass->IsChildOf<AActor>());
+			         Blueprint->GeneratedClass->IsChildOf<AActor>());
 
 			// Verify blueprint status is valid (compiled)
 			TestEqual(TEXT("Blueprint should be compiled (BS_UpToDate)"),
-				static_cast<int32>(Blueprint->Status), static_cast<int32>(BS_UpToDate));
+			          Blueprint->Status,
+			          BS_UpToDate);
 
 			// Verify asset actually exists in AssetRegistry
 			const FString AssetPath = FString::Printf(TEXT("/Game/Tests/%s.%s"), *BlueprintName, *BlueprintName);
 			TestTrue(TEXT("Blueprint asset should exist in project"),
-				UEditorAssetLibrary::DoesAssetExist(AssetPath));
+			         UEditorAssetLibrary::DoesAssetExist(AssetPath));
 		}
 	}
 
 	// Cleanup
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	return true;
 }
@@ -98,12 +95,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCreationPawnTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCreationPawnTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a Pawn blueprint with proper hierarchy
 
 	FString BlueprintName = TEXT("TestPawnBP");
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -114,28 +110,26 @@ bool FBlueprintCreationPawnTest::RunTest(const FString& Parameters)
 
 	TestTrue(TEXT("Pawn blueprint creation should succeed"), Result.IsSuccess());
 
-	if (Result.IsSuccess())
-	{
+	if (Result.IsSuccess()) {
 		const UBlueprint* Blueprint = Result.GetValue();
 		TestNotNull(TEXT("Pawn blueprint should not be null"), Blueprint);
 
-		if (Blueprint && Blueprint->GeneratedClass)
-		{
+		if (Blueprint && Blueprint->GeneratedClass) {
 			// Verify inheritance hierarchy
 			TestTrue(TEXT("Blueprint should be child of APawn"),
-				Blueprint->GeneratedClass->IsChildOf<APawn>());
+			         Blueprint->GeneratedClass->IsChildOf<APawn>());
 
 			// Pawn should also be an Actor
 			TestTrue(TEXT("Pawn blueprint should also be child of AActor"),
-				Blueprint->GeneratedClass->IsChildOf<AActor>());
+			         Blueprint->GeneratedClass->IsChildOf<AActor>());
 
 			// Verify it has SimpleConstructionScript for components
 			TestNotNull(TEXT("Blueprint should have SimpleConstructionScript"),
-				Blueprint->SimpleConstructionScript.Get());
+			            Blueprint->SimpleConstructionScript.Get());
 		}
 	}
 
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 	return true;
 }
 
@@ -145,12 +139,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCreationCharacterTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCreationCharacterTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a Character blueprint (more complex parent class)
 
 	FString BlueprintName = TEXT("TestCharacterBP");
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -161,26 +154,24 @@ bool FBlueprintCreationCharacterTest::RunTest(const FString& Parameters)
 
 	TestTrue(TEXT("Character blueprint creation should succeed"), Result.IsSuccess());
 
-	if (Result.IsSuccess())
-	{
+	if (Result.IsSuccess()) {
 		const UBlueprint* Blueprint = Result.GetValue();
 
-		if (Blueprint && Blueprint->GeneratedClass)
-		{
+		if (Blueprint && Blueprint->GeneratedClass) {
 			// Character inherits from Pawn
 			TestTrue(TEXT("Blueprint should be child of ACharacter"),
-				Blueprint->GeneratedClass->IsChildOf<ACharacter>());
+			         Blueprint->GeneratedClass->IsChildOf<ACharacter>());
 
 			TestTrue(TEXT("Character blueprint should be child of APawn"),
-				Blueprint->GeneratedClass->IsChildOf<APawn>());
+			         Blueprint->GeneratedClass->IsChildOf<APawn>());
 
 			// Character blueprints should have components (inherited from Character class)
 			TestNotNull(TEXT("Character blueprint should have SimpleConstructionScript"),
-				Blueprint->SimpleConstructionScript.Get());
+			            Blueprint->SimpleConstructionScript.Get());
 		}
 	}
 
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 	return true;
 }
 
@@ -190,12 +181,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCreationDuplicateTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCreationDuplicateTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating duplicate blueprint should fail gracefully
 
 	FString BlueprintName = TEXT("TestDuplicateBP");
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -211,17 +201,17 @@ bool FBlueprintCreationDuplicateTest::RunTest(const FString& Parameters)
 
 	// Should fail (or return existing blueprint - implementation dependent)
 	TestTrue(TEXT("Duplicate creation should either fail or return existing blueprint"),
-		SecondResult.IsSuccess() || SecondResult.IsFailure());
+	         SecondResult.IsSuccess() || SecondResult.IsFailure());
 
-	if (SecondResult.IsFailure())
-	{
+	if (SecondResult.IsFailure()) {
 		// Verify error message mentions the issue
 		const FString Error = SecondResult.GetError();
 		TestTrue(TEXT("Error message should indicate duplicate/existing asset"),
-			Error.Contains(TEXT("exists")) || Error.Contains(TEXT("duplicate")) || Error.Contains(TEXT("already")));
+		         Error.Contains(TEXT("exists")) || Error.Contains(TEXT("duplicate")) || Error.Contains(
+			         TEXT("already")));
 	}
 
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 	return true;
 }
 
@@ -231,12 +221,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCompilationTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCompilationTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Compile an existing blueprint and verify status changes
 
 	FString BlueprintName = TEXT("TestCompileBP");
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	// Create blueprint
 	UnrealMCP::FBlueprintCreationParams CreateParams;
@@ -247,12 +236,10 @@ bool FBlueprintCompilationTest::RunTest(const FString& Parameters)
 	auto CreateResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreateParams);
 	TestTrue(TEXT("Blueprint should be created for compile test"), CreateResult.IsSuccess());
 
-	if (CreateResult.IsSuccess())
-	{
+	if (CreateResult.IsSuccess()) {
 		// Mark blueprint as dirty to test compilation
 		const UBlueprint* Blueprint = CreateResult.GetValue();
-		if (Blueprint)
-		{
+		if (Blueprint) {
 			// Compile the blueprint
 			const auto CompileResult = UnrealMCP::FBlueprintCreationService::CompileBlueprint(BlueprintName);
 
@@ -260,11 +247,12 @@ bool FBlueprintCompilationTest::RunTest(const FString& Parameters)
 
 			// After successful compile, blueprint should be up to date
 			TestEqual(TEXT("Blueprint status should be BS_UpToDate after compile"),
-				static_cast<int32>(Blueprint->Status), static_cast<int32>(BS_UpToDate));
+			          Blueprint->Status,
+			          BS_UpToDate);
 		}
 	}
 
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 	return true;
 }
 
@@ -274,8 +262,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCompileNonExistentTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCompileNonExistentTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Compiling non-existent blueprint should fail with clear error
 
 	const FString NonExistentName = TEXT("NonExistentBlueprint_XYZ999");
@@ -284,11 +271,11 @@ bool FBlueprintCompileNonExistentTest::RunTest(const FString& Parameters)
 
 	TestTrue(TEXT("Compiling non-existent blueprint should fail"), Result.IsFailure());
 
-	if (Result.IsFailure())
-	{
+	if (Result.IsFailure()) {
 		const FString Error = Result.GetError();
 		TestTrue(TEXT("Error should mention blueprint not found"),
-			Error.Contains(TEXT("not found")) || Error.Contains(TEXT("does not exist")) || Error.Contains(TEXT("failed to load")));
+		         Error.Contains(TEXT("not found")) || Error.Contains(TEXT("does not exist")) || Error.Contains(
+			         TEXT("failed to load")));
 	}
 
 	return true;
@@ -300,33 +287,157 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintCreationWithPrefixTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintCreationWithPrefixTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Parent class names with/without "A" prefix should both work
 
 	FString BlueprintName = TEXT("TestPrefixBP");
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
 
 	// Try with "AActor" prefix
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
-	Params.ParentClass = TEXT("AActor");  // With prefix
+	Params.ParentClass = TEXT("AActor"); // With prefix
 	Params.PackagePath = TEXT("/Game/Tests/");
 
 	auto Result = UnrealMCP::FBlueprintCreationService::CreateBlueprint(Params);
 
 	TestTrue(TEXT("Creation with 'AActor' prefix should succeed"), Result.IsSuccess());
 
-	if (Result.IsSuccess())
-	{
+	if (Result.IsSuccess()) {
 		const UBlueprint* Blueprint = Result.GetValue();
-		if (Blueprint && Blueprint->GeneratedClass)
-		{
+		if (Blueprint && Blueprint->GeneratedClass) {
 			TestTrue(TEXT("Blueprint with 'AActor' prefix should be Actor class"),
-				Blueprint->GeneratedClass->IsChildOf<AActor>());
+			         Blueprint->GeneratedClass->IsChildOf<AActor>());
 		}
 	}
 
-	CleanupTestBlueprint(BlueprintName);
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	return true;
+}
+
+// NEW TESTS TO REACH 90% COVERAGE
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBlueprintCreationEmptyNameTest,
+	"UnrealMCP.Blueprint.EmptyNameValidation",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FBlueprintCreationEmptyNameTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Creating blueprint with empty name should fail gracefully
+
+	UnrealMCP::FBlueprintCreationParams Params;
+	Params.Name = TEXT(""); // Empty name
+	Params.ParentClass = TEXT("Actor");
+	Params.PackagePath = TEXT("/Game/Tests/");
+
+	const auto Result = UnrealMCP::FBlueprintCreationService::CreateBlueprint(Params);
+
+	// Should fail due to empty name
+	TestTrue(TEXT("Empty blueprint name should fail creation"), Result.IsFailure());
+
+	if (Result.IsFailure()) {
+		// Verify the failure indicates a validation error
+		const FString Error = Result.GetError();
+		TestTrue(TEXT("Error should indicate name validation issue"),
+		         Error.Contains(TEXT("empty")) || Error.Contains(TEXT("name")));
+	}
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBlueprintCreationInvalidParentClassTest,
+	"UnrealMCP.Blueprint.InvalidParentClassHandling",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FBlueprintCreationInvalidParentClassTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Creating blueprint with invalid parent class should fallback to AActor
+
+	FString BlueprintName = TEXT("TestInvalidParentBP");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+
+	UnrealMCP::FBlueprintCreationParams Params;
+	Params.Name = BlueprintName;
+	Params.ParentClass = TEXT("NonExistentClassXYZ123"); // Invalid class
+	Params.PackagePath = TEXT("/Game/Tests/");
+
+	const auto Result = UnrealMCP::FBlueprintCreationService::CreateBlueprint(Params);
+
+	// Should succeed due to fallback to AActor
+	TestTrue(TEXT("Invalid parent class should fallback to AActor and succeed"), Result.IsSuccess());
+
+	if (Result.IsSuccess()) {
+		const UBlueprint* Blueprint = Result.GetValue();
+		if (Blueprint && Blueprint->GeneratedClass) {
+			// Verify it defaults to Actor class
+			TestTrue(TEXT("Blueprint should default to AActor class"),
+			         Blueprint->GeneratedClass->IsChildOf<AActor>());
+		}
+	}
+
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBlueprintCreationSpecialCharactersTest,
+	"UnrealMCP.Blueprint.SpecialCharactersInName",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FBlueprintCreationSpecialCharactersTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Creating blueprint with special characters should work
+
+	FString BlueprintName = TEXT("Test_Special-123@BP");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+
+	UnrealMCP::FBlueprintCreationParams Params;
+	Params.Name = BlueprintName;
+	Params.ParentClass = TEXT("Actor");
+	Params.PackagePath = TEXT("/Game/Tests/");
+
+	const auto Result = UnrealMCP::FBlueprintCreationService::CreateBlueprint(Params);
+
+	// Should succeed with special characters
+	TestTrue(TEXT("Blueprint with special characters should be created"), Result.IsSuccess());
+
+	if (Result.IsSuccess()) {
+		const UBlueprint* Blueprint = Result.GetValue();
+		TestNotNull(TEXT("Blueprint with special characters should not be null"), Blueprint);
+
+		if (Blueprint) {
+			// Verify the name contains our special characters
+			TestTrue(TEXT("Blueprint name should contain special characters"),
+			         Blueprint->GetName().Contains(TEXT("Test_Special-123@BP")));
+		}
+	}
+
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBlueprintCompilationEmptyNameTest,
+	"UnrealMCP.Blueprint.CompileEmptyName",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FBlueprintCompilationEmptyNameTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Compiling with empty name should fail with validation error
+
+	const FString EmptyName = TEXT("");
+
+	const auto Result = UnrealMCP::FBlueprintCreationService::CompileBlueprint(EmptyName);
+
+	TestTrue(TEXT("Compiling empty name should fail"), Result.IsFailure());
+
+	if (Result.IsFailure()) {
+		const FString Error = Result.GetError();
+		TestTrue(TEXT("Error should indicate name validation issue"),
+		         Error.Contains(TEXT("empty")) || Error.Contains(TEXT("name")));
+	}
+
 	return true;
 }

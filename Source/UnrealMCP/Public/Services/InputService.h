@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Core/Result.h"
 #include "Core/MCPTypes.h"
+#include "Core/Result.h"
 
 class UInputAction;
 class UInputMappingContext;
@@ -41,7 +41,8 @@ namespace UnrealMCP {
 		 *
 		 * Returns Success with the created UInputMappingContext*, or Failure with an error message
 		 */
-		static auto CreateInputMappingContext(const FInputMappingContextParams& Params) -> TResult<UInputMappingContext*>;
+		static auto CreateInputMappingContext(
+			const FInputMappingContextParams& Params) -> TResult<UInputMappingContext*>;
 
 		/**
 		 * Add a key mapping to an input mapping context
@@ -151,6 +152,6 @@ namespace UnrealMCP {
 		 * Helper to get the Enhanced Input subsystem from the first player controller
 		 * Returns the subsystem, or nullptr with the provided error reference set
 		 */
-		static UEnhancedInputLocalPlayerSubsystem* GetInputSubsystem(FString& OutError);
+		static auto GetInputSubsystem(FString& OutError) -> UEnhancedInputLocalPlayerSubsystem*;
 	};
 }

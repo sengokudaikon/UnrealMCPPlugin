@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
@@ -9,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FAddBlueprintVariable {
 	public:
 		FAddBlueprintVariable() = default;
+
 		~FAddBlueprintVariable() = default;
 
 		/**

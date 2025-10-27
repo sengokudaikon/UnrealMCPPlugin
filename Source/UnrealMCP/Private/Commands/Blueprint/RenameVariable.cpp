@@ -1,4 +1,4 @@
-#include "Commands/Blueprint/RenameVariable.h"
+﻿#include "Commands/Blueprint/RenameVariable.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintMemberService.h"
 
@@ -18,7 +18,8 @@ namespace UnrealMCP {
 		const FString NewName = Params->GetStringField(TEXT("new_name"));
 
 
-		if (const FVoidResult Result = FBlueprintMemberService::RenameVariable(BlueprintName, OldName, NewName); Result.IsFailure()) {
+		if (const FVoidResult Result = FBlueprintMemberService::RenameVariable(BlueprintName, OldName, NewName); Result.
+			IsFailure()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 

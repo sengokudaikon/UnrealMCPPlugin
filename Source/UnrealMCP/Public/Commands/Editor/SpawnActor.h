@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles spawning native actors in the editor level
@@ -10,6 +11,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FSpawnActor {
 	public:
 		FSpawnActor() = default;
+
 		~FSpawnActor() = default;
 
 		/**

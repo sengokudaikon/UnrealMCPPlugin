@@ -1,6 +1,6 @@
-#include "Commands/Blueprint/GetBlueprintInfo.h"
-#include "Services/BlueprintIntrospectionService.h"
+﻿#include "Commands/Blueprint/GetBlueprintInfo.h"
 #include "Core/CommonUtils.h"
+#include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 
@@ -12,7 +12,8 @@ namespace UnrealMCP {
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));
 		TMap<FString, FString> Info;
 
-		if (const FVoidResult Result = FBlueprintIntrospectionService::GetBlueprintInfo(BlueprintName, Info); !Result.IsSuccess()) {
+		if (const FVoidResult Result = FBlueprintIntrospectionService::GetBlueprintInfo(BlueprintName, Info); !Result.
+			IsSuccess()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 

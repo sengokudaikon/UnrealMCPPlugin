@@ -7,31 +7,31 @@
 
 namespace UnrealMCP {
 
-auto FSetBlueprintProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
-	FString BlueprintName;
-	if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-		return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+	auto FSetBlueprintProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
+		FString BlueprintName;
+		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
+			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+		}
+
+		TResult<FPropertyParams> ParamsResult =
+			FPropertyParams::FromJson(Params, TEXT("blueprint_name"));
+
+		if (ParamsResult.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
+		}
+
+		const FVoidResult Result =
+			FBlueprintService::SetBlueprintProperty(
+				BlueprintName,
+				ParamsResult.GetValue()
+			);
+
+		if (Result.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(Result.GetError());
+		}
+
+		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
+			Data->SetStringField(TEXT("property"), ParamsResult.GetValue().PropertyName);
+		});
 	}
-
-	TResult<FPropertyParams> ParamsResult =
-		FPropertyParams::FromJson(Params, TEXT("blueprint_name"));
-
-	if (ParamsResult.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
-	}
-
-	const FVoidResult Result =
-		FBlueprintService::SetBlueprintProperty(
-			BlueprintName,
-			ParamsResult.GetValue()
-		);
-
-	if (Result.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(Result.GetError());
-	}
-
-	return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("property"), ParamsResult.GetValue().PropertyName);
-	});
-}
 }

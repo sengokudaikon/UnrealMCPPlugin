@@ -6,7 +6,7 @@ namespace PropertyHandlers {
 		const FBoolProperty* Prop;
 		void* Addr;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			Prop->SetPropertyValue(Addr, Value->AsBool());
 			return true;
 		}
@@ -16,7 +16,7 @@ namespace PropertyHandlers {
 		const FIntProperty* Prop;
 		UObject* Object;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			Prop->SetPropertyValue_InContainer(Object, static_cast<int32>(Value->AsNumber()));
 			return true;
 		}
@@ -26,7 +26,7 @@ namespace PropertyHandlers {
 		const FFloatProperty* Prop;
 		void* Addr;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			Prop->SetPropertyValue(Addr, static_cast<float>(Value->AsNumber()));
 			return true;
 		}
@@ -36,7 +36,7 @@ namespace PropertyHandlers {
 		const FStrProperty* Prop;
 		void* Addr;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			Prop->SetPropertyValue(Addr, Value->AsString());
 			return true;
 		}
@@ -47,7 +47,7 @@ namespace PropertyHandlers {
 		void* Addr;
 		FString PropertyName;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			// Regular byte property (no enum)
 			Prop->SetPropertyValue(Addr, static_cast<uint8>(Value->AsNumber()));
 			return true;
@@ -60,7 +60,7 @@ namespace PropertyHandlers {
 		void* Addr;
 		FString PropertyName;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			return HandleEnumValue(Value,
 			                       Error,
 			                       [this](int64 Val) {
@@ -69,9 +69,9 @@ namespace PropertyHandlers {
 		}
 
 	private:
-		bool HandleEnumValue(const TSharedPtr<FJsonValue>& Value,
+		auto HandleEnumValue(const TSharedPtr<FJsonValue>& Value,
 		                     FString& Error,
-		                     const TFunction<void(int64)>& Setter) const {
+		                     const TFunction<void(int64)>& Setter) const -> bool {
 			// Numeric value
 			if (Value->Type == EJson::Number) {
 				const int64 EnumValue = static_cast<int64>(Value->AsNumber());
@@ -152,7 +152,7 @@ namespace PropertyHandlers {
 		void* Addr;
 		FString PropertyName;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			return HandleEnumValue(Value,
 			                       Error,
 			                       [this](int64 Val) {
@@ -161,9 +161,9 @@ namespace PropertyHandlers {
 		}
 
 	private:
-		bool HandleEnumValue(const TSharedPtr<FJsonValue>& Value,
+		auto HandleEnumValue(const TSharedPtr<FJsonValue>& Value,
 		                     FString& Error,
-		                     const TFunction<void(int64)>& Setter) const {
+		                     const TFunction<void(int64)>& Setter) const -> bool {
 			// Numeric value
 			if (Value->Type == EJson::Number) {
 				const int64 EnumValue = static_cast<int64>(Value->AsNumber());
@@ -241,7 +241,7 @@ namespace PropertyHandlers {
 		FString PropertyTypeName;
 		FString PropertyName;
 
-		bool operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const {
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
 			Error = FString::Printf(TEXT("Unsupported property type: %s for property %s"),
 			                        *PropertyTypeName,
 			                        *PropertyName);
@@ -264,7 +264,7 @@ namespace PropertyHandlers {
 		const TSharedPtr<FJsonValue>& Value;
 		FString& Error;
 
-		bool operator()(const auto& Handler) const {
+		auto operator()(const auto& Handler) const -> bool {
 			return Handler(Value, Error);
 		}
 	};

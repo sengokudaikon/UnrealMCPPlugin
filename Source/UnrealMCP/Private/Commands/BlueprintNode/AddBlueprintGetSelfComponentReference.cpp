@@ -1,7 +1,7 @@
-#include "Commands/BlueprintNode/AddBlueprintGetSelfComponentReference.h"
+﻿#include "Commands/BlueprintNode/AddBlueprintGetSelfComponentReference.h"
+#include "K2Node_VariableGet.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
-#include "K2Node_VariableGet.h"
 
 namespace UnrealMCP {
 	auto FAddBlueprintGetSelfComponentReference::Handle(

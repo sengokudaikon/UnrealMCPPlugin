@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles removing Input Mapping Contexts from the player's input subsystem at runtime
@@ -8,6 +9,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FRemoveMappingContext {
 	public:
 		FRemoveMappingContext() = default;
+
 		~FRemoveMappingContext() = default;
 
 		/**

@@ -1,16 +1,16 @@
-#include "Services/BlueprintIntrospectionService.h"
-#include "Engine/Blueprint.h"
-#include "Engine/SimpleConstructionScript.h"
-#include "Engine/SCS_Node.h"
-#include "Components/SceneComponent.h"
-#include "Components/StaticMeshComponent.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "Components/PrimitiveComponent.h"
+﻿#include "Services/BlueprintIntrospectionService.h"
+#include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/LightComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Components/SceneComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Engine/Blueprint.h"
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Kismet2/KismetEditorUtilities.h"
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "UObject/UObjectIterator.h"
 
 namespace UnrealMCP {
@@ -22,7 +22,8 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		OutBlueprints.Empty();
 
-		const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+		const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(
+			"AssetRegistry");
 		const IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
 		FARFilter Filter;
@@ -40,7 +41,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	bool FBlueprintIntrospectionService::BlueprintExists(const FString& BlueprintName) {
+	auto FBlueprintIntrospectionService::BlueprintExists(const FString& BlueprintName) -> bool {
 		const UBlueprint* Blueprint = FindBlueprint(BlueprintName);
 		return Blueprint != nullptr;
 	}
@@ -62,7 +63,8 @@ namespace UnrealMCP {
 
 		if (const USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript) {
 			OutInfo.Add(TEXT("num_components"), FString::FromInt(SCS->GetAllNodes().Num()));
-		} else {
+		}
+		else {
 			OutInfo.Add(TEXT("num_components"), TEXT("0"));
 		}
 
@@ -100,14 +102,17 @@ namespace UnrealMCP {
 			// Get transform from component template if it's a scene component
 			if (const USceneComponent* SceneComp = Cast<USceneComponent>(Node->ComponentTemplate)) {
 				const FVector Location = SceneComp->GetRelativeLocation();
-				ComponentInfo.Add(TEXT("location"), FString::Printf(TEXT("%.2f,%.2f,%.2f"), Location.X, Location.Y, Location.Z));
+				ComponentInfo.Add(TEXT("location"),
+				                  FString::Printf(TEXT("%.2f,%.2f,%.2f"), Location.X, Location.Y, Location.Z));
 
 				const FRotator Rotation = SceneComp->GetRelativeRotation();
-				ComponentInfo.Add(TEXT("rotation"), FString::Printf(TEXT("%.2f,%.2f,%.2f"), Rotation.Pitch, Rotation.Yaw, Rotation.Roll));
+				ComponentInfo.Add(TEXT("rotation"),
+				                  FString::Printf(TEXT("%.2f,%.2f,%.2f"), Rotation.Pitch, Rotation.Yaw, Rotation.Roll));
 
 				const FVector Scale = SceneComp->GetRelativeScale3D();
 				ComponentInfo.Add(TEXT("scale"), FString::Printf(TEXT("%.2f,%.2f,%.2f"), Scale.X, Scale.Y, Scale.Z));
-			} else {
+			}
+			else {
 				ComponentInfo.Add(TEXT("location"), TEXT("0,0,0"));
 				ComponentInfo.Add(TEXT("rotation"), TEXT("0,0,0"));
 				ComponentInfo.Add(TEXT("scale"), TEXT("1,1,1"));
@@ -119,7 +124,8 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	auto FBlueprintIntrospectionService::GetBlueprintVariables(const FString& BlueprintName) -> TResult<FGetBlueprintVariablesResult> {
+	auto FBlueprintIntrospectionService::GetBlueprintVariables(
+		const FString& BlueprintName) -> TResult<FGetBlueprintVariablesResult> {
 		UBlueprint* Blueprint = FindBlueprint(BlueprintName);
 		if (!Blueprint) {
 			return TResult<FGetBlueprintVariablesResult>::Failure(
@@ -199,7 +205,8 @@ namespace UnrealMCP {
 		return FString::Printf(TEXT("/Game/Blueprints/%s.%s"), *BlueprintName, *BlueprintName);
 	}
 
-	auto FBlueprintIntrospectionService::GetComponentHierarchy(const FComponentHierarchyParams& Params) -> TResult<FComponentHierarchyResult> {
+	auto FBlueprintIntrospectionService::GetComponentHierarchy(
+		const FComponentHierarchyParams& Params) -> TResult<FComponentHierarchyResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
 			return TResult<FComponentHierarchyResult>::Failure(TEXT("Blueprint name cannot be empty"));
@@ -233,7 +240,7 @@ namespace UnrealMCP {
 		return TResult<FComponentHierarchyResult>::Success(MoveTemp(Result));
 	}
 
-	TSharedPtr<FJsonObject> FBlueprintIntrospectionService::BuildHierarchyNode(const USCS_Node* Node) {
+	auto FBlueprintIntrospectionService::BuildHierarchyNode(const USCS_Node* Node) -> TSharedPtr<FJsonObject> {
 		auto NodeObj = MakeShared<FJsonObject>();
 
 		if (!Node || !Node->ComponentTemplate) {
@@ -293,7 +300,8 @@ namespace UnrealMCP {
 		return NodeObj;
 	}
 
-	auto FBlueprintIntrospectionService::GetComponentProperties(const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult> {
+	auto FBlueprintIntrospectionService::GetComponentProperties(
+		const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
 			return TResult<FComponentPropertiesResult>::Failure(TEXT("Blueprint name cannot be empty"));
@@ -381,7 +389,8 @@ namespace UnrealMCP {
 		// Skeletal mesh properties
 		if (const USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(ComponentTemplate)) {
 			if (SkelComp->GetSkeletalMeshAsset()) {
-				Result.Properties->SetStringField(TEXT("skeletal_mesh"), SkelComp->GetSkeletalMeshAsset()->GetPathName());
+				Result.Properties->SetStringField(TEXT("skeletal_mesh"),
+				                                  SkelComp->GetSkeletalMeshAsset()->GetPathName());
 			}
 		}
 
@@ -427,7 +436,8 @@ namespace UnrealMCP {
 		return TResult<FComponentPropertiesResult>::Success(MoveTemp(Result));
 	}
 
-	auto FBlueprintIntrospectionService::removeComponent(const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult> {
+	auto FBlueprintIntrospectionService::RemoveComponent(
+		const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
 			return TResult<FRemoveComponentResult>::Failure(TEXT("Blueprint name cannot be empty"));
@@ -487,7 +497,8 @@ namespace UnrealMCP {
 		return TResult<FRemoveComponentResult>::Success(MoveTemp(Result));
 	}
 
-	auto FBlueprintIntrospectionService::renameComponent(const FRenameComponentParams& Params) -> TResult<FRenameComponentResult> {
+	auto FBlueprintIntrospectionService::RenameComponent(
+		const FRenameComponentParams& Params) -> TResult<FRenameComponentResult> {
 		// Validate input
 		if (Params.NewName.IsEmpty()) {
 			return TResult<FRenameComponentResult>::Failure(TEXT("New component name cannot be empty"));

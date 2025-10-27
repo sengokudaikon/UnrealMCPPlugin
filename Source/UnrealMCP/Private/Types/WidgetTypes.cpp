@@ -1,141 +1,116 @@
-#include "Types/WidgetTypes.h"
+﻿#include "Types/WidgetTypes.h"
 #include "Core/CommonUtils.h"
 
-namespace UnrealMCP
-{
-	auto FWidgetCreationParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FWidgetCreationParams>
-	{
-		if (!Json.IsValid())
-		{
+namespace UnrealMCP {
+	auto FWidgetCreationParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FWidgetCreationParams> {
+		if (!Json.IsValid()) {
 			return TResult<FWidgetCreationParams>::Failure(TEXT("Invalid JSON object"));
 		}
 
 		FWidgetCreationParams Params;
 
-		if (!Json->TryGetStringField(TEXT("name"), Params.Name))
-		{
+		if (!Json->TryGetStringField(TEXT("name"), Params.Name)) {
 			return TResult<FWidgetCreationParams>::Failure(TEXT("Missing 'name' parameter"));
 		}
 
 		Json->TryGetStringField(TEXT("parent_class"), Params.ParentClass);
 
 		FString PackagePath;
-		if (Json->TryGetStringField(TEXT("path"), PackagePath))
-		{
+		if (Json->TryGetStringField(TEXT("path"), PackagePath)) {
 			Params.PackagePath = PackagePath;
 		}
 
 		return TResult<FWidgetCreationParams>::Success(MoveTemp(Params));
 	}
 
-	auto FTextBlockParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FTextBlockParams>
-	{
-		if (!Json.IsValid())
-		{
+	auto FTextBlockParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FTextBlockParams> {
+		if (!Json.IsValid()) {
 			return TResult<FTextBlockParams>::Failure(TEXT("Invalid JSON object"));
 		}
 
 		FTextBlockParams Params;
 
-		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName))
-		{
+		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName)) {
 			return TResult<FTextBlockParams>::Failure(TEXT("Missing 'widget_name' parameter"));
 		}
 
-		if (!Json->TryGetStringField(TEXT("text_block_name"), Params.TextBlockName))
-		{
+		if (!Json->TryGetStringField(TEXT("text_block_name"), Params.TextBlockName)) {
 			return TResult<FTextBlockParams>::Failure(TEXT("Missing 'text_block_name' parameter"));
 		}
 
 		Json->TryGetStringField(TEXT("text"), Params.Text);
 
-		if (Json->HasField(TEXT("position")))
-		{
+		if (Json->HasField(TEXT("position"))) {
 			Params.Position = FCommonUtils::GetVector2DFromJson(Json, TEXT("position"));
 		}
 
-		if (Json->HasField(TEXT("size")))
-		{
+		if (Json->HasField(TEXT("size"))) {
 			Params.Size = FCommonUtils::GetVector2DFromJson(Json, TEXT("size"));
 		}
 
-		if (Json->HasField(TEXT("font_size")))
-		{
+		if (Json->HasField(TEXT("font_size"))) {
 			Params.FontSize = static_cast<int32>(Json->GetNumberField(TEXT("font_size")));
 		}
 
 		return TResult<FTextBlockParams>::Success(MoveTemp(Params));
 	}
 
-	auto FButtonParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FButtonParams>
-	{
-		if (!Json.IsValid())
-		{
+	auto FButtonParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FButtonParams> {
+		if (!Json.IsValid()) {
 			return TResult<FButtonParams>::Failure(TEXT("Invalid JSON object"));
 		}
 
 		FButtonParams Params;
 
-		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName))
-		{
+		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName)) {
 			return TResult<FButtonParams>::Failure(TEXT("Missing 'widget_name' parameter"));
 		}
 
-		if (!Json->TryGetStringField(TEXT("button_name"), Params.ButtonName))
-		{
+		if (!Json->TryGetStringField(TEXT("button_name"), Params.ButtonName)) {
 			return TResult<FButtonParams>::Failure(TEXT("Missing 'button_name' parameter"));
 		}
 
 		Json->TryGetStringField(TEXT("text"), Params.Text);
 
-		if (Json->HasField(TEXT("position")))
-		{
+		if (Json->HasField(TEXT("position"))) {
 			Params.Position = FCommonUtils::GetVector2DFromJson(Json, TEXT("position"));
 		}
 
-		if (Json->HasField(TEXT("size")))
-		{
+		if (Json->HasField(TEXT("size"))) {
 			Params.Size = FCommonUtils::GetVector2DFromJson(Json, TEXT("size"));
 		}
 
-		if (Json->HasField(TEXT("font_size")))
-		{
+		if (Json->HasField(TEXT("font_size"))) {
 			Params.FontSize = static_cast<int32>(Json->GetNumberField(TEXT("font_size")));
 		}
 
 		return TResult<FButtonParams>::Success(MoveTemp(Params));
 	}
 
-	auto FWidgetEventBindingParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FWidgetEventBindingParams>
-	{
-		if (!Json.IsValid())
-		{
+	auto FWidgetEventBindingParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FWidgetEventBindingParams> {
+		if (!Json.IsValid()) {
 			return TResult<FWidgetEventBindingParams>::Failure(TEXT("Invalid JSON object"));
 		}
 
 		FWidgetEventBindingParams Params;
 
-		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName))
-		{
+		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName)) {
 			return TResult<FWidgetEventBindingParams>::Failure(TEXT("Missing 'widget_name' parameter"));
 		}
 
-		if (!Json->TryGetStringField(TEXT("widget_component_name"), Params.WidgetComponentName))
-		{
+		if (!Json->TryGetStringField(TEXT("widget_component_name"), Params.WidgetComponentName)) {
 			return TResult<FWidgetEventBindingParams>::Failure(TEXT("Missing 'widget_component_name' parameter"));
 		}
 
-		if (!Json->TryGetStringField(TEXT("event_name"), Params.EventName))
-		{
+		if (!Json->TryGetStringField(TEXT("event_name"), Params.EventName)) {
 			return TResult<FWidgetEventBindingParams>::Failure(TEXT("Missing 'event_name' parameter"));
 		}
 
-		if (Json->TryGetStringField(TEXT("function_name"), Params.FunctionName))
-		{
+		if (Json->TryGetStringField(TEXT("function_name"), Params.FunctionName)) {
 			// Use provided function name
 		}
-		else
-		{
+		else {
 			// Default function name
 			Params.FunctionName = Params.WidgetComponentName + TEXT("_") + Params.EventName;
 		}
@@ -143,27 +118,22 @@ namespace UnrealMCP
 		return TResult<FWidgetEventBindingParams>::Success(MoveTemp(Params));
 	}
 
-	auto FTextBlockBindingParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FTextBlockBindingParams>
-	{
-		if (!Json.IsValid())
-		{
+	auto FTextBlockBindingParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FTextBlockBindingParams> {
+		if (!Json.IsValid()) {
 			return TResult<FTextBlockBindingParams>::Failure(TEXT("Invalid JSON object"));
 		}
 
 		FTextBlockBindingParams Params;
 
-		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName))
-		{
+		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName)) {
 			return TResult<FTextBlockBindingParams>::Failure(TEXT("Missing 'widget_name' parameter"));
 		}
 
-		if (!Json->TryGetStringField(TEXT("text_block_name"), Params.TextBlockName))
-		{
+		if (!Json->TryGetStringField(TEXT("text_block_name"), Params.TextBlockName)) {
 			return TResult<FTextBlockBindingParams>::Failure(TEXT("Missing 'text_block_name' parameter"));
 		}
 
-		if (!Json->TryGetStringField(TEXT("binding_property"), Params.BindingProperty))
-		{
+		if (!Json->TryGetStringField(TEXT("binding_property"), Params.BindingProperty)) {
 			return TResult<FTextBlockBindingParams>::Failure(TEXT("Missing 'binding_property' parameter"));
 		}
 
@@ -172,22 +142,19 @@ namespace UnrealMCP
 		return TResult<FTextBlockBindingParams>::Success(MoveTemp(Params));
 	}
 
-	auto FAddWidgetToViewportParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FAddWidgetToViewportParams>
-	{
-		if (!Json.IsValid())
-		{
+	auto FAddWidgetToViewportParams::FromJson(
+		const TSharedPtr<FJsonObject>& Json) -> TResult<FAddWidgetToViewportParams> {
+		if (!Json.IsValid()) {
 			return TResult<FAddWidgetToViewportParams>::Failure(TEXT("Invalid JSON object"));
 		}
 
 		FAddWidgetToViewportParams Params;
 
-		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName))
-		{
+		if (!Json->TryGetStringField(TEXT("widget_name"), Params.WidgetName)) {
 			return TResult<FAddWidgetToViewportParams>::Failure(TEXT("Missing 'widget_name' parameter"));
 		}
 
-		if (Json->HasField(TEXT("z_order")))
-		{
+		if (Json->HasField(TEXT("z_order"))) {
 			Params.ZOrder = static_cast<int32>(Json->GetNumberField(TEXT("z_order")));
 		}
 

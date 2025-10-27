@@ -1,16 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
 #include "Core/Result.h"
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Parameters for adding a component to a blueprint
 	 */
-	struct FComponentParams
-	{
+	struct FComponentParams {
 		FString BlueprintName;
 		FString ComponentType;
 		FString ComponentName;
@@ -27,21 +25,20 @@ namespace UnrealMCP
 	/**
 	 * Parameters for setting a property
 	 */
-	struct FPropertyParams
-	{
+	struct FPropertyParams {
 		FString TargetName;
 		FString PropertyName;
 		TSharedPtr<FJsonValue> PropertyValue;
 
 		/** Parse from JSON parameters */
-		static auto FromJson(const TSharedPtr<FJsonObject>& Json, const FString& TargetFieldName = TEXT("blueprint_name")) -> TResult<FPropertyParams>;
+		static auto FromJson(const TSharedPtr<FJsonObject>& Json,
+		                     const FString& TargetFieldName = TEXT("blueprint_name")) -> TResult<FPropertyParams>;
 	};
 
 	/**
 	 * Parameters for physics properties
 	 */
-	struct FPhysicsParams
-	{
+	struct FPhysicsParams {
 		FString BlueprintName;
 		FString ComponentName;
 		bool bSimulatePhysics = true;
@@ -57,8 +54,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for setting static mesh properties on a component
 	 */
-	struct FStaticMeshParams
-	{
+	struct FStaticMeshParams {
 		FString BlueprintName;
 		FString ComponentName;
 		FString StaticMesh;
@@ -71,8 +67,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for setting transform properties on a component
 	 */
-	struct FComponentTransformParams
-	{
+	struct FComponentTransformParams {
 		FString BlueprintName;
 		FString ComponentName;
 		TOptional<FVector> Location;
@@ -86,21 +81,19 @@ namespace UnrealMCP
 	/**
 	 * Result structure for component transform operations
 	 */
-	struct FComponentTransformResult
-	{
+	struct FComponentTransformResult {
 		FVector Location;
 		FRotator Rotation;
 		FVector Scale;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Parameters for getting component hierarchy
 	 */
-	struct FComponentHierarchyParams
-	{
+	struct FComponentHierarchyParams {
 		FString BlueprintName;
 
 		/** Parse from JSON parameters */
@@ -110,21 +103,19 @@ namespace UnrealMCP
 	/**
 	 * Result structure for component hierarchy operations
 	 */
-	struct FComponentHierarchyResult
-	{
+	struct FComponentHierarchyResult {
 		TArray<TSharedPtr<FJsonValue>> Hierarchy;
 		int32 RootCount;
 		int32 TotalComponents;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Parameters for getting component properties
 	 */
-	struct FComponentPropertiesParams
-	{
+	struct FComponentPropertiesParams {
 		FString BlueprintName;
 		FString ComponentName;
 
@@ -135,19 +126,17 @@ namespace UnrealMCP
 	/**
 	 * Result structure for component properties operations
 	 */
-	struct FComponentPropertiesResult
-	{
+	struct FComponentPropertiesResult {
 		TSharedPtr<FJsonObject> Properties;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Parameters for removing a component from a blueprint
 	 */
-	struct FRemoveComponentParams
-	{
+	struct FRemoveComponentParams {
 		FString BlueprintName;
 		FString ComponentName;
 
@@ -158,21 +147,19 @@ namespace UnrealMCP
 	/**
 	 * Result structure for component removal operations
 	 */
-	struct FRemoveComponentResult
-	{
+	struct FRemoveComponentResult {
 		FString BlueprintName;
 		FString ComponentName;
 		FString Message;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 
 	/**
 	 * Parameters for renaming a component in a blueprint
 	 */
-	struct FRenameComponentParams
-	{
+	struct FRenameComponentParams {
 		FString BlueprintName;
 		FString OldName;
 		FString NewName;
@@ -184,14 +171,13 @@ namespace UnrealMCP
 	/**
 	 * Result structure for component rename operations
 	 */
-	struct FRenameComponentResult
-	{
+	struct FRenameComponentResult {
 		FString BlueprintName;
 		FString OldName;
 		FString NewName;
 		FString Message;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 }

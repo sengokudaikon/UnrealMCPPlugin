@@ -1,531 +1,660 @@
-/**
+﻿/**
  * Functional tests for BlueprintGraphService
  *
  * These tests verify the actual behavior of blueprint graph operations:
- * - Connecting nodes (with invalid blueprints/nodes)
- * - Adding event nodes (with validation)
- * - Adding function call nodes (with error handling)
- * - Adding component reference nodes
- * - Adding self reference nodes
- * - Adding input action nodes
- * - Finding nodes by criteria
- * - Adding variables to blueprints
+ * - Creating real blueprints and event graphs
+ * - Adding various node types and verifying their creation
+ * - Connecting nodes and verifying graph topology changes
+ * - Setting function parameters with different data types
+ * - Finding nodes by criteria in actual graphs
+ * - Adding variables with proper type handling
+ * - Error handling with real-world scenarios
  *
- * Tests focus on error handling paths as functional tests with valid blueprints
- * would require complex asset setup and graph management.
- *
- * Tests run in the Unreal Editor with real world context.
+ * Tests focus on functional outcomes and behavioral verification
+ * rather than error message string matching.
  */
 
-#include "Services/BlueprintGraphService.h"
-#include "Misc/AutomationTest.h"
-#include "Blueprint/UserWidget.h"
+#include "EdGraphSchema_K2.h"
 #include "Editor.h"
-#include "K2Node_Event.h"
 #include "K2Node_CallFunction.h"
-#include "K2Node_VariableGet.h"
-#include "K2Node_Self.h"
+#include "K2Node_Event.h"
 #include "K2Node_InputAction.h"
+#include "K2Node_Self.h"
+#include "K2Node_VariableGet.h"
+#include "Blueprint/UserWidget.h"
+#include "Core/CommonUtils.h"
 #include "Dom/JsonObject.h"
+#include "EdGraph/EdGraph.h"
+#include "Engine/Blueprint.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Misc/AutomationTest.h"
+#include "Services/BlueprintCreationService.h"
+#include "Services/BlueprintGraphService.h"
+#include "Services/BlueprintService.h"
+#include "Tests/GlobalTestCleanup.h"
+#include "Tests/TestUtils.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceConnectNodesInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.ConnectNodesInvalidBlueprint",
+	FBlueprintGraphServiceCreateTestBlueprintTest,
+	"UnrealMCP.BlueprintGraph.CreateTestBlueprint",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceConnectNodesInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Connecting nodes in non-existent blueprint should fail
+auto FBlueprintGraphServiceCreateTestBlueprintTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Create a real blueprint for testing graph operations
+	CREATE_TEST_CLEANUP_GUARD();
 
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::ConnectNodes(
-		TEXT("NonExistentBlueprint_XYZ123"),
-		TEXT("SourceNodeGuid"),
-		TEXT("TargetNodeGuid"),
-		TEXT("SourcePin"),
-		TEXT("TargetPin")
-	);
+	// Create a new Blueprint class based on Actor using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("TestBlueprint"));
 
-	// Verify failure
-	TestTrue(TEXT("ConnectNodes should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created successfully"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
+
+	// Verify the blueprint was created with proper structure
+	TestNotNull(TEXT("Blueprint should have a generated class"), TestBlueprint->GeneratedClass.Get());
+	TestTrue(TEXT("Blueprint should be based on Actor"),
+	         TestBlueprint->ParentClass == AActor::StaticClass() || TestBlueprint->GeneratedClass->IsChildOf(
+		         AActor::StaticClass()));
+
+	// Verify we can find it using the service's FindBlueprint function
+	FString Error;
+	UBlueprint* FoundBlueprint = UnrealMCP::FBlueprintGraphService::FindBlueprint(CreationParams.Name, Error);
+	TestNotNull(TEXT("Should be able to find created blueprint via service"), FoundBlueprint);
+	TestTrue(TEXT("Error should be empty when blueprint is found"), Error.IsEmpty());
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceConnectNodesInvalidGuidsTest,
-	"UnrealMCP.BlueprintGraph.ConnectNodesInvalidGuids",
+	FBlueprintGraphServiceAddEventNodeTest,
+	"UnrealMCP.BlueprintGraph.AddEventNode",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceConnectNodesInvalidGuidsTest::RunTest(const FString& Parameters)
-{
-	// Test: Connecting nodes with invalid GUIDs should fail
+auto FBlueprintGraphServiceAddEventNodeTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Add event node to real blueprint and verify its properties
+	CREATE_TEST_CLEANUP_GUARD();
 
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::ConnectNodes(
-		TEXT("SomeBlueprint"),  // This will fail before GUID validation
-		TEXT("InvalidSourceNodeGuid_XYZ123"),
-		TEXT("InvalidTargetNodeGuid_XYZ123"),
-		TEXT("SourcePin"),
-		TEXT("TargetPin")
-	);
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("EventNodeTestBlueprint"));
 
-	// Verify failure
-	TestTrue(TEXT("ConnectNodes should fail for invalid GUIDs"), Result.IsFailure());
-	TestTrue(TEXT("Should have an error message"), !Result.GetError().IsEmpty());
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
 
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddEventNodeInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.AddEventNodeInvalidBlueprint",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceAddEventNodeInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding event node to non-existent blueprint should fail
-
-	const UnrealMCP::TResult<UK2Node_Event*> Result = UnrealMCP::FBlueprintGraphService::AddEventNode(
-		TEXT("NonExistentBlueprint_XYZ123"),
+	// Add ReceiveBeginPlay event node
+	const FVector2D NodePosition(100.0f, 100.0f);
+	UnrealMCP::TResult<UK2Node_Event*> Result = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		CreationParams.Name,
 		TEXT("ReceiveBeginPlay"),
-		FVector2D(0.0f, 0.0f)
+		NodePosition
 	);
 
-	// Verify failure
-	TestTrue(TEXT("AddEventNode should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	// Verify success
+	TestTrue(TEXT("AddEventNode should succeed"), Result.IsSuccess());
+	UK2Node_Event* EventNode = Result.GetValue();
+	TestNotNull(TEXT("Event node should be created"), EventNode);
+
+	if (EventNode) {
+		// Verify node properties
+		TestEqual(TEXT("Event node should be at correct position"),
+		          FVector2D(EventNode->NodePosX, EventNode->NodePosY),
+		          NodePosition);
+		TestTrue(TEXT("Event should be ReceiveBeginPlay"),
+		         EventNode->EventReference.GetMemberName() == FName(TEXT("ReceiveBeginPlay")));
+
+		// Verify node has expected pins
+		TestTrue(TEXT("Event node should have execution pin"),
+		         EventNode->Pins.Num() > 0);
+
+		// Verify blueprint was marked as modified
+		TestTrue(TEXT("Blueprint should be marked as modified"), TestBlueprint->bIsRegeneratingOnLoad);
+	}
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddEventNodeInvalidEventTest,
-	"UnrealMCP.BlueprintGraph.AddEventNodeInvalidEvent",
+	FBlueprintGraphServiceAddFunctionCallNodeTest,
+	"UnrealMCP.BlueprintGraph.AddFunctionCallNode",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceAddEventNodeInvalidEventTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding event node with invalid event name should fail
+auto FBlueprintGraphServiceAddFunctionCallNodeTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Add function call node with parameters
+	CREATE_TEST_CLEANUP_GUARD();
 
-	const UnrealMCP::TResult<UK2Node_Event*> Result = UnrealMCP::FBlueprintGraphService::AddEventNode(
-		TEXT("SomeBlueprint"),  // This will fail before event validation
-		TEXT("NonExistentEvent_XYZ123"),
-		FVector2D(0.0f, 0.0f)
-	);
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("FunctionCallTestBlueprint"));
 
-	// Verify failure
-	TestTrue(TEXT("AddEventNode should fail for invalid event"), Result.IsFailure());
-	TestTrue(TEXT("Should have an error message"), !Result.GetError().IsEmpty());
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
 
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddFunctionCallNodeInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.AddFunctionCallNodeInvalidBlueprint",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceAddFunctionCallNodeInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding function call node to non-existent blueprint should fail
-
+	// Create function parameters JSON
 	const TSharedPtr<FJsonObject> FunctionParams = MakeShareable(new FJsonObject);
+	FunctionParams->SetStringField(TEXT("InString"), TEXT("Test Message"));
+	FunctionParams->SetNumberField(TEXT("bPrintToScreen"), 1.0);
+	FunctionParams->SetNumberField(TEXT("Duration"), 5.0);
 
-	const UnrealMCP::TResult<UK2Node_CallFunction*> Result = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
-		TEXT("NonExistentBlueprint_XYZ123"),
+	// Add PrintString function call node
+	const FVector2D NodePosition(300.0f, 100.0f);
+	UnrealMCP::TResult<UK2Node_CallFunction*> Result = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
+		CreationParams.Name,
 		TEXT("PrintString"),
-		TOptional<FString>(),
-		FVector2D(100.0f, 100.0f),
+		TOptional<FString>(TEXT("GameplayStatics")),
+		NodePosition,
 		FunctionParams
 	);
 
-	// Verify failure
-	TestTrue(TEXT("AddFunctionCallNode should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	// Verify success
+	TestTrue(TEXT("AddFunctionCallNode should succeed"), Result.IsSuccess());
+	UK2Node_CallFunction* FunctionNode = Result.GetValue();
+	TestNotNull(TEXT("Function node should be created"), FunctionNode);
+
+	if (FunctionNode) {
+		// Verify node properties
+		TestEqual(TEXT("Function node should be at correct position"),
+		          FVector2D(FunctionNode->NodePosX, FunctionNode->NodePosY),
+		          NodePosition);
+		TestTrue(TEXT("Function should be PrintString"),
+		         FunctionNode->FunctionReference.GetMemberName() == FName(TEXT("PrintString")));
+
+		// Verify parameters were applied
+		UEdGraphPin* StringPin = FCommonUtils::FindPin(FunctionNode, TEXT("InString"), EGPD_Input);
+		TestNotNull(TEXT("InString pin should exist"), StringPin);
+		if (StringPin) {
+			TestEqual(TEXT("InString should have correct value"), StringPin->DefaultValue, TEXT("Test Message"));
+		}
+
+		UEdGraphPin* DurationPin = FCommonUtils::FindPin(FunctionNode, TEXT("Duration"), EGPD_Input);
+		TestNotNull(TEXT("Duration pin should exist"), DurationPin);
+		if (DurationPin) {
+			TestEqual(TEXT("Duration should have correct value"), DurationPin->DefaultValue, TEXT("5.000000"));
+		}
+	}
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddFunctionCallNodeInvalidFunctionTest,
-	"UnrealMCP.BlueprintGraph.AddFunctionCallNodeInvalidFunction",
+	FBlueprintGraphServiceAddComponentReferenceNodeTest,
+	"UnrealMCP.BlueprintGraph.AddComponentReferenceNode",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceAddFunctionCallNodeInvalidFunctionTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding function call node with invalid function name should fail
+auto FBlueprintGraphServiceAddComponentReferenceNodeTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Add component reference node
+	CREATE_TEST_CLEANUP_GUARD();
 
-	const TSharedPtr<FJsonObject> FunctionParams = MakeShareable(new FJsonObject);
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("ComponentRefTestBlueprint"));
 
-	const UnrealMCP::TResult<UK2Node_CallFunction*> Result = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
-		TEXT("SomeBlueprint"),  // This will fail before function validation
-		TEXT("NonExistentFunction_XYZ123"),
-		TOptional<FString>(),
-		FVector2D(100.0f, 100.0f),
-		FunctionParams
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
+
+	// Add a StaticMeshComponent to the blueprint first using the service's AddVariable function
+	UnrealMCP::FVoidResult AddVarResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		CreationParams.Name,
+		TEXT("TestMeshComponent"),
+		TEXT("StaticMeshComponent"),
+		false
+	);
+	TestTrue(TEXT("AddVariable should succeed for StaticMeshComponent"), AddVarResult.IsSuccess());
+
+	// Add component reference node
+	const FVector2D NodePosition(200.0f, 200.0f);
+	UnrealMCP::TResult<UK2Node_VariableGet*> Result = UnrealMCP::FBlueprintGraphService::AddComponentReferenceNode(
+		CreationParams.Name,
+		TEXT("TestMeshComponent"),
+		NodePosition
 	);
 
-	// Verify failure
-	TestTrue(TEXT("AddFunctionCallNode should fail for invalid function"), Result.IsFailure());
-	TestTrue(TEXT("Should have an error message"), !Result.GetError().IsEmpty());
+	// Verify success
+	TestTrue(TEXT("AddComponentReferenceNode should succeed"), Result.IsSuccess());
+	UK2Node_VariableGet* ComponentNode = Result.GetValue();
+	TestNotNull(TEXT("Component node should be created"), ComponentNode);
+
+	if (ComponentNode) {
+		// Verify node properties
+		TestEqual(TEXT("Component node should be at correct position"),
+		          FVector2D(ComponentNode->NodePosX, ComponentNode->NodePosY),
+		          NodePosition);
+		TestTrue(TEXT("Should reference correct component"),
+		         ComponentNode->VariableReference.GetMemberName() == FName(TEXT("TestMeshComponent")));
+	}
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddFunctionCallNodeWithParametersTest,
-	"UnrealMCP.BlueprintGraph.AddFunctionCallNodeWithParameters",
+	FBlueprintGraphServiceConnectNodesTest,
+	"UnrealMCP.BlueprintGraph.ConnectNodes",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceAddFunctionCallNodeWithParametersTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding function call node with JSON parameters
+auto FBlueprintGraphServiceConnectNodesTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Connect nodes in actual blueprint graph
+	CREATE_TEST_CLEANUP_GUARD();
 
-	const TSharedPtr<FJsonObject> FunctionParams = MakeShareable(new FJsonObject);
-	FunctionParams->SetStringField(TEXT("InString"), TEXT("Hello World"));
-	// SetLinearColorField doesn't exist on FJsonObject, so we'll set it as a string array
-	TArray<TSharedPtr<FJsonValue>> ColorArray;
-	ColorArray.Add(MakeShareable(new FJsonValueNumber(FLinearColor::Red.R)));
-	ColorArray.Add(MakeShareable(new FJsonValueNumber(FLinearColor::Red.G)));
-	ColorArray.Add(MakeShareable(new FJsonValueNumber(FLinearColor::Red.B)));
-	ColorArray.Add(MakeShareable(new FJsonValueNumber(FLinearColor::Red.A)));
-	FunctionParams->SetArrayField(TEXT("TextColor"), ColorArray);
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("ConnectNodesTestBlueprint"));
 
-	const UnrealMCP::TResult<UK2Node_CallFunction*> Result = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
-		TEXT("SomeBlueprint"),  // This will fail before parameter validation
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
+
+	// Add ReceiveBeginPlay event node
+	UnrealMCP::TResult<UK2Node_Event*> EventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		CreationParams.Name,
+		TEXT("ReceiveBeginPlay"),
+		FVector2D(100.0f, 100.0f)
+	);
+	TestTrue(TEXT("Event node should be created"), EventResult.IsSuccess());
+	UK2Node_Event* EventNode = EventResult.GetValue();
+	TestNotNull(TEXT("Event node should not be null"), EventNode);
+	if (!EventNode)
+		return false;
+
+	// Add PrintString function node
+	const TSharedPtr<FJsonObject> PrintParams = MakeShareable(new FJsonObject);
+	PrintParams->SetStringField(TEXT("InString"), TEXT("Hello World"));
+	UnrealMCP::TResult<UK2Node_CallFunction*> FunctionResult = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
+		CreationParams.Name,
 		TEXT("PrintString"),
-		TOptional<FString>(),
-		FVector2D(100.0f, 100.0f),
-		FunctionParams
+		TOptional<FString>(TEXT("GameplayStatics")),
+		FVector2D(400.0f, 100.0f),
+		PrintParams
+	);
+	TestTrue(TEXT("Function node should be created"), FunctionResult.IsSuccess());
+	UK2Node_CallFunction* FunctionNode = FunctionResult.GetValue();
+	TestNotNull(TEXT("Function node should not be null"), FunctionNode);
+	if (!FunctionNode)
+		return false;
+
+	// Connect the nodes (event execution pin to function execution pin)
+	UnrealMCP::FVoidResult ConnectResult = UnrealMCP::FBlueprintGraphService::ConnectNodes(
+		CreationParams.Name,
+		EventNode->NodeGuid.ToString(),
+		FunctionNode->NodeGuid.ToString(),
+		TEXT(""),
+		// Use default execution pin
+		TEXT("") // Use default execution pin
 	);
 
-	// Verify failure (due to blueprint not existing)
-	TestTrue(TEXT("Should fail gracefully"), Result.IsFailure());
-	TestTrue(TEXT("Should handle JSON parameters without crashing"), !Result.GetError().IsEmpty());
+	// Verify connection succeeded
+	TestTrue(TEXT("ConnectNodes should succeed"), ConnectResult.IsSuccess());
+
+	if (ConnectResult.IsSuccess()) {
+		// Verify the connection was made by checking pins
+		UEdGraphPin* EventExecPin = EventNode->Pins.Num() > 0 ? EventNode->Pins[0] : nullptr;
+		UEdGraphPin* FunctionExecPin = FunctionNode->Pins.Num() > 0 ? FunctionNode->Pins[0] : nullptr;
+
+		TestNotNull(TEXT("Event should have execution pin"), EventExecPin);
+		TestNotNull(TEXT("Function should have execution pin"), FunctionExecPin);
+
+		if (EventExecPin && FunctionExecPin) {
+			TestTrue(TEXT("Event execution pin should be linked"), EventExecPin->LinkedTo.Num() > 0);
+			TestTrue(TEXT("Function execution pin should be linked"), FunctionExecPin->LinkedTo.Num() > 0);
+			TestEqual(TEXT("Pins should be linked to each other"),
+			          EventExecPin->LinkedTo[0],
+			          FunctionExecPin);
+		}
+	}
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddComponentReferenceNodeInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.AddComponentReferenceNodeInvalidBlueprint",
+	FBlueprintGraphServiceFindNodesTest,
+	"UnrealMCP.BlueprintGraph.FindNodes",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceAddComponentReferenceNodeInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding component reference node to non-existent blueprint should fail
+auto FBlueprintGraphServiceFindNodesTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Find nodes in actual blueprint graph
+	CREATE_TEST_CLEANUP_GUARD();
 
-	const UnrealMCP::TResult<UK2Node_VariableGet*> Result = UnrealMCP::FBlueprintGraphService::AddComponentReferenceNode(
-		TEXT("NonExistentBlueprint_XYZ123"),
-		TEXT("TestComponent"),
-		FVector2D(50.0f, 50.0f)
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("FindNodesTestBlueprint"));
+
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
+
+	// Add ReceiveBeginPlay event node
+	UnrealMCP::TResult<UK2Node_Event*> EventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		CreationParams.Name,
+		TEXT("ReceiveBeginPlay"),
+		FVector2D(100.0f, 100.0f)
 	);
+	TestTrue(TEXT("Event node should be created"), EventResult.IsSuccess());
+	UK2Node_Event* EventNode = EventResult.GetValue();
+	TestNotNull(TEXT("Event node should not be null"), EventNode);
+	if (!EventNode)
+		return false;
 
-	// Verify failure
-	TestTrue(TEXT("AddComponentReferenceNode should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
-
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddSelfReferenceNodeInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.AddSelfReferenceNodeInvalidBlueprint",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceAddSelfReferenceNodeInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding self reference node to non-existent blueprint should fail
-
-	const UnrealMCP::TResult<UK2Node_Self*> Result = UnrealMCP::FBlueprintGraphService::AddSelfReferenceNode(
-		TEXT("NonExistentBlueprint_XYZ123"),
-		FVector2D(25.0f, 25.0f)
+	// Add another event node
+	UnrealMCP::TResult<UK2Node_Event*> TickEventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		CreationParams.Name,
+		TEXT("ReceiveTick"),
+		FVector2D(100.0f, 300.0f)
 	);
+	TestTrue(TEXT("Tick event node should be created"), TickEventResult.IsSuccess());
 
-	// Verify failure
-	TestTrue(TEXT("AddSelfReferenceNode should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
-
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddInputActionNodeInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.AddInputActionNodeInvalidBlueprint",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceAddInputActionNodeInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding input action node to non-existent blueprint should fail
-
-	const UnrealMCP::TResult<UK2Node_InputAction*> Result = UnrealMCP::FBlueprintGraphService::AddInputActionNode(
-		TEXT("NonExistentBlueprint_XYZ123"),
-		TEXT("JumpAction"),
-		FVector2D(75.0f, 75.0f)
-	);
-
-	// Verify failure
-	TestTrue(TEXT("AddInputActionNode should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
-
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceFindNodesInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.FindNodesInvalidBlueprint",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceFindNodesInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Finding nodes in non-existent blueprint should fail
-
-	TArray<FString> OutNodeGuids;
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::FindNodes(
-		TEXT("NonExistentBlueprint_XYZ123"),
+	// Find ReceiveBeginPlay event nodes
+	TArray<FString> FoundNodeGuids;
+	UnrealMCP::FVoidResult FindResult = UnrealMCP::FBlueprintGraphService::FindNodes(
+		CreationParams.Name,
 		TEXT("Event"),
 		TOptional<FString>(TEXT("ReceiveBeginPlay")),
-		OutNodeGuids
+		FoundNodeGuids
 	);
 
-	// Verify failure
-	TestTrue(TEXT("FindNodes should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
-	TestTrue(TEXT("Output array should be empty"), OutNodeGuids.Num() == 0);
+	// Verify find operation succeeded
+	TestTrue(TEXT("FindNodes should succeed"), FindResult.IsSuccess());
+	TestTrue(TEXT("Should find exactly one ReceiveBeginPlay node"), FoundNodeGuids.Num() == 1);
+
+	if (FoundNodeGuids.Num() > 0) {
+		TestEqual(TEXT("Found node GUID should match our event node"),
+		          FoundNodeGuids[0],
+		          EventNode->NodeGuid.ToString());
+	}
+
+	// Find all event nodes
+	FoundNodeGuids.Empty();
+	FindResult = UnrealMCP::FBlueprintGraphService::FindNodes(
+		CreationParams.Name,
+		TEXT("Event"),
+		TOptional<FString>(TEXT("ReceiveTick")),
+		FoundNodeGuids
+	);
+
+	TestTrue(TEXT("FindNodes should succeed for ReceiveTick"), FindResult.IsSuccess());
+	TestTrue(TEXT("Should find exactly one ReceiveTick node"), FoundNodeGuids.Num() == 1);
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceFindNodesWithDifferentTypesTest,
-	"UnrealMCP.BlueprintGraph.FindNodesWithDifferentTypes",
+	FBlueprintGraphServiceAddVariableTest,
+	"UnrealMCP.BlueprintGraph.AddVariable",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceFindNodesWithDifferentTypesTest::RunTest(const FString& Parameters)
-{
-	// Test: Finding nodes with different type filters
+auto FBlueprintGraphServiceAddVariableTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Add variables with different types to blueprint
+	CREATE_TEST_CLEANUP_GUARD();
 
-	TArray<FString> OutNodeGuids;
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("AddVariableTestBlueprint"));
 
-	// Test with Event type
-	{
-		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::FindNodes(
-			TEXT("SomeBlueprint"),  // This will fail but tests the type parameter
-			TEXT("Event"),
-			TOptional<FString>(TEXT("ReceiveBeginPlay")),
-			OutNodeGuids
-		);
-		TestTrue(TEXT("Should fail gracefully for Event type"), Result.IsFailure());
-		TestTrue(TEXT("Should handle Event type parameter"), !Result.GetError().IsEmpty());
-	}
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
 
-	// Test with Function type
-	{
-		OutNodeGuids.Empty();
-		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::FindNodes(
-			TEXT("SomeBlueprint"),  // This will fail but tests the type parameter
-			TEXT("Function"),
-			TOptional<FString>(),
-			OutNodeGuids
-		);
-		TestTrue(TEXT("Should fail gracefully for Function type"), Result.IsFailure());
-		TestTrue(TEXT("Should handle Function type parameter"), !Result.GetError().IsEmpty());
-	}
-
-	// Test with Variable type
-	{
-		OutNodeGuids.Empty();
-		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::FindNodes(
-			TEXT("SomeBlueprint"),  // This will fail but tests the type parameter
-			TEXT("Variable"),
-			TOptional<FString>(),
-			OutNodeGuids
-		);
-		TestTrue(TEXT("Should fail gracefully for Variable type"), Result.IsFailure());
-		TestTrue(TEXT("Should handle Variable type parameter"), !Result.GetError().IsEmpty());
-	}
-
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddVariableInvalidBlueprintTest,
-	"UnrealMCP.BlueprintGraph.AddVariableInvalidBlueprint",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceAddVariableInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding variable to non-existent blueprint should fail
-
-	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::AddVariable(
-		TEXT("NonExistentBlueprint_XYZ123"),
-		TEXT("TestVariable"),
+	// Add boolean variable
+	UnrealMCP::FVoidResult BoolResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		CreationParams.Name,
+		TEXT("TestBool"),
 		TEXT("Boolean"),
 		false
 	);
+	TestTrue(TEXT("AddVariable should succeed for Boolean"), BoolResult.IsSuccess());
 
-	// Verify failure
-	TestTrue(TEXT("AddVariable should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	// Add integer variable
+	UnrealMCP::FVoidResult IntResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		CreationParams.Name,
+		TEXT("TestInt"),
+		TEXT("Integer"),
+		true // Exposed to editor
+	);
+	TestTrue(TEXT("AddVariable should succeed for Integer"), IntResult.IsSuccess());
+
+	// Add string variable
+	UnrealMCP::FVoidResult StringResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		CreationParams.Name,
+		TEXT("TestString"),
+		TEXT("String"),
+		false
+	);
+	TestTrue(TEXT("AddVariable should succeed for String"), StringResult.IsSuccess());
+
+	// Add vector variable
+	UnrealMCP::FVoidResult VectorResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		CreationParams.Name,
+		TEXT("TestVector"),
+		TEXT("Vector"),
+		false
+	);
+	TestTrue(TEXT("AddVariable should succeed for Vector"), VectorResult.IsSuccess());
+
+	// Verify variables were added by checking blueprint's variable list
+	TestTrue(TEXT("Should have at least 4 new variables"), TestBlueprint->NewVariables.Num() >= 4);
+
+	// Check specific variables exist
+	bool bFoundBool = false, bFoundInt = false, bFoundString = false, bFoundVector = false;
+	for (const FBPVariableDescription& Variable : TestBlueprint->NewVariables) {
+		if (Variable.VarName == FName(TEXT("TestBool"))) {
+			bFoundBool = true;
+			// Boolean should not be exposed (CPF_Edit flag not set)
+			TestFalse(TEXT("TestBool should not be exposed"), (Variable.PropertyFlags & CPF_Edit) != 0);
+		}
+		else if (Variable.VarName == FName(TEXT("TestInt"))) {
+			bFoundInt = true;
+			// Integer should be exposed (CPF_Edit flag set)
+			TestTrue(TEXT("TestInt should be exposed"), (Variable.PropertyFlags & CPF_Edit) != 0);
+		}
+		else if (Variable.VarName == FName(TEXT("TestString"))) {
+			bFoundString = true;
+		}
+		else if (Variable.VarName == FName(TEXT("TestVector"))) {
+			bFoundVector = true;
+		}
+	}
+
+	TestTrue(TEXT("Should find TestBool variable"), bFoundBool);
+	TestTrue(TEXT("Should find TestInt variable"), bFoundInt);
+	TestTrue(TEXT("Should find TestString variable"), bFoundString);
+	TestTrue(TEXT("Should find TestVector variable"), bFoundVector);
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddVariableWithDifferentTypesTest,
-	"UnrealMCP.BlueprintGraph.AddVariableWithDifferentTypes",
+	FBlueprintGraphServiceErrorHandlingTest,
+	"UnrealMCP.BlueprintGraph.ErrorHandling",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceAddVariableWithDifferentTypesTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding variables with different types
+auto FBlueprintGraphServiceErrorHandlingTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Proper error handling for invalid operations
+	CREATE_TEST_CLEANUP_GUARD();
 
-	TArray<FString> VariableTypes = { TEXT("Boolean"), TEXT("Integer"), TEXT("Float"), TEXT("String"), TEXT("Vector") };
+	// Test with non-existent blueprint
+	UnrealMCP::TResult<UK2Node_Event*> EventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		TEXT("NonExistentBlueprint"),
+		TEXT("ReceiveBeginPlay"),
+		FVector2D(0.0f, 0.0f)
+	);
+	TestTrue(TEXT("AddEventNode should fail for non-existent blueprint"), EventResult.IsFailure());
 
-	for (const FString& VariableType : VariableTypes)
-	{
-		UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::AddVariable(
-			TEXT("SomeBlueprint"),  // This will fail but tests the type parameter
-			FString::Printf(TEXT("TestVariable_%s"), *VariableType),
-			VariableType,
-			false
+	// Test with empty parameters
+	UnrealMCP::TResult<UK2Node_Event*> EmptyEventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		TEXT(""),
+		// Empty blueprint name
+		TEXT("ReceiveBeginPlay"),
+		FVector2D(0.0f, 0.0f)
+	);
+	TestTrue(TEXT("AddEventNode should fail for empty blueprint name"), EmptyEventResult.IsFailure());
+
+	// Test with invalid function
+	const TSharedPtr<FJsonObject> Params = MakeShareable(new FJsonObject);
+	UnrealMCP::TResult<UK2Node_CallFunction*> InvalidFuncResult =
+		UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
+			TEXT("NonExistentBlueprint"),
+			TEXT("NonExistentFunction"),
+			TOptional<FString>(),
+			FVector2D(0.0f, 0.0f),
+			Params
 		);
-
-		// Should fail due to blueprint not existing, but the important part is that it
-		// handles the type parameter correctly and doesn't crash
-		TestTrue(FString::Printf(TEXT("Should fail gracefully for type %s"), *VariableType), Result.IsFailure());
-		TestTrue(FString::Printf(TEXT("Should handle type %s parameter"), *VariableType), !Result.GetError().IsEmpty());
-	}
-
-	return true;
-}
-
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceAddVariableWithEmptyNamesTest,
-	"UnrealMCP.BlueprintGraph.AddVariableWithEmptyNames",
-	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
-)
-
-bool FBlueprintGraphServiceAddVariableWithEmptyNamesTest::RunTest(const FString& Parameters)
-{
-	// Test: Adding variable with empty names should fail
-
-	// Test with empty blueprint name
-	{
-		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::AddVariable(
-			TEXT(""),  // Empty blueprint name
-			TEXT("TestVariable"),
-			TEXT("Boolean"),
-			false
-		);
-		TestTrue(TEXT("Should fail with empty blueprint name"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
-	}
+	TestTrue(TEXT("AddFunctionCallNode should fail appropriately"), InvalidFuncResult.IsFailure());
 
 	// Test with empty variable name
-	{
-		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::AddVariable(
-			TEXT("SomeBlueprint"),
-			TEXT(""),  // Empty variable name
-			TEXT("Boolean"),
-			false
-		);
-		TestTrue(TEXT("Should fail with empty variable name"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
-	}
-
-	// Test with empty variable type
-	{
-		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintGraphService::AddVariable(
-			TEXT("SomeBlueprint"),
-			TEXT("TestVariable"),
-			TEXT(""),  // Empty variable type
-			false
-		);
-		TestTrue(TEXT("Should fail with empty variable type"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
-	}
+	UnrealMCP::FVoidResult EmptyVarResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		TEXT("NonExistentBlueprint"),
+		TEXT(""),
+		// Empty variable name
+		TEXT("Boolean"),
+		false
+	);
+	TestTrue(TEXT("AddVariable should fail for empty variable name"), EmptyVarResult.IsFailure());
 
 	return true;
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
-	FBlueprintGraphServiceNodeParameterValidationTest,
-	"UnrealMCP.BlueprintGraph.NodeParameterValidation",
+	FBlueprintGraphServiceComplexGraphTest,
+	"UnrealMCP.BlueprintGraph.ComplexGraph",
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintGraphServiceNodeParameterValidationTest::RunTest(const FString& Parameters)
-{
-	// Test: Various node parameter validation scenarios
+auto FBlueprintGraphServiceComplexGraphTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Build a complex graph with multiple connected nodes
+	CREATE_TEST_CLEANUP_GUARD();
 
-	// Test AddEventNode with empty event name
-	{
-		const UnrealMCP::TResult<UK2Node_Event*> Result = UnrealMCP::FBlueprintGraphService::AddEventNode(
-			TEXT("SomeBlueprint"),
-			TEXT(""),  // Empty event name
-			FVector2D(0.0f, 0.0f)
-		);
-		TestTrue(TEXT("AddEventNode should fail with empty event name"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
-	}
+	// Create test blueprint using MCP utilities
+	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
+		TEXT("ComplexGraphTestBlueprint"));
 
-	// Test AddFunctionCallNode with empty function name
-	{
-		const TSharedPtr<FJsonObject> JsonParameters = MakeShareable(new FJsonObject);
-		const UnrealMCP::TResult<UK2Node_CallFunction*> Result = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
-			TEXT("SomeBlueprint"),
-			TEXT(""),  // Empty function name
-			TOptional<FString>(),
-			FVector2D(100.0f, 100.0f),
-			JsonParameters
-		);
-		TestTrue(TEXT("AddFunctionCallNode should fail with empty function name"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
-	}
+	auto CreationResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(CreationParams);
+	TestTrue(TEXT("Blueprint creation should succeed"), CreationResult.IsSuccess());
+	UBlueprint* TestBlueprint = CreationResult.GetValue();
+	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
+	if (!TestBlueprint)
+		return false;
 
-	// Test AddComponentReferenceNode with empty component name
-	{
-		const UnrealMCP::TResult<UK2Node_VariableGet*> Result = UnrealMCP::FBlueprintGraphService::AddComponentReferenceNode(
-			TEXT("SomeBlueprint"),
-			TEXT(""),  // Empty component name
-			FVector2D(50.0f, 50.0f)
-		);
-		TestTrue(TEXT("AddComponentReferenceNode should fail with empty component name"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
-	}
+	// Add ReceiveBeginPlay event
+	UnrealMCP::TResult<UK2Node_Event*> EventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
+		CreationParams.Name,
+		TEXT("ReceiveBeginPlay"),
+		FVector2D(100.0f, 100.0f)
+	);
+	TestTrue(TEXT("Event node should be created"), EventResult.IsSuccess());
+	UK2Node_Event* EventNode = EventResult.GetValue();
+	if (!EventNode)
+		return false;
 
-	// Test AddInputActionNode with empty action name
-	{
-		const UnrealMCP::TResult<UK2Node_InputAction*> Result = UnrealMCP::FBlueprintGraphService::AddInputActionNode(
-			TEXT("SomeBlueprint"),
-			TEXT(""),  // Empty action name
-			FVector2D(75.0f, 75.0f)
+	// Add self reference node
+	UnrealMCP::TResult<UK2Node_Self*> SelfResult = UnrealMCP::FBlueprintGraphService::AddSelfReferenceNode(
+		CreationParams.Name,
+		FVector2D(300.0f, 50.0f)
+	);
+	TestTrue(TEXT("Self reference node should be created"), SelfResult.IsSuccess());
+
+	// Add variable first
+	UnrealMCP::FVoidResult AddVarResult = UnrealMCP::FBlueprintGraphService::AddVariable(
+		CreationParams.Name,
+		TEXT("HealthValue"),
+		TEXT("Float"),
+		true
+	);
+	TestTrue(TEXT("Variable should be added"), AddVarResult.IsSuccess());
+
+	// Add variable get node
+	UnrealMCP::TResult<UK2Node_VariableGet*> VarGetResult =
+		UnrealMCP::FBlueprintGraphService::AddComponentReferenceNode(
+			CreationParams.Name,
+			TEXT("HealthValue"),
+			FVector2D(300.0f, 150.0f)
 		);
-		TestTrue(TEXT("AddInputActionNode should fail with empty action name"), Result.IsFailure());
-		TestTrue(TEXT("Should have meaningful error message"), !Result.GetError().IsEmpty());
+	TestTrue(TEXT("Variable get node should be created"), VarGetResult.IsSuccess());
+
+	// Add function call with vector parameter
+	const TSharedPtr<FJsonObject> VectorParams = MakeShareable(new FJsonObject);
+	TArray<TSharedPtr<FJsonValue>> VectorArray;
+	VectorArray.Add(MakeShareable(new FJsonValueNumber(100.0f)));
+	VectorArray.Add(MakeShareable(new FJsonValueNumber(200.0f)));
+	VectorArray.Add(MakeShareable(new FJsonValueNumber(300.0f)));
+	VectorParams->SetArrayField(TEXT("WorldLocation"), VectorArray);
+
+	UnrealMCP::TResult<UK2Node_CallFunction*> FuncResult = UnrealMCP::FBlueprintGraphService::AddFunctionCallNode(
+		CreationParams.Name,
+		TEXT("PrintString"),
+		TOptional<FString>(TEXT("GameplayStatics")),
+		FVector2D(500.0f, 100.0f),
+		VectorParams
+	);
+	TestTrue(TEXT("Function call node should be created"), FuncResult.IsSuccess());
+	UK2Node_CallFunction* FunctionNode = FuncResult.GetValue();
+	if (!FunctionNode)
+		return false;
+
+	// Connect event to function
+	UnrealMCP::FVoidResult ConnectResult = UnrealMCP::FBlueprintGraphService::ConnectNodes(
+		CreationParams.Name,
+		EventNode->NodeGuid.ToString(),
+		FunctionNode->NodeGuid.ToString(),
+		TEXT(""),
+		TEXT("")
+	);
+	TestTrue(TEXT("Nodes should connect successfully"), ConnectResult.IsSuccess());
+
+	// Verify the graph structure
+	UEdGraph* EventGraph = FCommonUtils::FindOrCreateEventGraph(TestBlueprint);
+	TestNotNull(TEXT("Event graph should exist"), EventGraph);
+	if (EventGraph) {
+		TestTrue(TEXT("Should have multiple nodes in graph"), EventGraph->Nodes.Num() >= 3);
+
+		// Count different node types
+		int32 EventCount = 0, FunctionCount = 0, VariableGetCount = 0, SelfRefCount = 0;
+		for (UEdGraphNode* Node : EventGraph->Nodes) {
+			if (Cast<UK2Node_Event>(Node))
+				EventCount++;
+			else if (Cast<UK2Node_CallFunction>(Node))
+				FunctionCount++;
+			else if (Cast<UK2Node_VariableGet>(Node))
+				VariableGetCount++;
+			else
+				if (Cast<UK2Node_Self>(Node))
+					SelfRefCount++;
+		}
+
+		TestTrue(TEXT("Should have at least 1 event node"), EventCount >= 1);
+		TestTrue(TEXT("Should have at least 1 function node"), FunctionCount >= 1);
+		TestTrue(TEXT("Should have at least 1 variable get node"), VariableGetCount >= 1);
+		TestTrue(TEXT("Should have at least 1 self reference node"), SelfRefCount >= 1);
 	}
 
 	return true;

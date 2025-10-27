@@ -1,7 +1,7 @@
-#include "Commands/BlueprintNode/AddBlueprintSelfReference.h"
+﻿#include "Commands/BlueprintNode/AddBlueprintSelfReference.h"
+#include "K2Node_Self.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintGraphService.h"
-#include "K2Node_Self.h"
 
 namespace UnrealMCP {
 	auto FAddBlueprintSelfReference::Handle(

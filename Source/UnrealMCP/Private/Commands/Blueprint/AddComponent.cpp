@@ -7,7 +7,7 @@
 
 namespace UnrealMCP {
 
-auto FAddComponent::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
+	auto FAddComponent::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 
 		TResult<FComponentParams> ParamsResult =
 			FComponentParams::FromJson(Params);

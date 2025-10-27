@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Functional tests for BlueprintService
  *
  * These tests verify the actual behavior of blueprint operations:
@@ -15,15 +15,15 @@
  * Tests run in the Unreal Editor with real world context.
  */
 
-#include "Services/BlueprintService.h"
+#include "Editor.h"
+#include "Blueprint/UserWidget.h"
 #include "Core/MCPTypes.h"
-#include "Misc/AutomationTest.h"
+#include "Dom/JsonObject.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
-#include "Blueprint/UserWidget.h"
-#include "Editor.h"
+#include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
-#include "Dom/JsonObject.h"
+#include "Services/BlueprintService.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBlueprintServiceSpawnInvalidActorBlueprintTest,
@@ -31,8 +31,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSpawnInvalidActorBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSpawnInvalidActorBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Spawning actor from non-existent blueprint should fail
 
 	UnrealMCP::FBlueprintSpawnParams Params;
@@ -46,7 +45,7 @@ bool FBlueprintServiceSpawnInvalidActorBlueprintTest::RunTest(const FString& Par
 	// Verify failure
 	TestTrue(TEXT("SpawnActorBlueprint should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -57,8 +56,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceAddComponentToInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceAddComponentToInvalidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding component to non-existent blueprint should fail
 
 	UnrealMCP::FComponentParams Params;
@@ -74,7 +72,7 @@ bool FBlueprintServiceAddComponentToInvalidBlueprintTest::RunTest(const FString&
 	// Verify failure
 	TestTrue(TEXT("AddComponent should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -85,12 +83,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceAddComponentWithInvalidTypeTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceAddComponentWithInvalidTypeTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding component with invalid component type should fail
 
 	UnrealMCP::FComponentParams Params;
-	Params.BlueprintName = TEXT("SomeBlueprint");  // This will fail before validation
+	Params.BlueprintName = TEXT("SomeBlueprint"); // This will fail before validation
 	Params.ComponentType = TEXT("NonExistentComponentType_XYZ123");
 	Params.ComponentName = TEXT("TestComponent");
 
@@ -112,8 +109,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetComponentPropertyInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetComponentPropertyInvalidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting component property on non-existent blueprint should fail
 
 	UnrealMCP::FPropertyParams PropertyParams;
@@ -134,7 +130,7 @@ bool FBlueprintServiceSetComponentPropertyInvalidBlueprintTest::RunTest(const FS
 	// Verify failure
 	TestTrue(TEXT("SetComponentProperty should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -145,8 +141,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetPhysicsPropertiesInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetPhysicsPropertiesInvalidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting physics properties on non-existent blueprint should fail
 
 	UnrealMCP::FPhysicsParams Params;
@@ -163,7 +158,7 @@ bool FBlueprintServiceSetPhysicsPropertiesInvalidBlueprintTest::RunTest(const FS
 	// Verify failure
 	TestTrue(TEXT("SetPhysicsProperties should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -174,8 +169,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetStaticMeshPropertiesInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetStaticMeshPropertiesInvalidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting static mesh properties on non-existent blueprint should fail
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintService::SetStaticMeshProperties(
@@ -188,7 +182,7 @@ bool FBlueprintServiceSetStaticMeshPropertiesInvalidBlueprintTest::RunTest(const
 	// Verify failure
 	TestTrue(TEXT("SetStaticMeshProperties should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -199,12 +193,12 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetStaticMeshPropertiesInvalidMeshTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetStaticMeshPropertiesInvalidMeshTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting static mesh with invalid mesh path should fail
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintService::SetStaticMeshProperties(
-		TEXT("SomeBlueprint"),  // This will fail before mesh validation
+		TEXT("SomeBlueprint"),
+		// This will fail before mesh validation
 		TEXT("TestComponent"),
 		TEXT("/Game/Meshes/NonExistentMesh_XYZ123"),
 		TOptional<FString>()
@@ -223,8 +217,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetBlueprintPropertyInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetBlueprintPropertyInvalidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting blueprint property on non-existent blueprint should fail
 
 	UnrealMCP::FPropertyParams PropertyParams;
@@ -244,7 +237,7 @@ bool FBlueprintServiceSetBlueprintPropertyInvalidBlueprintTest::RunTest(const FS
 	// Verify failure
 	TestTrue(TEXT("SetBlueprintProperty should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -255,8 +248,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetPawnPropertiesInvalidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetPawnPropertiesInvalidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting pawn properties on non-existent blueprint should fail
 
 	// Create a JSON object with pawn properties
@@ -274,7 +266,7 @@ bool FBlueprintServiceSetPawnPropertiesInvalidBlueprintTest::RunTest(const FStri
 	// Verify failure
 	TestTrue(TEXT("SetPawnProperties should fail for non-existent blueprint"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found or failed"),
-		Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
 
 	return true;
 }
@@ -285,8 +277,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceSetPawnPropertiesWithValidBlueprintTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceSetPawnPropertiesWithValidBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting pawn properties with valid JSON structure
 
 	// This test verifies that the service can handle valid JSON input
@@ -318,8 +309,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServiceComponentParameterValidationTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServiceComponentParameterValidationTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Various component parameter validation scenarios
 
 	// Test with empty component name
@@ -327,7 +317,7 @@ bool FBlueprintServiceComponentParameterValidationTest::RunTest(const FString& P
 		UnrealMCP::FComponentParams Params;
 		Params.BlueprintName = TEXT("SomeBlueprint");
 		Params.ComponentType = TEXT("StaticMeshComponent");
-		Params.ComponentName = TEXT("");  // Empty component name
+		Params.ComponentName = TEXT(""); // Empty component name
 
 		UnrealMCP::TResult<UBlueprint*> Result = UnrealMCP::FBlueprintService::AddComponent(Params);
 		TestTrue(TEXT("Should fail with empty component name"), Result.IsFailure());
@@ -338,7 +328,7 @@ bool FBlueprintServiceComponentParameterValidationTest::RunTest(const FString& P
 	{
 		UnrealMCP::FComponentParams Params;
 		Params.BlueprintName = TEXT("SomeBlueprint");
-		Params.ComponentType = TEXT("");  // Empty component type
+		Params.ComponentType = TEXT(""); // Empty component type
 		Params.ComponentName = TEXT("TestComponent");
 
 		UnrealMCP::TResult<UBlueprint*> Result = UnrealMCP::FBlueprintService::AddComponent(Params);
@@ -349,7 +339,7 @@ bool FBlueprintServiceComponentParameterValidationTest::RunTest(const FString& P
 	// Test with empty blueprint name
 	{
 		UnrealMCP::FComponentParams Params;
-		Params.BlueprintName = TEXT("");  // Empty blueprint name
+		Params.BlueprintName = TEXT(""); // Empty blueprint name
 		Params.ComponentType = TEXT("StaticMeshComponent");
 		Params.ComponentName = TEXT("TestComponent");
 
@@ -367,8 +357,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FBlueprintServicePhysicsParameterValidationTest::RunTest(const FString& Parameters)
-{
+auto FBlueprintServicePhysicsParameterValidationTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Physics parameters validation with different values
 
 	// Test with negative mass (should still work but validate)
@@ -377,7 +366,7 @@ bool FBlueprintServicePhysicsParameterValidationTest::RunTest(const FString& Par
 		Params.BlueprintName = TEXT("SomeBlueprint");
 		Params.ComponentName = TEXT("TestComponent");
 		Params.bSimulatePhysics = true;
-		Params.Mass = -5.0f;  // Negative mass
+		Params.Mass = -5.0f; // Negative mass
 		Params.LinearDamping = 0.1f;
 		Params.AngularDamping = 0.0f;
 		Params.bEnableGravity = true;
@@ -394,8 +383,8 @@ bool FBlueprintServicePhysicsParameterValidationTest::RunTest(const FString& Par
 		Params.ComponentName = TEXT("TestComponent");
 		Params.bSimulatePhysics = true;
 		Params.Mass = 1.0f;
-		Params.LinearDamping = 1000.0f;  // Very high damping
-		Params.AngularDamping = 1000.0f;  // Very high damping
+		Params.LinearDamping = 1000.0f; // Very high damping
+		Params.AngularDamping = 1000.0f; // Very high damping
 		Params.bEnableGravity = false;
 
 		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintService::SetPhysicsProperties(Params);

@@ -1,19 +1,19 @@
-#include "Services/BlueprintGraphService.h"
+﻿#include "Services/BlueprintGraphService.h"
+#include "EdGraphSchema_K2.h"
+#include "K2Node_CallFunction.h"
+#include "K2Node_Event.h"
+#include "K2Node_InputAction.h"
+#include "K2Node_Self.h"
+#include "K2Node_VariableGet.h"
+#include "Camera/CameraActor.h"
 #include "Core/CommonUtils.h"
-#include "Engine/Blueprint.h"
-#include "Engine/BlueprintGeneratedClass.h"
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
 #include "EdGraph/EdGraphPin.h"
-#include "K2Node_Event.h"
-#include "K2Node_CallFunction.h"
-#include "K2Node_VariableGet.h"
-#include "K2Node_InputAction.h"
-#include "K2Node_Self.h"
-#include "EdGraphSchema_K2.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Camera/CameraActor.h"
+#include "Engine/Blueprint.h"
+#include "Engine/BlueprintGeneratedClass.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet2/BlueprintEditorUtils.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBlueprintGraphService, Log, All);
 
@@ -280,7 +280,8 @@ namespace UnrealMCP {
 			return TResult<UK2Node_InputAction*>::Failure(Error);
 		}
 
-		UK2Node_InputAction* InputActionNode = FCommonUtils::CreateInputActionNode(EventGraph, ActionName, NodePosition);
+		UK2Node_InputAction* InputActionNode =
+			FCommonUtils::CreateInputActionNode(EventGraph, ActionName, NodePosition);
 		if (!InputActionNode) {
 			return TResult<UK2Node_InputAction*>::Failure(TEXT("Failed to create input action node"));
 		}
@@ -373,7 +374,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	UBlueprint* FBlueprintGraphService::FindBlueprint(const FString& BlueprintName, FString& OutError) {
+	auto FBlueprintGraphService::FindBlueprint(const FString& BlueprintName, FString& OutError) -> UBlueprint* {
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
 			OutError = FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName);
@@ -381,7 +382,7 @@ namespace UnrealMCP {
 		return Blueprint;
 	}
 
-	UEdGraph* FBlueprintGraphService::GetEventGraph(UBlueprint* Blueprint, FString& OutError) {
+	auto FBlueprintGraphService::GetEventGraph(UBlueprint* Blueprint, FString& OutError) -> UEdGraph* {
 		UEdGraph* EventGraph = FCommonUtils::FindOrCreateEventGraph(Blueprint);
 		if (!EventGraph) {
 			OutError = TEXT("Failed to get event graph");
@@ -389,7 +390,7 @@ namespace UnrealMCP {
 		return EventGraph;
 	}
 
-	UEdGraphNode* FBlueprintGraphService::FindNodeByGuid(UEdGraph* Graph, const FString& NodeGuid) {
+	auto FBlueprintGraphService::FindNodeByGuid(UEdGraph* Graph, const FString& NodeGuid) -> UEdGraphNode* {
 		for (UEdGraphNode* Node : Graph->Nodes) {
 			if (Node->NodeGuid.ToString() == NodeGuid) {
 				return Node;

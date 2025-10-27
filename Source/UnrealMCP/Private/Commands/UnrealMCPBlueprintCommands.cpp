@@ -1,37 +1,37 @@
 ﻿#include "Commands/UnrealMCPBlueprintCommands.h"
 
-#include "Commands/Blueprint/CreateBlueprint.h"
-#include "Commands/Blueprint/CompileBlueprint.h"
-#include "Commands/Blueprint/SpawnActorBlueprint.h"
-#include "Commands/Blueprint/SetComponentProperty.h"
-#include "Commands/Blueprint/SetPhysicsProperties.h"
-#include "Commands/Blueprint/SetBlueprintProperty.h"
-#include "Commands/Blueprint/SetStaticMeshProperties.h"
-#include "Commands/Blueprint/SetPawnProperties.h"
 #include "Commands/Blueprint/AddComponent.h"
-#include "Commands/Blueprint/ListBlueprints.h"
-#include "Commands/Blueprint/GetComponentProperties.h"
-#include "Commands/Blueprint/GetBlueprintFunctions.h"
-#include "Commands/Blueprint/RemoveComponent.h"
-#include "Commands/Blueprint/RenameComponent.h"
-#include "Commands/Blueprint/SetComponentTransform.h"
-#include "Commands/Blueprint/GetComponentHierarchy.h"
-#include "Commands/Blueprint/DeleteBlueprint.h"
-#include "Commands/Blueprint/DuplicateBlueprint.h"
-#include "Commands/Blueprint/RemoveVariable.h"
-#include "Commands/Blueprint/SetVariableDefaultValue.h"
-#include "Commands/Blueprint/SetVariableMetadata.h"
-#include "Commands/Blueprint/RenameVariable.h"
 #include "Commands/Blueprint/AddFunction.h"
-#include "Commands/Blueprint/RemoveFunction.h"
 #include "Commands/Blueprint/AddFunctionParameter.h"
 #include "Commands/Blueprint/BlueprintExists.h"
+#include "Commands/Blueprint/CompileBlueprint.h"
+#include "Commands/Blueprint/CreateBlueprint.h"
+#include "Commands/Blueprint/DeleteBlueprint.h"
+#include "Commands/Blueprint/DuplicateBlueprint.h"
 #include "Commands/Blueprint/GetBlueprintComponents.h"
+#include "Commands/Blueprint/GetBlueprintFunctions.h"
 #include "Commands/Blueprint/GetBlueprintInfo.h"
 #include "Commands/Blueprint/GetBlueprintPath.h"
 #include "Commands/Blueprint/GetBlueprintVariables.h"
-#include "Commands/Blueprint/SetFunctionReturnType.h"
+#include "Commands/Blueprint/GetComponentHierarchy.h"
+#include "Commands/Blueprint/GetComponentProperties.h"
+#include "Commands/Blueprint/ListBlueprints.h"
+#include "Commands/Blueprint/RemoveComponent.h"
+#include "Commands/Blueprint/RemoveFunction.h"
+#include "Commands/Blueprint/RemoveVariable.h"
+#include "Commands/Blueprint/RenameComponent.h"
+#include "Commands/Blueprint/RenameVariable.h"
+#include "Commands/Blueprint/SetBlueprintProperty.h"
+#include "Commands/Blueprint/SetComponentProperty.h"
+#include "Commands/Blueprint/SetComponentTransform.h"
 #include "Commands/Blueprint/SetFunctionMetadata.h"
+#include "Commands/Blueprint/SetFunctionReturnType.h"
+#include "Commands/Blueprint/SetPawnProperties.h"
+#include "Commands/Blueprint/SetPhysicsProperties.h"
+#include "Commands/Blueprint/SetStaticMeshProperties.h"
+#include "Commands/Blueprint/SetVariableDefaultValue.h"
+#include "Commands/Blueprint/SetVariableMetadata.h"
+#include "Commands/Blueprint/SpawnActorBlueprint.h"
 #include "Core/CommonUtils.h"
 
 namespace UnrealMCP {
@@ -82,10 +82,10 @@ namespace UnrealMCP {
 		CommandHandlers.Add(TEXT("set_function_metadata"), &FSetFunctionMetadataCommand::Handle);
 	}
 
-	TSharedPtr<FJsonObject> FUnrealMCPBlueprintCommands::HandleCommand(
+	auto FUnrealMCPBlueprintCommands::HandleCommand(
 		const FString& CommandType,
 		const TSharedPtr<FJsonObject>& Params
-	) {
+	) -> TSharedPtr<FJsonObject> {
 		if (const auto* Handler = CommandHandlers.Find(CommandType)) {
 			return (*Handler)(Params);
 		}

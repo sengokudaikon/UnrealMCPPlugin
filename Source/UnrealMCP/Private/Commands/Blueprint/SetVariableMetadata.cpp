@@ -1,4 +1,4 @@
-#include "Commands/Blueprint/SetVariableMetadata.h"
+﻿#include "Commands/Blueprint/SetVariableMetadata.h"
 #include "Core/CommonUtils.h"
 #include "Services/BlueprintMemberService.h"
 
@@ -39,7 +39,7 @@ namespace UnrealMCP {
 		if (Params->HasField(TEXT("blueprint_read_only"))) {
 			bBlueprintReadOnly = Params->GetBoolField(TEXT("blueprint_read_only"));
 		}
-		
+
 		const FVoidResult Result = FBlueprintMemberService::SetVariableMetadata(
 			BlueprintName,
 			VariableName,

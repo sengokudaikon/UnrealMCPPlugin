@@ -1,21 +1,21 @@
-#include "Services/WidgetService.h"
+﻿#include "Services/WidgetService.h"
+#include "EdGraphSchema_K2.h"
 #include "Editor.h"
 #include "EditorAssetLibrary.h"
-#include "AssetRegistry/AssetRegistryModule.h"
-#include "Blueprint/UserWidget.h"
-#include "Components/TextBlock.h"
-#include "Components/Button.h"
-#include "WidgetBlueprint.h"
-#include "Blueprint/WidgetTree.h"
-#include "Components/CanvasPanel.h"
-#include "Components/CanvasPanelSlot.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/KismetEditorUtilities.h"
 #include "K2Node_Event.h"
 #include "K2Node_FunctionEntry.h"
 #include "K2Node_VariableGet.h"
+#include "WidgetBlueprint.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Blueprint/UserWidget.h"
+#include "Blueprint/WidgetTree.h"
+#include "Components/Button.h"
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/TextBlock.h"
 #include "EdGraph/EdGraph.h"
-#include "EdGraphSchema_K2.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Kismet2/KismetEditorUtilities.h"
 
 namespace UnrealMCP {
 	auto FWidgetService::CreateWidget(const FWidgetCreationParams& Params) -> TResult<UWidgetBlueprint*> {
@@ -121,8 +121,7 @@ namespace UnrealMCP {
 		TextBlock->SetFont(FontInfo);
 
 		// Set color if specified
-		if (Params.Color.IsSet())
-		{
+		if (Params.Color.IsSet()) {
 			TextBlock->SetColorAndOpacity(FSlateColor(Params.Color.GetValue()));
 		}
 
@@ -259,7 +258,8 @@ namespace UnrealMCP {
 		}
 
 		// Find the TextBlock widget
-		const UTextBlock* TextBlock = Cast<UTextBlock>(WidgetBlueprint->WidgetTree->FindWidget(FName(*Params.TextBlockName)));
+		const UTextBlock* TextBlock = Cast<UTextBlock>(
+			WidgetBlueprint->WidgetTree->FindWidget(FName(*Params.TextBlockName)));
 		if (!TextBlock) {
 			return FVoidResult::Failure(
 				FString::Printf(TEXT("Failed to find TextBlock widget: %s"), *Params.TextBlockName)
@@ -283,18 +283,15 @@ namespace UnrealMCP {
 		UEdGraph* FuncGraph = nullptr;
 
 		// Search through existing graphs to see if one with this name already exists
-		for (UEdGraph* Graph : WidgetBlueprint->FunctionGraphs)
-		{
-			if (Graph && Graph->GetFName() == FName(*FunctionName))
-			{
+		for (UEdGraph* Graph : WidgetBlueprint->FunctionGraphs) {
+			if (Graph && Graph->GetFName() == FName(*FunctionName)) {
 				FuncGraph = Graph;
 				break;
 			}
 		}
 
 		// Only create if it doesn't exist
-		if (!FuncGraph)
-		{
+		if (!FuncGraph) {
 			FuncGraph = FBlueprintEditorUtils::CreateNewGraph(
 				WidgetBlueprint,
 				FName(*FunctionName),
@@ -308,23 +305,21 @@ namespace UnrealMCP {
 
 				// Check if entry node already exists
 				UK2Node_FunctionEntry* EntryNode = nullptr;
-				for (UEdGraphNode* Node : FuncGraph->Nodes)
-				{
+				for (UEdGraphNode* Node : FuncGraph->Nodes) {
 					EntryNode = Cast<UK2Node_FunctionEntry>(Node);
-					if (EntryNode)
-					{
+					if (EntryNode) {
 						break;
 					}
 				}
 
 				// Create entry node only if it doesn't exist
-				if (!EntryNode)
-				{
+				if (!EntryNode) {
 					EntryNode = NewObject<UK2Node_FunctionEntry>(FuncGraph);
 					FuncGraph->AddNode(EntryNode, false, false);
 					EntryNode->NodePosX = 0;
 					EntryNode->NodePosY = 0;
-					EntryNode->FunctionReference.SetExternalMember(FName(*FunctionName), WidgetBlueprint->GeneratedClass);
+					EntryNode->FunctionReference.SetExternalMember(FName(*FunctionName),
+					                                               WidgetBlueprint->GeneratedClass);
 					EntryNode->AllocateDefaultPins();
 				}
 

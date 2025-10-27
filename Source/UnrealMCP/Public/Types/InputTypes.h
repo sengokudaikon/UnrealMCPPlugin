@@ -1,16 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Json.h"
 #include "Core/Result.h"
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Parameters for creating an input action
 	 */
-	struct FInputActionParams
-	{
+	struct FInputActionParams {
 		FString Name;
 		FString ValueType = TEXT("Boolean");
 		FString Path = TEXT("/Game/Input");
@@ -22,8 +20,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for creating an input mapping context
 	 */
-	struct FInputMappingContextParams
-	{
+	struct FInputMappingContextParams {
 		FString Name;
 		FString Path = TEXT("/Game/Input");
 
@@ -34,8 +31,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for adding a mapping to a context
 	 */
-	struct FAddMappingParams
-	{
+	struct FAddMappingParams {
 		FString ContextPath;
 		FString ActionPath;
 		FString Key;
@@ -47,8 +43,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for applying a mapping context at runtime
 	 */
-	struct FApplyMappingContextParams
-	{
+	struct FApplyMappingContextParams {
 		FString ContextPath;
 		int32 Priority = 0;
 
@@ -59,8 +54,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for removing a mapping context at runtime
 	 */
-	struct FRemoveMappingContextParams
-	{
+	struct FRemoveMappingContextParams {
 		FString ContextPath;
 
 		/** Parse from JSON parameters */
@@ -70,8 +64,7 @@ namespace UnrealMCP
 	/**
 	 * Parameters for creating a legacy input action mapping
 	 */
-	struct FLegacyInputMappingParams
-	{
+	struct FLegacyInputMappingParams {
 		FString ActionName;
 		FString Key;
 		bool bShift = false;
@@ -86,13 +79,12 @@ namespace UnrealMCP
 	/**
 	 * Result structure for input action creation
 	 */
-	struct FCreateInputActionResult
-	{
+	struct FCreateInputActionResult {
 		FString Name;
 		FString ValueType;
 		FString AssetPath;
 
 		/** Convert to JSON object */
-		TSharedPtr<FJsonObject> ToJson() const;
+		auto ToJson() const -> TSharedPtr<FJsonObject>;
 	};
 }

@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handler class for Editor-related MCP commands
@@ -8,8 +9,7 @@ namespace UnrealMCP {
 	 * This class acts as a command router, delegating to specialized
 	 * command handler classes for each editor operation using a registry pattern.
 	 */
-	class UNREALMCP_API FUnrealMCPEditorCommands
-	{
+	class UNREALMCP_API FUnrealMCPEditorCommands {
 	public:
 		FUnrealMCPEditorCommands();
 
@@ -20,7 +20,8 @@ namespace UnrealMCP {
 		 * @param Params JSON parameters for the command
 		 * @return JSON response object
 		 */
-		TSharedPtr<FJsonObject> HandleCommand(const FString& CommandType, const TSharedPtr<FJsonObject>& Params);
+		auto HandleCommand(const FString& CommandType,
+		                   const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
 
 	private:
 		/** Type definition for command handler function pointers */

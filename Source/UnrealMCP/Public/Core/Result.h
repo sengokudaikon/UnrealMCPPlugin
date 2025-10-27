@@ -1,85 +1,98 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 
-namespace UnrealMCP
-{
+namespace UnrealMCP {
 	/**
 	 * Generic result type for operations that can fail
 	 * Provides a type-safe way to return values or errors
 	 */
-	template<typename T>
-	struct TResult
-	{
+	template <typename T>
+	struct TResult {
 		bool bSuccess;
 		T Value;
 		FString Error;
 
 		/** Create a successful result */
-		static TResult Success(T&& InValue)
-		{
+		static auto Success(T&& InValue) -> TResult {
 			return TResult{true, MoveTemp(InValue), FString()};
 		}
 
 		/** Create a successful result (copy) */
-		static TResult Success(const T& InValue)
-		{
+		static auto Success(const T& InValue) -> TResult {
 			return TResult{true, InValue, FString()};
 		}
 
 		/** Create a failed result */
-		static TResult Failure(const FString& InError)
-		{
+		static auto Failure(const FString& InError) -> TResult {
 			return TResult{false, T(), InError};
 		}
 
 		/** Check if the operation succeeded */
-		bool IsSuccess() const { return bSuccess; }
+		auto IsSuccess() const -> bool {
+			return bSuccess;
+		}
 
 		/** Check if the operation failed */
-		bool IsFailure() const { return !bSuccess; }
+		auto IsFailure() const -> bool {
+			return !bSuccess;
+		}
 
 		/** Get the value (only valid if IsSuccess()) */
-		const T& GetValue() const { return Value; }
-		T& GetValue() { return Value; }
+		auto GetValue() const -> const T& {
+			return Value;
+		}
+
+		auto GetValue() -> T& {
+			return Value;
+		}
 
 		/** Get the error message (only valid if IsFailure()) */
-		const FString& GetError() const { return Error; }
+		auto GetError() const -> const FString& {
+			return Error;
+		}
 
 		/** Convert to boolean (true if success) */
-		explicit operator bool() const { return bSuccess; }
+		explicit operator bool() const {
+			return bSuccess;
+		}
 	};
 
 	/**
 	 * Specialized result for void operations (operations that don't return a value)
 	 */
-	struct FVoidResult
-	{
+	struct FVoidResult {
 		bool bSuccess;
 		FString Error;
 
 		/** Create a successful result */
-		static FVoidResult Success()
-		{
+		static auto Success() -> FVoidResult {
 			return FVoidResult{true, FString()};
 		}
 
 		/** Create a failed result */
-		static FVoidResult Failure(const FString& InError)
-		{
+		static auto Failure(const FString& InError) -> FVoidResult {
 			return FVoidResult{false, InError};
 		}
 
 		/** Check if the operation succeeded */
-		bool IsSuccess() const { return bSuccess; }
+		auto IsSuccess() const -> bool {
+			return bSuccess;
+		}
 
 		/** Check if the operation failed */
-		bool IsFailure() const { return !bSuccess; }
+		auto IsFailure() const -> bool {
+			return !bSuccess;
+		}
 
 		/** Get the error message (only valid if IsFailure()) */
-		const FString& GetError() const { return Error; }
+		auto GetError() const -> const FString& {
+			return Error;
+		}
 
 		/** Convert to boolean (true if success) */
-		explicit operator bool() const { return bSuccess; }
+		explicit operator bool() const {
+			return bSuccess;
+		}
 	};
 }

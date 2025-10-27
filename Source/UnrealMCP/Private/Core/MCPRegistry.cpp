@@ -1,30 +1,35 @@
 #include "Core/MCPRegistry.h"
-#include "Engine/Blueprint.h"
+#include "K2Node.h"
+#include "K2Node_CallFunction.h"
+#include "K2Node_Event.h"
+#include "K2Node_VariableGet.h"
+#include "K2Node_VariableSet.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/ActorComponent.h"
 #include "Components/SceneComponent.h"
+#include "Engine/Blueprint.h"
 #include "GameFramework/Actor.h"
 #include "UObject/UObjectIterator.h"
-#include "K2Node.h"
-#include "K2Node_Event.h"
-#include "K2Node_CallFunction.h"
-#include "K2Node_VariableGet.h"
-#include "K2Node_VariableSet.h"
 
 namespace UnrealMCP {
 
 	// Static member initialization
-	TArray<UClass*> FMCPRegistry::ParentClassCache;
-	TArray<UClass*> FMCPRegistry::ComponentTypeCache;
-	TArray<UClass*> FMCPRegistry::WidgetTypeCache;
+	TArray<UClass*>* FMCPRegistry::ParentClassCache = nullptr;
+	TArray<UClass*>* FMCPRegistry::ComponentTypeCache = nullptr;
+	TArray<UClass*>* FMCPRegistry::WidgetTypeCache = nullptr;
 	bool FMCPRegistry::bRegistriesInitialized = false;
 
 	// ============ Registry Initialization ============
 
-	void FMCPRegistry::Initialize() {
+	auto FMCPRegistry::Initialize() -> void {
 		if (bRegistriesInitialized) {
 			return;
 		}
+
+		// Allocate cache arrays
+		ParentClassCache = new TArray<UClass*>();
+		ComponentTypeCache = new TArray<UClass*>();
+		WidgetTypeCache = new TArray<UClass*>();
 
 		BuildParentClassCache();
 		BuildComponentTypeCache();
@@ -36,13 +41,13 @@ namespace UnrealMCP {
 
 	// ============ Parent Class Registry ============
 
-	FVoidResult FMCPRegistry::GetSupportedParentClasses(TArray<FString>& OutClasses) {
+	auto FMCPRegistry::GetSupportedParentClasses(TArray<FString>& OutClasses) -> FVoidResult {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
 
 		OutClasses.Empty();
-		for (const UClass* Class : ParentClassCache) {
+		for (const UClass* Class : *ParentClassCache) {
 			if (Class) {
 				OutClasses.Add(Class->GetName());
 			}
@@ -51,7 +56,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	bool FMCPRegistry::IsValidParentClass(const FString& ClassName) {
+	auto FMCPRegistry::IsValidParentClass(const FString& ClassName) -> bool {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
@@ -60,7 +65,7 @@ namespace UnrealMCP {
 		return ResolvedClass != nullptr;
 	}
 
-	FVoidResult FMCPRegistry::GetParentClassInfo(const FString& ClassName, TMap<FString, FString>& OutInfo) {
+	auto FMCPRegistry::GetParentClassInfo(const FString& ClassName, TMap<FString, FString>& OutInfo) -> FVoidResult {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
@@ -88,13 +93,13 @@ namespace UnrealMCP {
 
 	// ============ Component Type Registry ============
 
-	FVoidResult FMCPRegistry::GetSupportedComponentTypes(TArray<FString>& OutComponentTypes) {
+	auto FMCPRegistry::GetSupportedComponentTypes(TArray<FString>& OutComponentTypes) -> FVoidResult {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
 
 		OutComponentTypes.Empty();
-		for (const UClass* Class : ComponentTypeCache) {
+		for (const UClass* Class : *ComponentTypeCache) {
 			if (Class) {
 				OutComponentTypes.Add(Class->GetName());
 			}
@@ -103,7 +108,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	bool FMCPRegistry::IsValidComponentType(const FString& ComponentType) {
+	auto FMCPRegistry::IsValidComponentType(const FString& ComponentType) -> bool {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
@@ -112,7 +117,8 @@ namespace UnrealMCP {
 		return ResolvedClass != nullptr;
 	}
 
-	FVoidResult FMCPRegistry::GetComponentTypeInfo(const FString& ComponentType, TMap<FString, FString>& OutInfo) {
+	auto FMCPRegistry::GetComponentTypeInfo(const FString& ComponentType,
+	                                        TMap<FString, FString>& OutInfo) -> FVoidResult {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
@@ -135,7 +141,7 @@ namespace UnrealMCP {
 
 	// ============ API Method Registry ============
 
-	FVoidResult FMCPRegistry::GetAvailableAPIMethods(TMap<FString, TArray<FString>>& OutMethods) {
+	auto FMCPRegistry::GetAvailableAPIMethods(TMap<FString, TArray<FString>>& OutMethods) -> FVoidResult {
 		OutMethods.Empty();
 
 		// Blueprint methods
@@ -240,7 +246,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	FVoidResult FMCPRegistry::GetAPIMethodInfo(const FString& MethodName, TMap<FString, FString>& OutInfo) {
+	auto FMCPRegistry::GetAPIMethodInfo(const FString& MethodName, TMap<FString, FString>& OutInfo) -> FVoidResult {
 		// This is a simplified implementation. In a full version, you'd maintain
 		// a comprehensive registry of method signatures and documentation.
 		OutInfo.Empty();
@@ -271,13 +277,13 @@ namespace UnrealMCP {
 
 	// ============ Widget Type Registry ============
 
-	FVoidResult FMCPRegistry::GetSupportedWidgetTypes(TArray<FString>& OutWidgetTypes) {
+	auto FMCPRegistry::GetSupportedWidgetTypes(TArray<FString>& OutWidgetTypes) -> FVoidResult {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
 
 		OutWidgetTypes.Empty();
-		for (const UClass* Class : WidgetTypeCache) {
+		for (const UClass* Class : *WidgetTypeCache) {
 			if (Class) {
 				OutWidgetTypes.Add(Class->GetName());
 			}
@@ -286,7 +292,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	bool FMCPRegistry::IsValidWidgetType(const FString& WidgetType) {
+	auto FMCPRegistry::IsValidWidgetType(const FString& WidgetType) -> bool {
 		if (!bRegistriesInitialized) {
 			Initialize();
 		}
@@ -297,7 +303,7 @@ namespace UnrealMCP {
 
 	// ============ Property Type Registry ============
 
-	FVoidResult FMCPRegistry::GetSupportedPropertyTypes(TArray<FString>& OutPropertyTypes) {
+	auto FMCPRegistry::GetSupportedPropertyTypes(TArray<FString>& OutPropertyTypes) -> FVoidResult {
 		OutPropertyTypes.Empty();
 
 		// Basic types
@@ -329,7 +335,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	bool FMCPRegistry::IsValidPropertyType(const FString& PropertyType) {
+	auto FMCPRegistry::IsValidPropertyType(const FString& PropertyType) -> bool {
 		TArray<FString> SupportedTypes;
 		GetSupportedPropertyTypes(SupportedTypes);
 		return SupportedTypes.Contains(PropertyType);
@@ -337,7 +343,7 @@ namespace UnrealMCP {
 
 	// ============ Node Type Registry ============
 
-	FVoidResult FMCPRegistry::GetSupportedNodeTypes(TArray<FString>& OutNodeTypes) {
+	auto FMCPRegistry::GetSupportedNodeTypes(TArray<FString>& OutNodeTypes) -> FVoidResult {
 		OutNodeTypes.Empty();
 
 		OutNodeTypes.Add(TEXT("Event"));
@@ -358,7 +364,7 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	FVoidResult FMCPRegistry::GetNodeTypeInfo(const FString& NodeType, TMap<FString, FString>& OutInfo) {
+	auto FMCPRegistry::GetNodeTypeInfo(const FString& NodeType, TMap<FString, FString>& OutInfo) -> FVoidResult {
 		OutInfo.Empty();
 
 		if (NodeType == TEXT("Event")) {
@@ -385,8 +391,8 @@ namespace UnrealMCP {
 
 	// ============ Internal Helper Methods ============
 
-	void FMCPRegistry::BuildParentClassCache() {
-		ParentClassCache.Empty();
+	auto FMCPRegistry::BuildParentClassCache() -> void {
+		ParentClassCache->Empty();
 
 		// Iterate through all UClasses derived from AActor
 		for (TObjectIterator<UClass> It; It; ++It) {
@@ -407,14 +413,14 @@ namespace UnrealMCP {
 				continue;
 			}
 
-			ParentClassCache.Add(Class);
+			ParentClassCache->Add(Class);
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid parent classes"), ParentClassCache.Num());
+		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid parent classes"), ParentClassCache->Num());
 	}
 
-	void FMCPRegistry::BuildComponentTypeCache() {
-		ComponentTypeCache.Empty();
+	auto FMCPRegistry::BuildComponentTypeCache() -> void {
+		ComponentTypeCache->Empty();
 
 		// Iterate through all UClasses derived from UActorComponent
 		for (TObjectIterator<UClass> It; It; ++It) {
@@ -435,14 +441,14 @@ namespace UnrealMCP {
 				continue;
 			}
 
-			ComponentTypeCache.Add(Class);
+			ComponentTypeCache->Add(Class);
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid component types"), ComponentTypeCache.Num());
+		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid component types"), ComponentTypeCache->Num());
 	}
 
-	void FMCPRegistry::BuildWidgetTypeCache() {
-		WidgetTypeCache.Empty();
+	auto FMCPRegistry::BuildWidgetTypeCache() -> void {
+		WidgetTypeCache->Empty();
 
 		// Iterate through all UClasses derived from UUserWidget
 		for (TObjectIterator<UClass> It; It; ++It) {
@@ -463,13 +469,13 @@ namespace UnrealMCP {
 				continue;
 			}
 
-			WidgetTypeCache.Add(Class);
+			WidgetTypeCache->Add(Class);
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid widget types"), WidgetTypeCache.Num());
+		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid widget types"), WidgetTypeCache->Num());
 	}
 
-	UClass* FMCPRegistry::ResolveClassName(const FString& ClassName, const UClass* BaseClass) {
+	auto FMCPRegistry::ResolveClassName(const FString& ClassName, const UClass* BaseClass) -> UClass* {
 		if (ClassName.IsEmpty()) {
 			return nullptr;
 		}
@@ -519,7 +525,7 @@ namespace UnrealMCP {
 		return nullptr;
 	}
 
-	bool FMCPRegistry::ShouldExcludeClass(const UClass* Class) {
+	auto FMCPRegistry::ShouldExcludeClass(const UClass* Class) -> bool {
 		if (!Class) {
 			return true;
 		}

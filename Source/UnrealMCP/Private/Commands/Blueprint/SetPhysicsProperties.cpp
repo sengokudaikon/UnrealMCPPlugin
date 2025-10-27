@@ -7,24 +7,24 @@
 
 namespace UnrealMCP {
 
-auto FSetPhysicsProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
-	TResult<FPhysicsParams> ParamsResult =
-		FPhysicsParams::FromJson(Params);
+	auto FSetPhysicsProperties::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
+		TResult<FPhysicsParams> ParamsResult =
+			FPhysicsParams::FromJson(Params);
 
-	if (ParamsResult.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
+		if (ParamsResult.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(ParamsResult.GetError());
+		}
+
+		const FVoidResult Result =
+			FBlueprintService::SetPhysicsProperties(ParamsResult.GetValue());
+
+		if (Result.IsFailure()) {
+			return FCommonUtils::CreateErrorResponse(Result.GetError());
+		}
+
+		return FCommonUtils::CreateSuccessResponse([&](TSharedPtr<FJsonObject>& Data) {
+			Data->SetStringField(TEXT("component"), ParamsResult.GetValue().ComponentName);
+		});
 	}
-
-	const FVoidResult Result =
-		FBlueprintService::SetPhysicsProperties(ParamsResult.GetValue());
-
-	if (Result.IsFailure()) {
-		return FCommonUtils::CreateErrorResponse(Result.GetError());
-	}
-
-	return FCommonUtils::CreateSuccessResponse([&](TSharedPtr<FJsonObject>& Data) {
-		Data->SetStringField(TEXT("component"), ParamsResult.GetValue().ComponentName);
-	});
-}
 
 }

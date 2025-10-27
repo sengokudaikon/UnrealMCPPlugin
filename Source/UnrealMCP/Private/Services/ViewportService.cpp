@@ -1,12 +1,12 @@
-#include "Services/ViewportService.h"
+﻿#include "Services/ViewportService.h"
 #include "Editor.h"
 #include "EditorViewportClient.h"
-#include "LevelEditorViewport.h"
 #include "ImageUtils.h"
-#include "Misc/FileHelper.h"
+#include "LevelEditorViewport.h"
+#include "Engine/Selection.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "Engine/Selection.h"
+#include "Misc/FileHelper.h"
 
 namespace UnrealMCP {
 
@@ -78,14 +78,15 @@ namespace UnrealMCP {
 
 		if (Viewport->ReadPixels(Bitmap, FReadSurfaceDataFlags(), ViewportRect)) {
 			TArray64<uint8> CompressedBitmap;
-			FImageUtils::PNGCompressImageArray(Viewport->GetSizeXY().X, Viewport->GetSizeXY().Y, Bitmap, CompressedBitmap);
+			FImageUtils::PNGCompressImageArray(Viewport->GetSizeXY().X,
+			                                   Viewport->GetSizeXY().Y,
+			                                   Bitmap,
+			                                   CompressedBitmap);
 
 			if (FFileHelper::SaveArrayToFile(CompressedBitmap, *FilePath)) {
 				return TResult<FString>::Success(FilePath);
 			}
-			else {
-				return TResult<FString>::Failure(FString::Printf(TEXT("Failed to save screenshot to: %s"), *FilePath));
-			}
+			return TResult<FString>::Failure(FString::Printf(TEXT("Failed to save screenshot to: %s"), *FilePath));
 		}
 
 		return TResult<FString>::Failure(TEXT("Failed to read viewport pixels"));

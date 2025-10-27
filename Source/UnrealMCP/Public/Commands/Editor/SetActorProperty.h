@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
+
 namespace UnrealMCP {
 	/**
 	 * Handles setting actor properties
@@ -9,6 +10,7 @@ namespace UnrealMCP {
 	class UNREALMCP_API FSetActorProperty {
 	public:
 		FSetActorProperty() = default;
+
 		~FSetActorProperty() = default;
 
 		/**

@@ -1,18 +1,18 @@
-#include "Services/ActorService.h"
-#include "GameFramework/Actor.h"
-#include "Engine/World.h"
-#include "Engine/StaticMeshActor.h"
+﻿#include "Services/ActorService.h"
+#include "Editor.h"
+#include "ScopedTransaction.h"
+#include "Camera/CameraActor.h"
+#include "Components/SceneComponent.h"
+#include "Engine/Blueprint.h"
+#include "Engine/BlueprintGeneratedClass.h"
 #include "Engine/DirectionalLight.h"
 #include "Engine/PointLight.h"
 #include "Engine/SpotLight.h"
-#include "Camera/CameraActor.h"
-#include "Engine/Blueprint.h"
-#include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/StaticMeshActor.h"
+#include "Engine/World.h"
+#include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
-#include "Editor.h"
 #include "Subsystems/EditorActorSubsystem.h"
-#include "ScopedTransaction.h"
-#include "Components/SceneComponent.h"
 
 namespace UnrealMCP {
 
@@ -143,7 +143,8 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	auto FActorService::GetActorProperties(const FString& ActorName, TMap<FString, FString>& OutProperties) -> FVoidResult {
+	auto FActorService::GetActorProperties(const FString& ActorName,
+	                                       TMap<FString, FString>& OutProperties) -> FVoidResult {
 		const AActor* Actor = FindActorByName(ActorName);
 		if (!Actor) {
 			return FVoidResult::Failure(FString::Printf(TEXT("Actor not found: %s"), *ActorName));
@@ -156,8 +157,14 @@ namespace UnrealMCP {
 
 		OutProperties.Add(TEXT("name"), Actor->GetName());
 		OutProperties.Add(TEXT("class"), Actor->GetClass()->GetName());
-		OutProperties.Add(TEXT("location"), FString::Printf(TEXT("X=%f,Y=%f,Z=%f"), Location.X, Location.Y, Location.Z));
-		OutProperties.Add(TEXT("rotation"), FString::Printf(TEXT("Pitch=%f,Yaw=%f,Roll=%f"), Rotation.Pitch, Rotation.Yaw, Rotation.Roll));
+		OutProperties.Add(TEXT("location"),
+		                  FString::Printf(TEXT("X=%f,Y=%f,Z=%f"), Location.X, Location.Y, Location.Z));
+		OutProperties.Add(TEXT("rotation"),
+		                  FString::Printf(
+			                  TEXT("Pitch=%f,Yaw=%f,Roll=%f"),
+			                  Rotation.Pitch,
+			                  Rotation.Yaw,
+			                  Rotation.Roll));
 		OutProperties.Add(TEXT("scale"), FString::Printf(TEXT("X=%f,Y=%f,Z=%f"), Scale.X, Scale.Y, Scale.Z));
 
 		return FVoidResult::Success();
@@ -181,14 +188,16 @@ namespace UnrealMCP {
 		if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(Property)) {
 			bool BoolValue;
 			if (!PropertyValue->TryGetBool(BoolValue)) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Property '%s' expects a boolean value"), *PropertyName));
+				return FVoidResult::Failure(
+					FString::Printf(TEXT("Property '%s' expects a boolean value"), *PropertyName));
 			}
 			BoolProp->SetPropertyValue_InContainer(Actor, BoolValue);
 		}
 		else if (const FFloatProperty* FloatProp = CastField<FFloatProperty>(Property)) {
 			double NumberValue;
 			if (!PropertyValue->TryGetNumber(NumberValue)) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Property '%s' expects a number value"), *PropertyName));
+				return FVoidResult::Failure(
+					FString::Printf(TEXT("Property '%s' expects a number value"), *PropertyName));
 			}
 			const float Value = static_cast<float>(NumberValue);
 			FloatProp->SetPropertyValue_InContainer(Actor, Value);
@@ -196,7 +205,8 @@ namespace UnrealMCP {
 		else if (const FIntProperty* IntProp = CastField<FIntProperty>(Property)) {
 			double NumberValue;
 			if (!PropertyValue->TryGetNumber(NumberValue)) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Property '%s' expects a number value"), *PropertyName));
+				return FVoidResult::Failure(
+					FString::Printf(TEXT("Property '%s' expects a number value"), *PropertyName));
 			}
 			const int32 Value = FMath::RoundToInt(NumberValue);
 			IntProp->SetPropertyValue_InContainer(Actor, Value);
@@ -204,7 +214,8 @@ namespace UnrealMCP {
 		else if (const FStrProperty* StrProp = CastField<FStrProperty>(Property)) {
 			FString StringValue;
 			if (!PropertyValue->TryGetString(StringValue)) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Property '%s' expects a string value"), *PropertyName));
+				return FVoidResult::Failure(
+					FString::Printf(TEXT("Property '%s' expects a string value"), *PropertyName));
 			}
 			StrProp->SetPropertyValue_InContainer(Actor, StringValue);
 		}
@@ -215,14 +226,14 @@ namespace UnrealMCP {
 		return FVoidResult::Success();
 	}
 
-	UWorld* FActorService::GetEditorWorld() {
+	auto FActorService::GetEditorWorld() -> UWorld* {
 		if (GEditor) {
 			return GEditor->GetEditorWorldContext().World();
 		}
 		return nullptr;
 	}
 
-	AActor* FActorService::FindActorByName(const FString& ActorName) {
+	auto FActorService::FindActorByName(const FString& ActorName) -> AActor* {
 		const UWorld* World = GetEditorWorld();
 		if (!World) {
 			return nullptr;
@@ -240,7 +251,7 @@ namespace UnrealMCP {
 		return nullptr;
 	}
 
-	UClass* FActorService::GetActorClassByName(const FString& ClassName) {
+	auto FActorService::GetActorClassByName(const FString& ClassName) -> UClass* {
 		// Map common actor class names to their UClass
 		if (ClassName == TEXT("StaticMeshActor")) {
 			return AStaticMeshActor::StaticClass();

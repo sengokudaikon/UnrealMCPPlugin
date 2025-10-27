@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Functional tests for WidgetService
  *
  * These tests verify the actual behavior of UMG widget operations:
@@ -12,18 +12,27 @@
  * Tests run in the Unreal Editor with real world context.
  */
 
-#include "Services/WidgetService.h"
-#include "Core/MCPTypes.h"
-#include "Misc/AutomationTest.h"
+#include "EditorAssetLibrary.h"
+#include "GlobalTestCleanup.h"
+#include "TestUtils.h"
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
-#include "Components/CanvasPanel.h"
-#include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
-#include "EditorAssetLibrary.h"
-#include "Misc/Paths.h"
+#include "Components/TextBlock.h"
+#include "Core/MCPTypes.h"
 #include "HAL/PlatformFilemanager.h"
+#include "Misc/AutomationTest.h"
+#include "Misc/Paths.h"
+#include "Services/WidgetService.h"
+
+// Register global cleanup for all tests in this file
+static struct FWidgetTestCleanupRegistrar {
+	FWidgetTestCleanupRegistrar() {
+		REGISTER_GLOBAL_CLEANUP();
+	}
+} WidgetTestCleanupRegistrar;
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FWidgetServiceCreateWidgetTest,
@@ -31,16 +40,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceCreateWidgetTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceCreateWidgetTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a basic widget blueprint
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/TestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("TestWidget"));
 
 	UnrealMCP::FWidgetCreationParams Params;
 	Params.Name = TEXT("TestWidget");
@@ -50,26 +54,23 @@ bool FWidgetServiceCreateWidgetTest::RunTest(const FString& Parameters)
 	UnrealMCP::TResult<UWidgetBlueprint*> Result = UnrealMCP::FWidgetService::CreateWidget(Params);
 
 	// Verify success
-	if (Result.IsFailure())
-	{
+	if (Result.IsFailure()) {
 		AddError(FString::Printf(TEXT("CreateWidget failed with error: %s"), *Result.GetError()));
 	}
 	TestTrue(TEXT("CreateWidget should succeed"), Result.IsSuccess());
 	const UWidgetBlueprint* WidgetBlueprint = Result.GetValue();
 	TestTrue(TEXT("WidgetBlueprint should not be null"), WidgetBlueprint != nullptr);
-	if (WidgetBlueprint)
-	{
+	if (WidgetBlueprint) {
 		TestEqual(TEXT("Widget name should match"), WidgetBlueprint->GetFName().ToString(), TEXT("TestWidget"));
 		TestTrue(TEXT("Widget should have a WidgetTree"), WidgetBlueprint->WidgetTree != nullptr);
 		TestTrue(TEXT("Widget should have a root widget"), WidgetBlueprint->WidgetTree->RootWidget != nullptr);
 		TestTrue(TEXT("Root widget should be a Canvas Panel"),
-			WidgetBlueprint->WidgetTree->RootWidget->IsA<UCanvasPanel>());
+		         WidgetBlueprint->WidgetTree->RootWidget->IsA<UCanvasPanel>());
 	}
 
 	// Cleanup - delete the created asset
-	if (WidgetBlueprint)
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
+	if (WidgetBlueprint) {
+		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("TestWidget"));
 	}
 
 	return true;
@@ -81,16 +82,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceCreateDuplicateWidgetTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceCreateDuplicateWidgetTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating a widget with the same name should fail
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/DuplicateTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("DuplicateTestWidget"));
 
 	UnrealMCP::FWidgetCreationParams Params;
 	Params.Name = TEXT("DuplicateTestWidget");
@@ -107,12 +103,11 @@ bool FWidgetServiceCreateDuplicateWidgetTest::RunTest(const FString& Parameters)
 	// Verify failure
 	TestTrue(TEXT("Second CreateWidget should fail"), SecondResult.IsFailure());
 	TestTrue(TEXT("Error message should mention already exists"),
-		SecondResult.GetError().Contains(TEXT("already exists")));
+	         SecondResult.GetError().Contains(TEXT("already exists")));
 
 	// Cleanup
-	if (FirstResult.IsSuccess())
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
+	if (FirstResult.IsSuccess()) {
+		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("DuplicateTestWidget"));
 	}
 
 	return true;
@@ -124,16 +119,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceCreateWidgetWithInvalidParentTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceCreateWidgetWithInvalidParentTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating widget with invalid parent class should still work (defaults to UserWidget)
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/InvalidParentTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidParentTestWidget"));
 
 	UnrealMCP::FWidgetCreationParams Params;
 	Params.Name = TEXT("InvalidParentTestWidget");
@@ -147,9 +137,8 @@ bool FWidgetServiceCreateWidgetWithInvalidParentTest::RunTest(const FString& Par
 	TestTrue(TEXT("CreateWidget should succeed even with invalid parent"), Result.IsSuccess());
 
 	// Cleanup
-	if (Result.IsSuccess())
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
+	if (Result.IsSuccess()) {
+		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidParentTestWidget"));
 	}
 
 	return true;
@@ -161,16 +150,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceAddTextBlockTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceAddTextBlockTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add a text block to an existing widget
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/TextBlockTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("TextBlockTestWidget"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -179,7 +163,8 @@ bool FWidgetServiceAddTextBlockTest::RunTest(const FString& Parameters)
 
 	UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	UWidgetBlueprint* WidgetBlueprint = CreateResult.GetValue();
 
@@ -199,15 +184,16 @@ bool FWidgetServiceAddTextBlockTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("AddTextBlock should succeed"), TextResult.IsSuccess());
 	const UTextBlock* TextBlock = TextResult.GetValue();
 	TestTrue(TEXT("TextBlock should not be null"), TextBlock != nullptr);
-	if (TextBlock)
-	{
+	if (TextBlock) {
 		TestEqual(TEXT("TextBlock name should match"), TextBlock->GetFName().ToString(), TEXT("TestTextBlock"));
 		TestEqual(TEXT("TextBlock text should match"), TextBlock->GetText().ToString(), TEXT("Hello World"));
-		TestEqual(TEXT("TextBlock font size should be 16"), (int32)TextBlock->GetFont().Size, 16);
+		TestEqual(TEXT("TextBlock font size should be 16"), static_cast<int32>(TextBlock->GetFont().Size), 16);
 	}
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -218,8 +204,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceAddTextBlockToInvalidWidgetTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceAddTextBlockToInvalidWidgetTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding text block to non-existent widget should fail
 
 	// Suppress expected errors from asset loading
@@ -235,7 +220,7 @@ bool FWidgetServiceAddTextBlockToInvalidWidgetTest::RunTest(const FString& Param
 	// Verify failure
 	TestTrue(TEXT("AddTextBlock should fail for non-existent widget"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }
@@ -246,16 +231,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceAddButtonTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceAddButtonTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add a button to an existing widget
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/ButtonTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("ButtonTestWidget"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -264,7 +244,8 @@ bool FWidgetServiceAddButtonTest::RunTest(const FString& Parameters)
 
 	UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	UWidgetBlueprint* WidgetBlueprint = CreateResult.GetValue();
 
@@ -285,13 +266,14 @@ bool FWidgetServiceAddButtonTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("AddButton should succeed"), ButtonResult.IsSuccess());
 	const UButton* Button = ButtonResult.GetValue();
 	TestTrue(TEXT("Button should not be null"), Button != nullptr);
-	if (Button)
-	{
+	if (Button) {
 		TestEqual(TEXT("Button name should match"), Button->GetFName().ToString(), TEXT("TestButton"));
 	}
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -302,8 +284,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceAddButtonToInvalidWidgetTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceAddButtonToInvalidWidgetTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding button to non-existent widget should fail
 
 	// Suppress expected errors from asset loading
@@ -319,7 +300,7 @@ bool FWidgetServiceAddButtonToInvalidWidgetTest::RunTest(const FString& Paramete
 	// Verify failure
 	TestTrue(TEXT("AddButton should fail for non-existent widget"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }
@@ -330,16 +311,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Bind an event to a widget component
 
 	// Cleanup any existing widget from previous failed tests
-	FString AssetPath = TEXT("/Game/UI/EventBindTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("EventBindTestWidget"));
 
 	// First create a widget with a button
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -348,7 +324,8 @@ bool FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters)
 
 	UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	// Add a button to bind the event to
 	UnrealMCP::FButtonParams ButtonParams;
@@ -358,10 +335,9 @@ bool FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters)
 
 	UnrealMCP::TResult<UButton*> ButtonResult = UnrealMCP::FWidgetService::AddButton(ButtonParams);
 	TestTrue(TEXT("AddButton should succeed"), ButtonResult.IsSuccess());
-	if (!ButtonResult.IsSuccess())
-	{
+	if (!ButtonResult.IsSuccess()) {
 		// Cleanup before returning
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
+		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("EventBindTestWidget"));
 		return false;
 	}
 
@@ -378,7 +354,9 @@ bool FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("BindWidgetEvent should succeed"), EventResult.IsSuccess());
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -389,8 +367,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceBindWidgetEventInvalidWidgetTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceBindWidgetEventInvalidWidgetTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Binding event to non-existent widget should fail
 
 	// Suppress expected errors from asset loading
@@ -407,7 +384,7 @@ bool FWidgetServiceBindWidgetEventInvalidWidgetTest::RunTest(const FString& Para
 	// Verify failure
 	TestTrue(TEXT("BindWidgetEvent should fail for non-existent widget"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }
@@ -418,16 +395,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Binding event to non-existent component should fail
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/InvalidComponentTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidComponentTestWidget"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -436,7 +408,8 @@ bool FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& P
 
 	const UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	// Try to bind to a non-existent component
 	UnrealMCP::FWidgetEventBindingParams EventParams;
@@ -450,10 +423,12 @@ bool FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& P
 	// Verify failure
 	TestTrue(TEXT("BindWidgetEvent should fail for non-existent component"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention failed to find widget component"),
-		Result.GetError().Contains(TEXT("Failed to find widget component")));
+	         Result.GetError().Contains(TEXT("Failed to find widget component")));
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -464,16 +439,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Set text block binding
 
 	// Cleanup any existing widget from previous failed tests
-	FString AssetPath = TEXT("/Game/UI/BindingTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("BindingTestWidget"));
 
 	// First create a widget with a text block
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -482,7 +452,8 @@ bool FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters)
 
 	UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	// Add a text block to bind to
 	UnrealMCP::FTextBlockParams TextParams;
@@ -492,10 +463,9 @@ bool FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters)
 
 	UnrealMCP::TResult<UTextBlock*> TextResult = UnrealMCP::FWidgetService::AddTextBlock(TextParams);
 	TestTrue(TEXT("AddTextBlock should succeed"), TextResult.IsSuccess());
-	if (!TextResult.IsSuccess())
-	{
+	if (!TextResult.IsSuccess()) {
 		// Cleanup before returning
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
+		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("EventBindTestWidget"));
 		return false;
 	}
 
@@ -512,7 +482,9 @@ bool FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("SetTextBlockBinding should succeed"), BindingResult.IsSuccess());
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -523,8 +495,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceSetTextBlockBindingInvalidWidgetTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceSetTextBlockBindingInvalidWidgetTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting binding on non-existent widget should fail
 
 	// Suppress expected errors from asset loading
@@ -540,7 +511,7 @@ bool FWidgetServiceSetTextBlockBindingInvalidWidgetTest::RunTest(const FString& 
 	// Verify failure
 	TestTrue(TEXT("SetTextBlockBinding should fail for non-existent widget"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }
@@ -551,16 +522,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting binding on non-existent text block should fail
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/InvalidTextBlockTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidTextBlockTestWidget"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -569,7 +535,8 @@ bool FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FStrin
 
 	const UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	// Try to set binding on a non-existent text block
 	UnrealMCP::FTextBlockBindingParams BindingParams;
@@ -582,10 +549,12 @@ bool FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FStrin
 	// Verify failure
 	TestTrue(TEXT("SetTextBlockBinding should fail for non-existent text block"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention failed to find TextBlock"),
-		Result.GetError().Contains(TEXT("Failed to find TextBlock")));
+	         Result.GetError().Contains(TEXT("Failed to find TextBlock")));
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -596,16 +565,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceGetWidgetClassTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceGetWidgetClassTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Get widget class from existing widget
 
 	// Cleanup any existing widget from previous failed tests
-	const FString AssetPath = TEXT("/Game/UI/GetClassTestWidget");
-	if (UEditorAssetLibrary::DoesAssetExist(AssetPath))
-	{
-		UEditorAssetLibrary::DeleteAsset(AssetPath);
-	}
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("GetClassTestWidget"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -614,7 +578,8 @@ bool FWidgetServiceGetWidgetClassTest::RunTest(const FString& Parameters)
 
 	const UnrealMCP::TResult<UWidgetBlueprint*> CreateResult = UnrealMCP::FWidgetService::CreateWidget(CreateParams);
 	TestTrue(TEXT("CreateWidget should succeed"), CreateResult.IsSuccess());
-	if (!CreateResult.IsSuccess()) return false;
+	if (!CreateResult.IsSuccess())
+		return false;
 
 	// Get the widget class
 	UnrealMCP::FAddWidgetToViewportParams GetClassParams;
@@ -627,13 +592,15 @@ bool FWidgetServiceGetWidgetClassTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("GetWidgetClass should succeed"), ClassResult.IsSuccess());
 	const UClass* WidgetClass = ClassResult.GetValue();
 	TestTrue(TEXT("WidgetClass should not be null"), WidgetClass != nullptr);
-	if (WidgetClass)
-	{
-		TestTrue(TEXT("WidgetClass should be a child of UserWidget"), WidgetClass->IsChildOf(UUserWidget::StaticClass()));
+	if (WidgetClass) {
+		TestTrue(TEXT("WidgetClass should be a child of UserWidget"),
+		         WidgetClass->IsChildOf(UUserWidget::StaticClass()));
 	}
 
 	// Cleanup
-	UEditorAssetLibrary::DeleteAsset(AssetPath);
+	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
+	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	// Remove "/Game/UI/" prefix
 
 	return true;
 }
@@ -644,8 +611,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
 )
 
-bool FWidgetServiceGetInvalidWidgetClassTest::RunTest(const FString& Parameters)
-{
+auto FWidgetServiceGetInvalidWidgetClassTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Getting widget class from non-existent widget should fail
 
 	// Suppress expected errors from asset loading
@@ -660,7 +626,7 @@ bool FWidgetServiceGetInvalidWidgetClassTest::RunTest(const FString& Parameters)
 	// Verify failure
 	TestTrue(TEXT("GetWidgetClass should fail for non-existent widget"), Result.IsFailure());
 	TestTrue(TEXT("Error message should mention not found"),
-		Result.GetError().Contains(TEXT("not found")));
+	         Result.GetError().Contains(TEXT("not found")));
 
 	return true;
 }

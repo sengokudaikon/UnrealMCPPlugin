@@ -5,13 +5,13 @@
 
 namespace UnrealMCP {
 
-class UNREALMCP_API FSetComponentProperty {
-public:
-	FSetComponentProperty() = default;
+	class UNREALMCP_API FSetComponentProperty {
+	public:
+		FSetComponentProperty() = default;
 
-	~FSetComponentProperty() = default;
+		~FSetComponentProperty() = default;
 
-	static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
-};
+		static auto Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject>;
+	};
 
 }
