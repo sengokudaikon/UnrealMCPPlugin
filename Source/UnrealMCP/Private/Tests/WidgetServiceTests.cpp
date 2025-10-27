@@ -13,7 +13,6 @@
  */
 
 #include "EditorAssetLibrary.h"
-#include "GlobalTestCleanup.h"
 #include "TestUtils.h"
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
@@ -27,13 +26,6 @@
 #include "Misc/Paths.h"
 #include "Services/WidgetService.h"
 
-// Register global cleanup for all tests in this file
-static struct FWidgetTestCleanupRegistrar {
-	FWidgetTestCleanupRegistrar() {
-		REGISTER_GLOBAL_CLEANUP();
-	}
-} WidgetTestCleanupRegistrar;
-
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FWidgetServiceCreateWidgetTest,
 	"UnrealMCP.Widget.CreateWidget",
@@ -44,7 +36,7 @@ auto FWidgetServiceCreateWidgetTest::RunTest(const FString& Parameters) -> bool 
 	// Test: Create a basic widget blueprint
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("TestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 
 	UnrealMCP::FWidgetCreationParams Params;
 	Params.Name = TEXT("TestWidget");
@@ -70,7 +62,7 @@ auto FWidgetServiceCreateWidgetTest::RunTest(const FString& Parameters) -> bool 
 
 	// Cleanup - delete the created asset
 	if (WidgetBlueprint) {
-		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("TestWidget"));
+		UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	}
 
 	return true;
@@ -86,7 +78,7 @@ auto FWidgetServiceCreateDuplicateWidgetTest::RunTest(const FString& Parameters)
 	// Test: Creating a widget with the same name should fail
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("DuplicateTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("DuplicateTestWidget"), TEXT("UI"));
 
 	UnrealMCP::FWidgetCreationParams Params;
 	Params.Name = TEXT("DuplicateTestWidget");
@@ -107,7 +99,7 @@ auto FWidgetServiceCreateDuplicateWidgetTest::RunTest(const FString& Parameters)
 
 	// Cleanup
 	if (FirstResult.IsSuccess()) {
-		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("DuplicateTestWidget"));
+		UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("DuplicateTestWidget"), TEXT("UI"));
 	}
 
 	return true;
@@ -123,7 +115,7 @@ auto FWidgetServiceCreateWidgetWithInvalidParentTest::RunTest(const FString& Par
 	// Test: Creating widget with invalid parent class should still work (defaults to UserWidget)
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidParentTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("InvalidParentTestWidget"), TEXT("UI"));
 
 	UnrealMCP::FWidgetCreationParams Params;
 	Params.Name = TEXT("InvalidParentTestWidget");
@@ -138,7 +130,7 @@ auto FWidgetServiceCreateWidgetWithInvalidParentTest::RunTest(const FString& Par
 
 	// Cleanup
 	if (Result.IsSuccess()) {
-		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidParentTestWidget"));
+		UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("InvalidParentTestWidget"), TEXT("UI"));
 	}
 
 	return true;
@@ -154,7 +146,7 @@ auto FWidgetServiceAddTextBlockTest::RunTest(const FString& Parameters) -> bool 
 	// Test: Add a text block to an existing widget
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("TextBlockTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TextBlockTestWidget"), TEXT("UI"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -192,7 +184,7 @@ auto FWidgetServiceAddTextBlockTest::RunTest(const FString& Parameters) -> bool 
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;
@@ -235,7 +227,7 @@ auto FWidgetServiceAddButtonTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add a button to an existing widget
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("ButtonTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("ButtonTestWidget"), TEXT("UI"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -272,7 +264,7 @@ auto FWidgetServiceAddButtonTest::RunTest(const FString& Parameters) -> bool {
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;
@@ -315,7 +307,7 @@ auto FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters) -> bo
 	// Test: Bind an event to a widget component
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("EventBindTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("EventBindTestWidget"), TEXT("UI"));
 
 	// First create a widget with a button
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -337,7 +329,7 @@ auto FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters) -> bo
 	TestTrue(TEXT("AddButton should succeed"), ButtonResult.IsSuccess());
 	if (!ButtonResult.IsSuccess()) {
 		// Cleanup before returning
-		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("EventBindTestWidget"));
+		UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("EventBindTestWidget"), TEXT("UI"));
 		return false;
 	}
 
@@ -355,7 +347,7 @@ auto FWidgetServiceBindWidgetEventTest::RunTest(const FString& Parameters) -> bo
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;
@@ -399,7 +391,7 @@ auto FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& P
 	// Test: Binding event to non-existent component should fail
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidComponentTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("InvalidComponentTestWidget"), TEXT("UI"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -427,7 +419,7 @@ auto FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& P
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;
@@ -443,7 +435,7 @@ auto FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters) -
 	// Test: Set text block binding
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("BindingTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("BindingTestWidget"), TEXT("UI"));
 
 	// First create a widget with a text block
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -465,7 +457,7 @@ auto FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters) -
 	TestTrue(TEXT("AddTextBlock should succeed"), TextResult.IsSuccess());
 	if (!TextResult.IsSuccess()) {
 		// Cleanup before returning
-		FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("EventBindTestWidget"));
+		UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("EventBindTestWidget"), TEXT("UI"));
 		return false;
 	}
 
@@ -483,7 +475,7 @@ auto FWidgetServiceSetTextBlockBindingTest::RunTest(const FString& Parameters) -
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;
@@ -526,7 +518,7 @@ auto FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FStrin
 	// Test: Setting binding on non-existent text block should fail
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("InvalidTextBlockTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("InvalidTextBlockTestWidget"), TEXT("UI"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -553,7 +545,7 @@ auto FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FStrin
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;
@@ -569,7 +561,7 @@ auto FWidgetServiceGetWidgetClassTest::RunTest(const FString& Parameters) -> boo
 	// Test: Get widget class from existing widget
 
 	// Cleanup any existing widget from previous failed tests
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TEXT("GetClassTestWidget"));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("GetClassTestWidget"), TEXT("UI"));
 
 	// First create a widget
 	UnrealMCP::FWidgetCreationParams CreateParams;
@@ -599,7 +591,7 @@ auto FWidgetServiceGetWidgetClassTest::RunTest(const FString& Parameters) -> boo
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(TestAssetPath.Right(TestAssetPath.Len() - 9));
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(TEXT("TestWidget"), TEXT("UI"));
 	// Remove "/Game/UI/" prefix
 
 	return true;

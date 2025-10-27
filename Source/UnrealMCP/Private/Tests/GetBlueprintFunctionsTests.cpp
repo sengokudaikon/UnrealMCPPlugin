@@ -5,7 +5,6 @@
 #include "Services/BlueprintMemberService.h"
 #include "Types/BlueprintIntrospectionTypes.h"
 
-#if WITH_AUTOMATION_TESTS
 
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsErrorHandling,
@@ -341,5 +340,3 @@ auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const F
 
 	return true;
 }
-
-#endif // WITH_AUTOMATION_TESTS

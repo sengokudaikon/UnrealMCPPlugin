@@ -32,7 +32,6 @@
 #include "Services/BlueprintCreationService.h"
 #include "Services/BlueprintGraphService.h"
 #include "Services/BlueprintService.h"
-#include "Tests/GlobalTestCleanup.h"
 #include "Tests/TestUtils.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -43,8 +42,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceCreateTestBlueprintTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a real blueprint for testing graph operations
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create a new Blueprint class based on Actor using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("TestBlueprint"));
@@ -79,8 +77,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceAddEventNodeTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add event node to real blueprint and verify its properties
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("EventNodeTestBlueprint"));
@@ -132,8 +129,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceAddFunctionCallNodeTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add function call node with parameters
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("FunctionCallTestBlueprint"));
@@ -199,8 +195,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceAddComponentReferenceNodeTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add component reference node
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("ComponentRefTestBlueprint"));
@@ -254,8 +249,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceConnectNodesTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Connect nodes in actual blueprint graph
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("ConnectNodesTestBlueprint"));
@@ -336,8 +330,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceFindNodesTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Find nodes in actual blueprint graph
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("FindNodesTestBlueprint"));
@@ -411,8 +404,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceAddVariableTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Add variables with different types to blueprint
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("AddVariableTestBlueprint"));
@@ -500,8 +492,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceErrorHandlingTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Proper error handling for invalid operations
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Test with non-existent blueprint
 	UnrealMCP::TResult<UK2Node_Event*> EventResult = UnrealMCP::FBlueprintGraphService::AddEventNode(
 		TEXT("NonExistentBlueprint"),
@@ -552,8 +543,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FBlueprintGraphServiceComplexGraphTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Build a complex graph with multiple connected nodes
-	CREATE_TEST_CLEANUP_GUARD();
-
+	
 	// Create test blueprint using MCP utilities
 	UnrealMCP::FBlueprintCreationParams CreationParams = UnrealMCPTest::FTestUtils::CreateTestBlueprintParams(
 		TEXT("ComplexGraphTestBlueprint"));

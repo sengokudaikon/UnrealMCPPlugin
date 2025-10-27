@@ -27,10 +27,6 @@
 #include "Services/BlueprintMemberService.h"
 #include "Tests/TestUtils.h"
 
-// ============================================================================
-// Function Operation Tests - Positive Paths
-// ============================================================================
-
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBlueprintMemberServiceAddFunctionTest,
 	"UnrealMCP.BlueprintMember.AddFunction",

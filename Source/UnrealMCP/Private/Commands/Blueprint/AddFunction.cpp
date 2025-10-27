@@ -14,8 +14,10 @@ namespace UnrealMCP {
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));
 		const FString FunctionName = Params->GetStringField(TEXT("function_name"));
 
-		if (const TResult<FString> Result = FBlueprintMemberService::AddFunction(BlueprintName, FunctionName); Result.
-			IsFailure()) {
+		if (
+			const TResult<FString> Result = FBlueprintMemberService::AddFunction(BlueprintName, FunctionName);
+			Result.IsFailure()
+		) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());
 		}
 

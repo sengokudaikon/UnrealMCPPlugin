@@ -11,7 +11,6 @@
  */
 
 #include "EditorAssetLibrary.h"
-#include "GlobalTestCleanup.h"
 #include "TestUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Core/MCPTypes.h"
@@ -25,13 +24,6 @@
 #include "Misc/AutomationTest.h"
 #include "Services/BlueprintCreationService.h"
 
-// Register global cleanup for all tests in this file
-static struct FBlueprintTestCleanupRegistrar {
-	FBlueprintTestCleanupRegistrar() {
-		REGISTER_GLOBAL_CLEANUP();
-	}
-} BlueprintTestCleanupRegistrar;
-
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBlueprintCreationActorTest,
 	"UnrealMCP.Blueprint.CreateActorBlueprint",
@@ -42,7 +34,7 @@ auto FBlueprintCreationActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create an Actor blueprint and verify it exists as a real asset
 
 	FString BlueprintName = TEXT("TestActorBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	// Create blueprint parameters
 	UnrealMCP::FBlueprintCreationParams Params;
@@ -84,7 +76,7 @@ auto FBlueprintCreationActorTest::RunTest(const FString& Parameters) -> bool {
 	}
 
 	// Cleanup
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	return true;
 }
@@ -99,7 +91,7 @@ auto FBlueprintCreationPawnTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a Pawn blueprint with proper hierarchy
 
 	FString BlueprintName = TEXT("TestPawnBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -129,7 +121,7 @@ auto FBlueprintCreationPawnTest::RunTest(const FString& Parameters) -> bool {
 		}
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 
@@ -143,7 +135,7 @@ auto FBlueprintCreationCharacterTest::RunTest(const FString& Parameters) -> bool
 	// Test: Create a Character blueprint (more complex parent class)
 
 	FString BlueprintName = TEXT("TestCharacterBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -171,7 +163,7 @@ auto FBlueprintCreationCharacterTest::RunTest(const FString& Parameters) -> bool
 		}
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 
@@ -185,7 +177,7 @@ auto FBlueprintCreationDuplicateTest::RunTest(const FString& Parameters) -> bool
 	// Test: Creating duplicate blueprint should fail gracefully
 
 	FString BlueprintName = TEXT("TestDuplicateBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -211,7 +203,7 @@ auto FBlueprintCreationDuplicateTest::RunTest(const FString& Parameters) -> bool
 			         TEXT("already")));
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 
@@ -225,7 +217,7 @@ auto FBlueprintCompilationTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Compile an existing blueprint and verify status changes
 
 	FString BlueprintName = TEXT("TestCompileBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	// Create blueprint
 	UnrealMCP::FBlueprintCreationParams CreateParams;
@@ -252,7 +244,7 @@ auto FBlueprintCompilationTest::RunTest(const FString& Parameters) -> bool {
 		}
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 
@@ -291,7 +283,7 @@ auto FBlueprintCreationWithPrefixTest::RunTest(const FString& Parameters) -> boo
 	// Test: Parent class names with/without "A" prefix should both work
 
 	FString BlueprintName = TEXT("TestPrefixBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	// Try with "AActor" prefix
 	UnrealMCP::FBlueprintCreationParams Params;
@@ -311,7 +303,7 @@ auto FBlueprintCreationWithPrefixTest::RunTest(const FString& Parameters) -> boo
 		}
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 
@@ -356,7 +348,7 @@ auto FBlueprintCreationInvalidParentClassTest::RunTest(const FString& Parameters
 	// Test: Creating blueprint with invalid parent class should fallback to AActor
 
 	FString BlueprintName = TEXT("TestInvalidParentBP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -377,7 +369,7 @@ auto FBlueprintCreationInvalidParentClassTest::RunTest(const FString& Parameters
 		}
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 
@@ -391,7 +383,7 @@ auto FBlueprintCreationSpecialCharactersTest::RunTest(const FString& Parameters)
 	// Test: Creating blueprint with special characters should work
 
 	FString BlueprintName = TEXT("Test_Special-123@BP");
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
 	Params.Name = BlueprintName;
@@ -414,7 +406,7 @@ auto FBlueprintCreationSpecialCharactersTest::RunTest(const FString& Parameters)
 		}
 	}
 
-	FGlobalTestCleanupManager::Get().CleanupTestAsset(BlueprintName);
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 	return true;
 }
 

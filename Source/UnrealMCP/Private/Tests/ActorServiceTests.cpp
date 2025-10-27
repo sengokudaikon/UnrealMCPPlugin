@@ -20,7 +20,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/AutomationTest.h"
 #include "Services/ActorService.h"
-#include "Tests/GlobalTestCleanup.h"
 #include "Tests/TestUtils.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -32,7 +31,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceGetActorsInLevelTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Get all actors in the current level
-	CREATE_TEST_CLEANUP_GUARD();
 
 	const UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -67,7 +65,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceFindActorsByNameTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Find actors by name pattern
-	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -112,7 +109,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceSpawnActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Spawn different types of actors
-	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -160,7 +156,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceSpawnInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Spawning an invalid actor class should fail
-	CREATE_TEST_CLEANUP_GUARD();
 
 	const UnrealMCP::TResult<AActor*> Result = UnrealMCP::FActorService::SpawnActor(
 		TEXT("NonExistentActorClass_XYZ123"),
@@ -185,7 +180,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceDeleteActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Delete an actor
-	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -247,7 +241,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceDeleteInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Deleting a non-existent actor should fail gracefully
-	CREATE_TEST_CLEANUP_GUARD();
 
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::DeleteActor(TEXT("NonExistentActor_XYZ123"));
 
@@ -267,7 +260,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceSetActorTransformTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Set actor transform (location, rotation, scale)
-	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -355,7 +347,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceGetActorPropertiesTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Get actor properties
-	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -436,7 +427,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Set actor property
-	CREATE_TEST_CLEANUP_GUARD();
 
 	UWorld* World = GEditor->GetEditorWorldContext().World();
 	TestNotNull(TEXT("Editor world should be available"), World);
@@ -559,7 +549,6 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 auto FActorServiceSetActorTransformInvalidActorTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Setting transform on non-existent actor should fail
-	CREATE_TEST_CLEANUP_GUARD();
 
 	const FVector NewLocation(100.0f, 200.0f, 300.0f);
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorTransform(
