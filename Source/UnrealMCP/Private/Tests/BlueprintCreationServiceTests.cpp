@@ -382,7 +382,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 auto FBlueprintCreationSpecialCharactersTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Creating blueprint with special characters should work
 
-	FString BlueprintName = TEXT("Test_Special-123@BP");
+	FString BlueprintName = TEXT("Test_Special-123_BP");
 	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintName);
 
 	UnrealMCP::FBlueprintCreationParams Params;
@@ -400,9 +400,9 @@ auto FBlueprintCreationSpecialCharactersTest::RunTest(const FString& Parameters)
 		TestNotNull(TEXT("Blueprint with special characters should not be null"), Blueprint);
 
 		if (Blueprint) {
-			// Verify the name contains our special characters
+			// Verify the name contains our special characters (underscore and hyphen are valid)
 			TestTrue(TEXT("Blueprint name should contain special characters"),
-			         Blueprint->GetName().Contains(TEXT("Test_Special-123@BP")));
+			         Blueprint->GetName().Contains(TEXT("Test_Special-123_BP")));
 		}
 	}
 

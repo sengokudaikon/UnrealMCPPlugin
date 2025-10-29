@@ -452,7 +452,7 @@ auto FBlueprintIntrospectionServiceGetComponentHierarchyTest::RunTest(const FStr
 	// Create hierarchical component structure
 	UnrealMCP::FComponentParams RootParams;
 	RootParams.BlueprintName = TEXT("HierarchyTestBlueprint");
-	RootParams.ComponentName = TEXT("RootComponent");
+	RootParams.ComponentName = TEXT("SceneRoot");
 	RootParams.ComponentType = TEXT("SceneComponent");
 
 	const auto RootResult = UnrealMCP::FBlueprintService::AddComponent(RootParams);
@@ -501,7 +501,7 @@ auto FBlueprintIntrospectionServiceGetComponentHierarchyTest::RunTest(const FStr
 		if (NodeObj) {
 			const FString NodeName = NodeObj->GetStringField(TEXT("name"));
 
-			if (NodeName == TEXT("RootComponent")) {
+			if (NodeName == TEXT("SceneRoot")) {
 				bFoundRoot = true;
 				TestTrue(TEXT("Root should be marked as root"), NodeObj->GetBoolField(TEXT("is_root")));
 				TestTrue(TEXT("Root should be scene component"), NodeObj->GetBoolField(TEXT("is_scene_component")));
@@ -700,7 +700,7 @@ auto FBlueprintIntrospectionServiceRenameComponentTest::RunTest(const FString& P
 		FinalComponents);
 	TestTrue(TEXT("Should get final components"), FinalResult.IsSuccess());
 
-	bool bFoundNew = false, bFoundOther = false;
+	bFoundOriginal = false; bool bFoundNew = false, bFoundOther = false;
 	for (const TMap<FString, FString>& Component : FinalComponents) {
 		const FString* Name = Component.Find(TEXT("name"));
 		if (Name) {

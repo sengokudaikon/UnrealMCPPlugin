@@ -298,7 +298,51 @@ namespace UnrealMCP {
 			}
 		}
 
-		Blueprint->SimpleConstructionScript->AddNode(NewNode);
+		// Add the node to the construction script
+		// For scene components, check if we should add as root node
+		if (USceneComponent* SceneComp = Cast<USceneComponent>(NewNode->ComponentTemplate)) {
+			// Check if there's only a DefaultSceneRoot (auto-generated root)
+			const TArray<USCS_Node*>& RootNodes = Blueprint->SimpleConstructionScript->GetRootNodes();
+			bool bHasUserSceneRoot = false;
+			USCS_Node* DefaultRootNode = nullptr;
+			USCS_Node* UserSceneRootNode = nullptr;
+
+			for (USCS_Node* RootNode : RootNodes) {
+				if (RootNode && RootNode->ComponentTemplate && RootNode->ComponentTemplate->IsA<USceneComponent>()) {
+					const FString RootName = RootNode->GetVariableName().ToString();
+					if (RootName == TEXT("DefaultSceneRoot")) {
+						DefaultRootNode = RootNode;
+					} else {
+						bHasUserSceneRoot = true;
+						UserSceneRootNode = RootNode;
+						break;
+					}
+				}
+			}
+
+			// If only DefaultSceneRoot exists, remove it and make this node the root
+			if (!bHasUserSceneRoot && DefaultRootNode) {
+				UE_LOG(LogTemp, Display, TEXT("AddComponent - Removing DefaultSceneRoot, adding %s as root"),
+					*Params.ComponentName);
+				Blueprint->SimpleConstructionScript->RemoveNode(DefaultRootNode);
+				Blueprint->SimpleConstructionScript->AddNode(NewNode);
+			} else if (!bHasUserSceneRoot) {
+				UE_LOG(LogTemp, Display, TEXT("AddComponent - No scene root found, adding %s as root"),
+					*Params.ComponentName);
+				// No existing scene root, add as root
+				Blueprint->SimpleConstructionScript->AddNode(NewNode);
+			} else if (UserSceneRootNode) {
+				// Attach to existing user root as child
+				UserSceneRootNode->AddChildNode(NewNode);
+			} else {
+				// Fallback: add as root
+				Blueprint->SimpleConstructionScript->AddNode(NewNode);
+			}
+		} else {
+			// Non-scene components just get added
+			Blueprint->SimpleConstructionScript->AddNode(NewNode);
+		}
+
 		FKismetEditorUtilities::CompileBlueprint(Blueprint);
 
 		UE_LOG(

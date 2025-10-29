@@ -60,6 +60,8 @@ public:
 	// Pin type utilities
 	static auto ParsePinType(const FString& TypeString, FEdGraphPinType& OutPinType) -> bool;
 
+	static auto PinTypeToString(const FEdGraphPinType& PinType) -> FString;
+
 	static auto CreateEventNode(UEdGraph* Graph, const FString& EventName, const FVector2D& Position) -> UK2Node_Event*;
 
 	static auto CreateFunctionCallNode(

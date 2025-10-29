@@ -30,7 +30,6 @@ namespace UnrealMCP {
 			bPure = Params->GetBoolField(TEXT("pure"));
 		}
 
-
 		const FVoidResult Result = FBlueprintMemberService::SetFunctionMetadata(
 			BlueprintName,
 			FunctionName,
@@ -38,7 +37,6 @@ namespace UnrealMCP {
 			Tooltip,
 			bPure
 		);
-
 
 		if (Result.IsFailure()) {
 			return FCommonUtils::CreateErrorResponse(Result.GetError());

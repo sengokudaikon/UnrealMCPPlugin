@@ -275,6 +275,9 @@ auto FCommonUtils::ParsePinType(const FString& TypeString, FEdGraphPinType& OutP
 	else if (TypeString.Equals(TEXT("name"), ESearchCase::IgnoreCase)) {
 		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Name;
 	}
+	else if (TypeString.Equals(TEXT("object"), ESearchCase::IgnoreCase)) {
+		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Object;
+	}
 	else if (TypeString.Equals(TEXT("vector"), ESearchCase::IgnoreCase)) {
 		OutPinType.PinCategory = UEdGraphSchema_K2::PC_Struct;
 		OutPinType.PinSubCategoryObject = TBaseStructure<FVector>::Get();
@@ -294,6 +297,53 @@ auto FCommonUtils::ParsePinType(const FString& TypeString, FEdGraphPinType& OutP
 	return true;
 }
 
+auto FCommonUtils::PinTypeToString(const FEdGraphPinType& PinType) -> FString {
+	// Handle basic types with subcategory specifics
+	if (PinType.PinCategory == UEdGraphSchema_K2::PC_Real) {
+		if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Float) {
+			return TEXT("float");
+		}
+		else if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Double) {
+			return TEXT("double");
+		}
+		return TEXT("real"); // fallback
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Int) {
+		return TEXT("int");
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Boolean) {
+		return TEXT("bool");
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_String) {
+		return TEXT("string");
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Name) {
+		return TEXT("name");
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Object) {
+		return TEXT("object");
+	}
+	else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct) {
+		if (PinType.PinSubCategoryObject.IsValid()) {
+			const FString StructName = PinType.PinSubCategoryObject->GetName();
+			if (StructName == TEXT("Vector")) {
+				return TEXT("vector");
+			}
+			else if (StructName == TEXT("Rotator")) {
+				return TEXT("rotator");
+			}
+			else if (StructName == TEXT("Transform")) {
+				return TEXT("transform");
+			}
+			return StructName;
+		}
+		return TEXT("struct");
+	}
+
+	// Fallback to just the category name
+	return PinType.PinCategory.ToString();
+}
+
 // Blueprint node utilities
 auto FCommonUtils::CreateEventNode(UEdGraph* Graph,
                                    const FString& EventName,
@@ -311,11 +361,16 @@ auto FCommonUtils::CreateEventNode(UEdGraph* Graph,
 	for (UEdGraphNode* Node : Graph->Nodes) {
 		if (UK2Node_Event* EventNode = Cast<UK2Node_Event>(Node); EventNode && EventNode->EventReference.GetMemberName()
 			== FName(*EventName)) {
+			// Update position of existing node
+			EventNode->NodePosX = Position.X;
+			EventNode->NodePosY = Position.Y;
 			UE_LOG(LogTemp,
 			       Display,
-			       TEXT("Using existing event node with name %s (ID: %s)"),
+			       TEXT("Using existing event node with name %s (ID: %s), updated position to (%.1f, %.1f)"),
 			       *EventName,
-			       *EventNode->NodeGuid.ToString());
+			       *EventNode->NodeGuid.ToString(),
+			       Position.X,
+			       Position.Y);
 			return EventNode;
 		}
 	}
@@ -462,12 +517,28 @@ auto FCommonUtils::ConnectGraphNodes(const UEdGraph* Graph,
 	UEdGraphPin* SourcePin = FindPin(SourceNode, SourcePinName, EGPD_Output);
 	UEdGraphPin* TargetPin = FindPin(TargetNode, TargetPinName, EGPD_Input);
 
-	if (SourcePin && TargetPin) {
-		SourcePin->MakeLinkTo(TargetPin);
-		return true;
+	if (!SourcePin || !TargetPin) {
+		return false;
 	}
 
-	return false;
+	// Break any existing connections on the target pin (to avoid conflicts)
+	if (TargetPin->LinkedTo.Num() > 0) {
+		TargetPin->BreakAllPinLinks();
+	}
+
+	// Make the direct connection using the standard approach
+	SourcePin->MakeLinkTo(TargetPin);
+
+	// Notify the graph that the topology has changed (cast away const for modification)
+	const auto MutableGraph = const_cast<UEdGraph*>(Graph);
+	MutableGraph->NotifyGraphChanged();
+
+	// Get the blueprint and mark it as modified to ensure all state is properly updated
+	if (UBlueprint* Blueprint = FBlueprintEditorUtils::FindBlueprintForGraph(Graph)) {
+		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+	}
+
+	return true;
 }
 
 auto FCommonUtils::FindPin(UEdGraphNode* Node,
@@ -516,6 +587,16 @@ auto FCommonUtils::FindPin(UEdGraphNode* Node,
 		for (UEdGraphPin* Pin : Node->Pins) {
 			if (Pin->Direction == EGPD_Output && Pin->PinType.PinCategory != UEdGraphSchema_K2::PC_Exec) {
 				UE_LOG(LogTemp, Display, TEXT("  - Found fallback data output pin: '%s'"), *Pin->PinName.ToString());
+				return Pin;
+			}
+		}
+	}
+
+	// If pin name is empty, try to find default execution pin
+	if (PinName.IsEmpty()) {
+		for (UEdGraphPin* Pin : Node->Pins) {
+			if (Pin->Direction == Direction && Pin->PinType.PinCategory == UEdGraphSchema_K2::PC_Exec) {
+				UE_LOG(LogTemp, Display, TEXT("  - Found default execution pin: '%s'"), *Pin->PinName.ToString());
 				return Pin;
 			}
 		}

@@ -314,10 +314,39 @@ namespace UnrealMCP {
 			);
 		}
 
-#if WITH_EDITORONLY_DATA
-		// Set metadata on the compiled UFunction
-		// Note: Metadata is editor-only and will not exist in shipping builds
+		// Also set metadata on the function entry node for persistence
+		UK2Node_FunctionEntry* EntryNode = nullptr;
+		for (UEdGraphNode* Node : FunctionGraph->Nodes) {
+			if (UK2Node_FunctionEntry* Entry = Cast<UK2Node_FunctionEntry>(Node)) {
+				EntryNode = Entry;
+				UE_LOG(LogTemp, Display, TEXT("Found function entry node for: %s"), *FunctionName);
+				break;
+			}
+		}
 
+		if (!EntryNode) {
+			UE_LOG(LogTemp, Warning, TEXT("Could not find function entry node for: %s"), *FunctionName);
+		}
+
+#if WITH_EDITORONLY_DATA
+		// Set metadata on the function entry node first (this is the primary storage)
+		if (EntryNode) {
+			if (Category.IsSet()) {
+				EntryNode->MetaData.Category = FText::FromString(Category.GetValue());
+				UE_LOG(LogTemp, Display, TEXT("Set entry node category to: %s"), *Category.GetValue());
+			}
+
+			if (Tooltip.IsSet()) {
+				EntryNode->MetaData.ToolTip = FText::FromString(Tooltip.GetValue());
+				UE_LOG(LogTemp, Display, TEXT("Set entry node tooltip to: %s"), *Tooltip.GetValue());
+			}
+
+			
+			// Mark the entry node as modified to ensure changes are saved
+			EntryNode->Modify();
+		}
+
+		// Also set metadata on the compiled UFunction (but this might be lost during compilation)
 		if (Category.IsSet()) {
 			CompiledFunction->SetMetaData(FBlueprintMetadata::MD_FunctionCategory, *Category.GetValue());
 		}
@@ -328,18 +357,34 @@ namespace UnrealMCP {
 
 		if (bPure.IsSet()) {
 			if (bPure.GetValue()) {
-				// Add pure flag
 				CompiledFunction->FunctionFlags |= FUNC_BlueprintPure;
 			}
 			else {
-				// Remove pure flag
 				CompiledFunction->FunctionFlags &= ~FUNC_BlueprintPure;
 			}
 		}
+
+		
+		// Verify the metadata was set on the entry node
+		if (EntryNode) {
+			UE_LOG(LogTemp, Display, TEXT("Entry Node Verification - Category: %s, Tooltip: %s"),
+				*EntryNode->MetaData.Category.ToString(),
+				*EntryNode->MetaData.ToolTip.ToString());
+		}
+
+		// Verify the metadata was set on the UFunction
+		UE_LOG(LogTemp, Display, TEXT("UFunction Verification - Category: %s, Tooltip: %s, bIsPure: %d"),
+			*CompiledFunction->GetMetaData(FBlueprintMetadata::MD_FunctionCategory),
+			*CompiledFunction->GetMetaData(FBlueprintMetadata::MD_Tooltip),
+			(CompiledFunction->FunctionFlags & FUNC_BlueprintPure) != 0);
 #endif
 
-		// Mark the blueprint as modified
+		// Mark the blueprint as modified to ensure changes are saved
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+
+		// Recompile the blueprint to ensure metadata is properly saved to UFunction
+		// This is necessary for GetFunctions to retrieve the metadata correctly
+		FKismetEditorUtilities::CompileBlueprint(Blueprint);
 
 		return FVoidResult::Success();
 	}
@@ -378,6 +423,7 @@ namespace UnrealMCP {
 		}
 		else if (VariableType == TEXT("float") || VariableType == TEXT("Float") || VariableType == TEXT("Real")) {
 			PinType.PinCategory = UEdGraphSchema_K2::PC_Real;
+			PinType.PinSubCategory = UEdGraphSchema_K2::PC_Float; // PC_Real requires PC_Float or PC_Double subcategory
 		}
 		else if (VariableType == TEXT("string") || VariableType == TEXT("String")) {
 			PinType.PinCategory = UEdGraphSchema_K2::PC_String;
@@ -701,8 +747,18 @@ namespace UnrealMCP {
 		// Ensure the blueprint is compiled to have access to UFunction metadata
 		FKismetEditorUtilities::CompileBlueprint(Blueprint);
 
+		// Give the blueprint time to fully process the compilation
+		Blueprint->ConditionalPostLoad();
+
 		for (UEdGraph* Graph : Blueprint->FunctionGraphs) {
 			if (!Graph) {
+				continue;
+			}
+
+			// Skip built-in system functions that shouldn't be exposed as user functions
+			if (Graph->GetName() == TEXT("UserConstructionScript") ||
+				Graph->GetName() == TEXT("EvaluateBytecode") ||
+				Graph->GetName().StartsWith(TEXT("SKEL_"))) {
 				continue;
 			}
 
@@ -725,7 +781,9 @@ namespace UnrealMCP {
 					if (Pin && Pin->Direction == EGPD_Output && Pin->PinName != UEdGraphSchema_K2::PN_Then) {
 						FBlueprintFunctionParam Param;
 						Param.Name = Pin->PinName.ToString();
-						Param.Type = Pin->PinType.PinCategory.ToString();
+						Param.Type = FCommonUtils::PinTypeToString(Pin->PinType);
+
+
 						Param.bIsArray = Pin->PinType.IsArray();
 						Param.bIsReference = Pin->PinType.bIsReference;
 
@@ -737,23 +795,42 @@ namespace UnrealMCP {
 					}
 				}
 
-				// Extract return values (input pins excluding execution pin)
-				for (const UEdGraphPin* Pin : EntryNode->Pins) {
-					if (Pin && Pin->Direction == EGPD_Input && Pin->PinName != UEdGraphSchema_K2::PN_Execute) {
-						FBlueprintFunctionParam ReturnParam;
-						ReturnParam.Name = Pin->PinName.ToString();
-						ReturnParam.Type = Pin->PinType.PinCategory.ToString();
-						ReturnParam.bIsArray = Pin->PinType.IsArray();
-						ReturnParam.bIsReference = false; // Return values are typically not references
+				// Extract return values from the FunctionResult node (if it exists)
+				UK2Node_FunctionResult* ResultNode = nullptr;
+				for (UEdGraphNode* Node : Graph->Nodes) {
+					if (UK2Node_FunctionResult* FunctionResult = Cast<UK2Node_FunctionResult>(Node)) {
+						ResultNode = FunctionResult;
+						break;
+					}
+				}
 
-						if (Pin->PinType.PinSubCategoryObject.IsValid()) {
-							ReturnParam.SubType = Pin->PinType.PinSubCategoryObject->GetName();
+				if (ResultNode) {
+					// Return values are input pins to the FunctionResult node
+					for (const UEdGraphPin* Pin : ResultNode->Pins) {
+						if (Pin && Pin->Direction == EGPD_Input && Pin->PinName != UEdGraphSchema_K2::PN_Execute) {
+							FBlueprintFunctionParam ReturnParam;
+							ReturnParam.Name = Pin->PinName.ToString();
+							ReturnParam.Type = FCommonUtils::PinTypeToString(Pin->PinType);
+
+							
+							ReturnParam.bIsArray = Pin->PinType.IsArray();
+							ReturnParam.bIsReference = false; // Return values are typically not references
+
+							if (Pin->PinType.PinSubCategoryObject.IsValid()) {
+								ReturnParam.SubType = Pin->PinType.PinSubCategoryObject->GetName();
+							}
+
+							FunctionInfo.Returns.Add(ReturnParam);
 						}
-
-						FunctionInfo.Returns.Add(ReturnParam);
 					}
 				}
 			}
+
+			// Initialize metadata values
+			FunctionInfo.Category = TEXT("Default");
+			FunctionInfo.Tooltip = TEXT("");
+			FunctionInfo.Keywords = TEXT("");
+			FunctionInfo.bIsPure = false;
 
 			// Extract metadata from the compiled UFunction
 			if (Blueprint->GeneratedClass) {
@@ -761,28 +838,59 @@ namespace UnrealMCP {
 				UFunction* CompiledFunction = Blueprint->GeneratedClass->FindFunctionByName(FunctionFName);
 
 				if (CompiledFunction) {
-					FunctionInfo.Category = CompiledFunction->GetMetaData(FBlueprintMetadata::MD_FunctionCategory);
+					// Only override defaults if the metadata is not empty
+					const FString CompiledCategory = CompiledFunction->GetMetaData(FBlueprintMetadata::MD_FunctionCategory);
+					const FString CompiledTooltip = CompiledFunction->GetMetaData(FBlueprintMetadata::MD_Tooltip);
 
-					FunctionInfo.Tooltip = CompiledFunction->GetMetaData(FBlueprintMetadata::MD_Tooltip);
+					if (!CompiledCategory.IsEmpty()) {
+						FunctionInfo.Category = CompiledCategory;
+					}
+					if (!CompiledTooltip.IsEmpty()) {
+						FunctionInfo.Tooltip = CompiledTooltip;
+					}
 
 					FunctionInfo.Keywords = CompiledFunction->GetMetaData(TEXT("Keywords"));
-
 					FunctionInfo.bIsPure = (CompiledFunction->FunctionFlags & FUNC_BlueprintPure) != 0;
+
+					UE_LOG(LogTemp, Display, TEXT("GetFunctions - Function: %s, Category: '%s', Tooltip: '%s', bIsPure: %d"),
+						*FunctionInfo.Name,
+						*FunctionInfo.Category,
+						*FunctionInfo.Tooltip,
+						FunctionInfo.bIsPure);
 				}
 				else {
-					// Fallback values if compiled function is not found
-					FunctionInfo.Category = TEXT("Default");
-					FunctionInfo.Tooltip = TEXT("");
-					FunctionInfo.Keywords = TEXT("");
-					FunctionInfo.bIsPure = false;
+					UE_LOG(LogTemp, Warning, TEXT("GetFunctions - Compiled function not found for: %s"), *FunctionInfo.Name);
 				}
 			}
 			else {
-				// Fallback for non-compiled blueprints
-				FunctionInfo.Category = TEXT("Default");
-				FunctionInfo.Tooltip = TEXT("");
-				FunctionInfo.Keywords = TEXT("");
-				FunctionInfo.bIsPure = false;
+				UE_LOG(LogTemp, Warning, TEXT("GetFunctions - No generated class for blueprint when processing: %s"), *FunctionInfo.Name);
+			}
+
+			// If UFunction metadata is empty, try to get it from the function entry node
+			// This handles cases where metadata hasn't been compiled yet or was lost
+			if (FunctionInfo.Category.IsEmpty() || FunctionInfo.Tooltip.IsEmpty()) {
+				if (EntryNode) {
+					UE_LOG(LogTemp, Display, TEXT("GetFunctions - Found entry node for: %s, Entry Category: '%s', Entry Tooltip: '%s'"),
+						*FunctionInfo.Name,
+						*EntryNode->MetaData.Category.ToString(),
+						*EntryNode->MetaData.ToolTip.ToString());
+
+					if (FunctionInfo.Category.IsEmpty() && !EntryNode->MetaData.Category.IsEmpty()) {
+						FunctionInfo.Category = EntryNode->MetaData.Category.ToString();
+					}
+					if (FunctionInfo.Tooltip.IsEmpty() && !EntryNode->MetaData.ToolTip.IsEmpty()) {
+						FunctionInfo.Tooltip = EntryNode->MetaData.ToolTip.ToString();
+					}
+
+					UE_LOG(LogTemp, Display, TEXT("GetFunctions - Using entry node metadata for: %s, Category: '%s', Tooltip: '%s', bIsPure: %d"),
+						*FunctionInfo.Name,
+						*FunctionInfo.Category,
+						*FunctionInfo.Tooltip,
+						FunctionInfo.bIsPure);
+				}
+				else {
+					UE_LOG(LogTemp, Warning, TEXT("GetFunctions - No entry node found for function: %s"), *FunctionInfo.Name);
+				}
 			}
 
 			Result.Functions.Add(FunctionInfo);

@@ -140,8 +140,8 @@ namespace UnrealMCP {
 				ClassPtr = FindFirstObject<UClass>(*TargetWithPrefix, EFindFirstObjectOptions::NativeFirst);
 			}
 
-			// Special case for UGameplayStatics
-			if (!ClassPtr && TargetClass.GetValue() == TEXT("UGameplayStatics")) {
+			// Special case for UGameplayStatics and GameplayStatics
+			if (!ClassPtr && (TargetClass.GetValue() == TEXT("UGameplayStatics") || TargetClass.GetValue() == TEXT("GameplayStatics"))) {
 				ClassPtr = FindFirstObject<UClass>(TEXT("UGameplayStatics"), EFindFirstObjectOptions::NativeFirst);
 				if (!ClassPtr) {
 					ClassPtr = LoadObject<UClass>(nullptr, TEXT("/Script/Engine.GameplayStatics"));
@@ -150,12 +150,35 @@ namespace UnrealMCP {
 
 			if (ClassPtr) {
 				Function = ClassPtr->FindFunctionByName(*FunctionName);
+
+				// If PrintString not found, try some common alternatives
+				if (!Function && FunctionName == TEXT("PrintString")) {
+					Function = ClassPtr->FindFunctionByName(FName(TEXT("PrintString")));
+					if (!Function) {
+						// Try to find any function with "Print" in the name but make sure it's the right one
+						for (TFieldIterator<UFunction> It(ClassPtr); It; ++It) {
+							const UFunction* Func = *It;
+							if (Func->GetName().Contains(TEXT("Print")) && Func->GetName().Contains(TEXT("String"))) {
+								Function = Func;
+								break;
+							}
+						}
+					}
+				}
 			}
 		}
 
 		// If we still haven't found the function, try in the blueprint's class
 		if (!Function) {
 			Function = Blueprint->GeneratedClass->FindFunctionByName(*FunctionName);
+		}
+
+		// For PrintString, try to find it in KismetSystemLibrary as a last resort
+		if (!Function && FunctionName == TEXT("PrintString")) {
+			UClass* KismetSystemLibrary = LoadObject<UClass>(nullptr, TEXT("/Script/Engine.KismetSystemLibrary"));
+			if (KismetSystemLibrary) {
+				Function = KismetSystemLibrary->FindFunctionByName(*FunctionName);
+			}
 		}
 
 		// Create the function call node if we found the function
@@ -361,12 +384,15 @@ namespace UnrealMCP {
 
 		FBlueprintEditorUtils::AddMemberVariable(Blueprint, FName(*VariableName), PinType);
 
-		if (bIsExposed) {
-			for (FBPVariableDescription& Variable : Blueprint->NewVariables) {
-				if (Variable.VarName == FName(*VariableName)) {
+		// Set or clear CPF_Edit flag based on bIsExposed parameter
+		for (FBPVariableDescription& Variable : Blueprint->NewVariables) {
+			if (Variable.VarName == FName(*VariableName)) {
+				if (bIsExposed) {
 					Variable.PropertyFlags |= CPF_Edit;
-					break;
+				} else {
+					Variable.PropertyFlags &= ~CPF_Edit;
 				}
+				break;
 			}
 		}
 

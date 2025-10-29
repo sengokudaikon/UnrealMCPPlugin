@@ -581,7 +581,7 @@ auto FBlueprintMemberServiceCompleteWorkflowTest::RunTest(const FString& Paramet
 		FunctionName,
 		TOptional<FString>(TEXT("Math")),
 		TOptional<FString>(TEXT("Calculates a value from input")),
-		TOptional<bool>(false)
+		TOptional<bool>(false) // Not a pure function
 	);
 	TestTrue(TEXT("Metadata setting should succeed"), SetMetaResult.IsSuccess());
 

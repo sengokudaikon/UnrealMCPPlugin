@@ -133,7 +133,7 @@ namespace UnrealMCP {
 		 * @param Node SCS node to convert
 		 * @return JSON object representing the node
 		 */
-		static auto BuildHierarchyNode(const USCS_Node* Node) -> TSharedPtr<FJsonObject>;
+		static auto BuildHierarchyNode(const USCS_Node* Node, bool bIncludeChildren = true) -> TSharedPtr<FJsonObject>;
 	};
 
 }

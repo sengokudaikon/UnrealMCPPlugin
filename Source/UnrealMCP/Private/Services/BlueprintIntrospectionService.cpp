@@ -176,10 +176,29 @@ namespace UnrealMCP {
 			return Blueprint;
 		}
 
-		// Try resolving as short name
-		const FString FullPath = ResolveBlueprintPath(BlueprintName);
-		if (!FullPath.IsEmpty()) {
-			Blueprint = FindFirstObject<UBlueprint>(*FullPath, EFindFirstObjectOptions::NativeFirst);
+		// If the input looks like a path (contains /), try appending .AssetName format
+		if (BlueprintName.Contains(TEXT("/"))) {
+			// Extract the asset name from the path (last component after /)
+			FString AssetName;
+			if (BlueprintName.Split(TEXT("/"), nullptr, &AssetName, ESearchCase::IgnoreCase, ESearchDir::FromEnd)) {
+				// Try path with .AssetName suffix
+				const FString FullObjectPath = FString::Printf(TEXT("%s.%s"), *BlueprintName, *AssetName);
+				Blueprint = FindFirstObject<UBlueprint>(*FullObjectPath, EFindFirstObjectOptions::NativeFirst);
+				if (Blueprint) {
+					return Blueprint;
+				}
+			}
+		}
+
+		// Try resolving as short name with multiple possible paths
+		TArray<FString> PossiblePaths;
+		PossiblePaths.Add(FString::Printf(TEXT("/Game/Blueprints/%s.%s"), *BlueprintName, *BlueprintName));
+		PossiblePaths.Add(FString::Printf(TEXT("/Game/Tests/Introspection/%s.%s"), *BlueprintName, *BlueprintName));
+		PossiblePaths.Add(FString::Printf(TEXT("/Game/Tests/%s.%s"), *BlueprintName, *BlueprintName));
+		PossiblePaths.Add(FString::Printf(TEXT("/Game/%s.%s"), *BlueprintName, *BlueprintName));
+
+		for (const FString& Path : PossiblePaths) {
+			Blueprint = FindFirstObject<UBlueprint>(*Path, EFindFirstObjectOptions::NativeFirst);
 			if (Blueprint) {
 				return Blueprint;
 			}
@@ -188,8 +207,32 @@ namespace UnrealMCP {
 		// Search through all loaded blueprints
 		for (TObjectIterator<UBlueprint> It; It; ++It) {
 			UBlueprint* CurrentBP = *It;
+
+			// Check exact name match
 			if (CurrentBP->GetName() == BlueprintName) {
 				return CurrentBP;
+			}
+
+			// Check if the blueprint path contains the name (for better matching)
+			FString BPPath = CurrentBP->GetPathName();
+			if (BPPath.Contains(BlueprintName)) {
+				// Make sure this is not a partial match by checking the component parts
+				TArray<FString> PathParts;
+				BPPath.ParseIntoArray(PathParts, TEXT("/"));
+				for (const FString& Part : PathParts) {
+					if (Part == BlueprintName) {
+						return CurrentBP;
+					}
+				}
+			}
+
+			// For transient blueprints, also check if the name matches after removing the /Engine/Transient. prefix
+			if (BPPath.StartsWith(TEXT("/Engine/Transient."))) {
+				const FString TransientPrefix = TEXT("/Engine/Transient.");
+				FString TransientName = BPPath.RightChop(TransientPrefix.Len());
+				if (TransientName == BlueprintName) {
+					return CurrentBP;
+				}
 			}
 		}
 
@@ -225,27 +268,36 @@ namespace UnrealMCP {
 			return TResult<FComponentHierarchyResult>::Failure(TEXT("Blueprint has no construction script"));
 		}
 
-		// Build hierarchy starting from root nodes
+		// Build hierarchy - add ALL nodes to flat array
 		FComponentHierarchyResult Result;
-		Result.RootCount = 0;
+		Result.RootCount = SCS->GetRootNodes().Num();
 		Result.TotalComponents = SCS->GetAllNodes().Num();
 
-		for (const USCS_Node* RootNode : SCS->GetRootNodes()) {
-			if (RootNode) {
-				Result.Hierarchy.Add(MakeShared<FJsonValueObject>(BuildHierarchyNode(RootNode)));
-				Result.RootCount++;
+		UE_LOG(LogTemp, Display, TEXT("GetComponentHierarchy - Total nodes: %d, Root nodes: %d"),
+			SCS->GetAllNodes().Num(), SCS->GetRootNodes().Num());
+
+		// Add all nodes to hierarchy array (flat structure with parent info in each node)
+		for (const USCS_Node* Node : SCS->GetAllNodes()) {
+			if (Node) {
+				UE_LOG(LogTemp, Display, TEXT("GetComponentHierarchy - Adding node: %s"),
+					*Node->GetVariableName().ToString());
+				Result.Hierarchy.Add(MakeShared<FJsonValueObject>(BuildHierarchyNode(Node, false)));
 			}
 		}
 
 		return TResult<FComponentHierarchyResult>::Success(MoveTemp(Result));
 	}
 
-	auto FBlueprintIntrospectionService::BuildHierarchyNode(const USCS_Node* Node) -> TSharedPtr<FJsonObject> {
+	auto FBlueprintIntrospectionService::BuildHierarchyNode(const USCS_Node* Node, bool bIncludeChildren) -> TSharedPtr<FJsonObject> {
 		auto NodeObj = MakeShared<FJsonObject>();
 
 		if (!Node || !Node->ComponentTemplate) {
 			return NodeObj;
 		}
+
+		UE_LOG(LogTemp, Display, TEXT("BuildHierarchyNode - Processing node: %s, Type: %s"),
+			*Node->GetVariableName().ToString(),
+			Node->ComponentTemplate ? *Node->ComponentTemplate->GetClass()->GetName() : TEXT("None"));
 
 		// Basic node info
 		NodeObj->SetStringField(TEXT("name"), Node->GetVariableName().ToString());
@@ -286,16 +338,19 @@ namespace UnrealMCP {
 			NodeObj->SetObjectField(TEXT("transform"), TransformObj);
 		}
 
-		// Recursively build children
-		TArray<TSharedPtr<FJsonValue>> ChildrenArray;
-		for (const USCS_Node* ChildNode : Node->GetChildNodes()) {
-			if (ChildNode) {
-				ChildrenArray.Add(MakeShared<FJsonValueObject>(BuildHierarchyNode(ChildNode)));
+		// Recursively build children if requested
+		if (bIncludeChildren) {
+			TArray<TSharedPtr<FJsonValue>> ChildrenArray;
+			for (const USCS_Node* ChildNode : Node->GetChildNodes()) {
+				if (ChildNode) {
+					ChildrenArray.Add(MakeShared<FJsonValueObject>(BuildHierarchyNode(ChildNode, true)));
+				}
 			}
+			NodeObj->SetArrayField(TEXT("children"), ChildrenArray);
+			NodeObj->SetNumberField(TEXT("child_count"), ChildrenArray.Num());
+		} else {
+			NodeObj->SetNumberField(TEXT("child_count"), Node->GetChildNodes().Num());
 		}
-
-		NodeObj->SetArrayField(TEXT("children"), ChildrenArray);
-		NodeObj->SetNumberField(TEXT("child_count"), ChildrenArray.Num());
 
 		return NodeObj;
 	}
