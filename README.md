@@ -2,6 +2,20 @@
 
 Unreal Engine 5.5 plugin providing C++ APIs for the Model Context Protocol (MCP) bridge, enabling programmatic control of Unreal Editor operations through JSON commands.
 
+## 🚀 Quick Start
+
+For interfacing via MCP for your coding agents, go to the [Python MCP Server Repository](https://github.com/sengokudaikon/unreal-mcp)
+
+## 📋 Features Overview
+
+This MCP plugin provides **35+ commands** across 6 categories:
+- Blueprint Introspection & Management
+- Component Operations & Physics
+- Variable & Function Management
+- Actor & Level Operations
+- Enhanced Input System
+- UMG Widget Creation
+
 ## Core Architecture
 
 ### UUnrealMCPBridge
@@ -30,18 +44,48 @@ Level and actor management operations.
 - `take_screenshot` - Capture viewport screenshots
 
 ### Blueprint Commands
-Blueprint creation, modification, and compilation.
+Comprehensive blueprint introspection, creation, and modification.
 
-**Available Commands:**
+**Blueprint Introspection:**
+- `list_blueprints` - List all blueprints in directory
+- `blueprint_exists` - Check if blueprint exists
+- `get_blueprint_info` - Get comprehensive blueprint metadata
+- `get_blueprint_path` - Get blueprint asset path
+- `get_blueprint_components` - List all blueprint components
+- `get_blueprint_variables` - List all variables with types
+- `get_blueprint_functions` - List all custom functions
+- `get_component_hierarchy` - Get component parent-child tree
+
+**Blueprint Asset Management:**
 - `create_blueprint` - Create new Blueprint classes
+- `delete_blueprint` - Delete blueprint assets
+- `duplicate_blueprint` - Clone blueprints with new name
 - `compile_blueprint` - Compile Blueprint assets
 - `spawn_blueprint_actor` - Spawn Blueprint actors in level
+
+**Variable Management:**
+- `remove_variable` - Delete variables
+- `rename_variable` - Rename variables with reference updates
+- `set_variable_default_value` - Set default values (bool, int, float, string, Vector, Rotator)
+- `set_variable_metadata` - Configure variable metadata (tooltip, category, visibility)
+
+**Function Management:**
+- `add_function` - Create custom functions
+- `remove_function` - Delete functions
+- `add_function_parameter` - Add parameters to functions
+- `set_function_return_type` - Configure return value type
+- `set_function_metadata` - Configure function metadata (category, tooltip, pure)
+
+**Component Management:**
 - `add_component_to_blueprint` - Add components to Blueprints
+- `remove_component` - Delete components
+- `rename_component` - Rename components
+- `set_component_transform` - Update component transform
 - `set_component_property` - Set component property values
-- `set_blueprint_property` - Set Blueprint property values
-- `set_static_mesh_properties` - Configure static mesh components
 - `set_physics_properties` - Configure physics simulation
+- `set_static_mesh_properties` - Configure static mesh components
 - `set_pawn_properties` - Configure pawn-specific properties
+- `get_component_properties` - Get detailed component properties
 
 ### Blueprint Node Commands
 Visual scripting node operations.
@@ -60,14 +104,20 @@ Visual scripting node operations.
 Enhanced input system management.
 
 **Available Commands:**
-- `create_input_mapping` - Create legacy input mappings
 - `create_enhanced_input_action` - Create enhanced input actions
 - `create_input_mapping_context` - Create input mapping contexts
 - `add_enhanced_input_mapping` - Add mappings to contexts
-- `remove_enhanced_input_mapping` - Remove specific mappings
 - `apply_mapping_context` - Apply contexts at runtime
 - `remove_mapping_context` - Remove contexts at runtime
 - `clear_all_mapping_contexts` - Clear all active contexts
+
+### Registry & Query Commands
+Dynamic discovery of available classes and types.
+
+**Available Commands:**
+- `get_supported_parent_classes` - Query all available parent classes (100+ via reflection)
+- `get_supported_component_types` - Query all available component types (50+ via reflection)
+- `get_available_api_methods` - Get list of all API methods organized by category
 
 ### UMG Widget Commands
 User interface widget creation and management.
@@ -104,6 +154,11 @@ All operations return `TResult<T>` types for error handling:
 - Failed operations return descriptive error messages
 
 ## Integration
+
+### MCP Protocol
+This plugin implements the Model Context Protocol (MCP) for JSON-based command/response communication. The Python MCP server provides the interface for coding agents to access these capabilities.
+
+**Python MCP Repository:** [sengokudaikon/unreal-mcp](https://github.com/sengokudaikon/unreal-mcp)
 
 ### Command Registration
 Commands are registered using a registry pattern in each command handler class:
@@ -164,3 +219,10 @@ Params->SetStringField(TEXT("actor_name"), TEXT("MyActor"));
 // Execute command
 TSharedPtr<FJsonObject> Result = Bridge->ExecuteCommand(TEXT("spawn_actor"), Params);
 ```
+
+## Getting Started
+
+1. **Install this plugin** in your Unreal Engine project
+2. **Deploy the Python MCP Server** from [sengokudaikon/unreal-mcp](https://github.com/sengokudaikon/unreal-mcp)
+3. **Connect your coding agent** to the MCP server to access all blueprint and editor operations
+4. **Use available commands** to manipulate blueprints, actors, and game content programmatically
