@@ -8,6 +8,7 @@
 #include "EdGraph/EdGraphPin.h"
 #include "Misc/AutomationTest.h"
 #include "Services/BlueprintMemberService.h"
+#include "Tests/TestUtils.h"
 #include "Types/BlueprintIntrospectionTypes.h"
 
 
@@ -21,15 +22,26 @@ auto FBlueprintMemberServiceGetFunctionsErrorHandling::RunTest(const FString& Pa
 	{
 		auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT(""));
 		TestTrue(TEXT("Empty blueprint name should fail"), Result.IsFailure());
-		TestTrue(TEXT("Error should be descriptive"), !Result.GetError().IsEmpty());
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::InvalidInput,
+			TEXT("BlueprintName"),
+			this
+		);
 	}
 
 	// Test 2: Null/invalid blueprint name
 	{
 		auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT("NonExistentBlueprint"));
 		TestTrue(TEXT("Non-existent blueprint should fail"), Result.IsFailure());
-		TestTrue(TEXT("Error should mention blueprint not found"),
-		         Result.GetError().Contains(TEXT("blueprint")) || Result.GetError().Contains(TEXT("found")));
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::BlueprintNotFound,
+			TEXT("NonExistentBlueprint"),
+			this
+		);
 	}
 
 	return true;

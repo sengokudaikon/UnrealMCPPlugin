@@ -1,5 +1,6 @@
 ﻿#include "Commands/Editor/SetActorProperty.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 #include "Services/ActorService.h"
@@ -12,16 +13,16 @@ namespace UnrealMCP {
 
 		FString ActorName;
 		if (!Params->TryGetStringField(TEXT("name"), ActorName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'name' parameter")));
 		}
 
 		FString PropertyName;
 		if (!Params->TryGetStringField(TEXT("property_name"), PropertyName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'property_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'property_name' parameter")));
 		}
 
 		if (!Params->HasField(TEXT("property_value"))) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'property_value' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'property_value' parameter")));
 		}
 
 		const TSharedPtr<FJsonValue> PropertyValue = Params->Values.FindRef(TEXT("property_value"));

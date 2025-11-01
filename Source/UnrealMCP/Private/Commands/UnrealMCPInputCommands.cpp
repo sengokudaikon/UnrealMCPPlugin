@@ -9,6 +9,7 @@
 #include "Commands/Input/RemoveEnhancedInputMapping.h"
 #include "Commands/Input/RemoveMappingContext.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 
 namespace UnrealMCP {
 
@@ -30,6 +31,6 @@ namespace UnrealMCP {
 			return (*Handler)(Params);
 		}
 
-		return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown input command: %s"), *CommandType));
+		return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, FString::Printf(TEXT("Unknown input command: %s"), *CommandType)));
 	}
 }

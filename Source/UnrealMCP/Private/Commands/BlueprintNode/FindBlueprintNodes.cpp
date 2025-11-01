@@ -1,5 +1,6 @@
 ﻿#include "Commands/BlueprintNode/FindBlueprintNodes.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintGraphService.h"
 
 namespace UnrealMCP {
@@ -9,12 +10,12 @@ namespace UnrealMCP {
 
 		FString BlueprintName;
 		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter")));
 		}
 
 		FString NodeType;
 		if (!Params->TryGetStringField(TEXT("node_type"), NodeType)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'node_type' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'node_type' parameter")));
 		}
 
 		TOptional<FString> EventName;

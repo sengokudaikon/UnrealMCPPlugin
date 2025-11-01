@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Functional tests for WidgetService
  *
  * These tests verify the actual behavior of UMG widget operations:
@@ -13,7 +13,7 @@
  */
 
 #include "EditorAssetLibrary.h"
-#include "TestUtils.h"
+#include "Tests/TestUtils.h"
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Button.h"
@@ -47,7 +47,7 @@ auto FWidgetServiceCreateWidgetTest::RunTest(const FString& Parameters) -> bool 
 
 	// Verify success
 	if (Result.IsFailure()) {
-		AddError(FString::Printf(TEXT("CreateWidget failed with error: %s"), *Result.GetError()));
+		AddError(FString::Printf(TEXT("CreateWidget failed with error: %s"), *Result.GetError().GetMessage()));
 	}
 	TestTrue(TEXT("CreateWidget should succeed"), Result.IsSuccess());
 	const UWidgetBlueprint* WidgetBlueprint = Result.GetValue();
@@ -94,8 +94,13 @@ auto FWidgetServiceCreateDuplicateWidgetTest::RunTest(const FString& Parameters)
 
 	// Verify failure
 	TestTrue(TEXT("Second CreateWidget should fail"), SecondResult.IsFailure());
-	TestTrue(TEXT("Error message should mention already exists"),
-	         SecondResult.GetError().Contains(TEXT("already exists")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		SecondResult,
+		UnrealMCP::EErrorCode::FailedToCreateWidget,
+		TEXT("DuplicateTestWidget"),
+		this
+	);
 
 	// Cleanup
 	if (FirstResult.IsSuccess()) {
@@ -211,8 +216,13 @@ auto FWidgetServiceAddTextBlockToInvalidWidgetTest::RunTest(const FString& Param
 
 	// Verify failure
 	TestTrue(TEXT("AddTextBlock should fail for non-existent widget"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::WidgetNotFound,
+		TEXT("NonExistentWidget_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -291,8 +301,13 @@ auto FWidgetServiceAddButtonToInvalidWidgetTest::RunTest(const FString& Paramete
 
 	// Verify failure
 	TestTrue(TEXT("AddButton should fail for non-existent widget"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::WidgetNotFound,
+		TEXT("NonExistentWidget_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -375,8 +390,13 @@ auto FWidgetServiceBindWidgetEventInvalidWidgetTest::RunTest(const FString& Para
 
 	// Verify failure
 	TestTrue(TEXT("BindWidgetEvent should fail for non-existent widget"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::WidgetNotFound,
+		TEXT("NonExistentWidget_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -414,8 +434,13 @@ auto FWidgetServiceBindWidgetEventInvalidComponentTest::RunTest(const FString& P
 
 	// Verify failure
 	TestTrue(TEXT("BindWidgetEvent should fail for non-existent component"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention failed to find widget component"),
-	         Result.GetError().Contains(TEXT("Failed to find widget component")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::ComponentNotFound,
+		TEXT("NonExistentButton_XYZ123"),
+		this
+	);
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
@@ -502,8 +527,13 @@ auto FWidgetServiceSetTextBlockBindingInvalidWidgetTest::RunTest(const FString& 
 
 	// Verify failure
 	TestTrue(TEXT("SetTextBlockBinding should fail for non-existent widget"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::WidgetNotFound,
+		TEXT("NonExistentWidget_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -540,8 +570,13 @@ auto FWidgetServiceSetTextBlockBindingInvalidTextBlockTest::RunTest(const FStrin
 
 	// Verify failure
 	TestTrue(TEXT("SetTextBlockBinding should fail for non-existent text block"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention failed to find TextBlock"),
-	         Result.GetError().Contains(TEXT("Failed to find TextBlock")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::ComponentNotFound,
+		TEXT("NonExistentTextBlock_XYZ123"),
+		this
+	);
 
 	// Cleanup
 	const FString TestAssetPath = TEXT("/Game/UI/TestWidget");
@@ -617,8 +652,14 @@ auto FWidgetServiceGetInvalidWidgetClassTest::RunTest(const FString& Parameters)
 
 	// Verify failure
 	TestTrue(TEXT("GetWidgetClass should fail for non-existent widget"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::WidgetNotFound,
+		TEXT("NonExistentWidget_XYZ123"),
+		this
+	);
 
 	return true;
 }
+

@@ -1,5 +1,6 @@
 ﻿#include "Commands/Editor/FindActorsByName.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 #include "Services/ActorService.h"
@@ -12,7 +13,7 @@ namespace UnrealMCP {
 
 		FString Pattern;
 		if (!Params->TryGetStringField(TEXT("pattern"), Pattern)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'pattern' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'pattern' parameter")));
 		}
 
 		TArray<FString> ActorNames;

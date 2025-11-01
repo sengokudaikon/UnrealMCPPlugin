@@ -1,5 +1,6 @@
 ﻿#include "Commands/Blueprint/RenameVariable.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintMemberService.h"
 
 namespace UnrealMCP {
@@ -9,7 +10,7 @@ namespace UnrealMCP {
 		if (!Params->HasField(TEXT("blueprint_name")) || !Params->HasField(TEXT("old_name")) ||
 			!Params->HasField(TEXT("new_name"))) {
 			return FCommonUtils::CreateErrorResponse(
-				TEXT("Missing required parameters: blueprint_name, old_name, and new_name")
+				FError(EErrorCode::InvalidInput, TEXT("Missing required parameters: blueprint_name, old_name, and new_name"))
 			);
 		}
 

@@ -1,5 +1,6 @@
 ﻿#include "Commands/BlueprintNode/AddBlueprintVariable.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintGraphService.h"
 
 namespace UnrealMCP {
@@ -9,17 +10,17 @@ namespace UnrealMCP {
 
 		FString BlueprintName;
 		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter")));
 		}
 
 		FString VariableName;
 		if (!Params->TryGetStringField(TEXT("variable_name"), VariableName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'variable_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'variable_name' parameter")));
 		}
 
 		FString VariableType;
 		if (!Params->TryGetStringField(TEXT("variable_type"), VariableType)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'variable_type' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'variable_type' parameter")));
 		}
 
 		bool IsExposed = false;

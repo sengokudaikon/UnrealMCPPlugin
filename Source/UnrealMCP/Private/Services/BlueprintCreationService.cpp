@@ -13,7 +13,7 @@
 namespace UnrealMCP {
 	auto FBlueprintCreationService::CreateBlueprint(const FBlueprintCreationParams& Params) -> TResult<UBlueprint*> {
 		if (Params.Name.IsEmpty()) {
-			return TResult<UBlueprint*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 
 		const FString FullAssetPath = Params.PackagePath + Params.Name;
@@ -33,7 +33,7 @@ namespace UnrealMCP {
 
 		UBlueprintFactory* Factory = NewObject<UBlueprintFactory>();
 		if (!Factory) {
-			return TResult<UBlueprint*>::Failure(TEXT("Failed to create blueprint factory"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::FailedToCreateAsset, TEXT("Failed to create blueprint factory"));
 		}
 
 		Factory->ParentClass = ParentClass;
@@ -57,7 +57,7 @@ namespace UnrealMCP {
 		);
 
 		if (!NewBlueprint) {
-			return TResult<UBlueprint*>::Failure(TEXT("Failed to create blueprint asset"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::FailedToCreateAsset, TEXT("Failed to create blueprint asset"));
 		}
 
 		FAssetRegistryModule::AssetCreated(NewBlueprint);
@@ -77,12 +77,12 @@ namespace UnrealMCP {
 
 	auto FBlueprintCreationService::CompileBlueprint(const FString& BlueprintName) -> FVoidResult {
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
 		}
 
 		FKismetEditorUtilities::CompileBlueprint(Blueprint);

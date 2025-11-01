@@ -1,4 +1,5 @@
 ﻿#include "Services/BlueprintMemberService.h"
+#include "Core/ErrorTypes.h"
 #include "EdGraphSchema_K2.h"
 #include "K2Node_FunctionEntry.h"
 #include "K2Node_FunctionResult.h"
@@ -17,10 +18,18 @@ namespace UnrealMCP {
 		const FString& BlueprintName,
 		const FString& FunctionName
 	) -> TResult<FString> {
+		// Validate input parameters
+		if (BlueprintName.IsEmpty()) {
+			return TResult<FString>::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
+		}
+		if (FunctionName.IsEmpty()) {
+			return TResult<FString>::Failure(EErrorCode::InvalidInput, TEXT("FunctionName"));
+		}
+
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return TResult<FString>::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return TResult<FString>::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Check if function already exists
@@ -42,7 +51,7 @@ namespace UnrealMCP {
 		);
 
 		if (!NewGraph) {
-			return TResult<FString>::Failure(TEXT("Failed to create function graph"));
+			return TResult<FString>::Failure(EErrorCode::OperationFailed, TEXT("Failed to create function graph"));
 		}
 
 		// Create function entry and result nodes
@@ -65,7 +74,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the function graph
@@ -107,7 +116,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the function graph
@@ -137,7 +146,7 @@ namespace UnrealMCP {
 		}
 
 		if (!EntryNode) {
-			return FVoidResult::Failure(TEXT("Function entry node not found"));
+			return FVoidResult::Failure(EErrorCode::OperationFailed, TEXT("Function entry node not found"));
 		}
 
 		// Create the pin type based on the parameter type
@@ -182,7 +191,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the function graph
@@ -221,7 +230,7 @@ namespace UnrealMCP {
 				ResultNode->AllocateDefaultPins();
 			}
 			else {
-				return FVoidResult::Failure(TEXT("Failed to create function result node"));
+				return FVoidResult::Failure(EErrorCode::OperationFailed, TEXT("Failed to create function result node"));
 			}
 		}
 
@@ -279,7 +288,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the function graph
@@ -400,7 +409,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Check if variable already exists
@@ -485,7 +494,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the variable
@@ -516,13 +525,13 @@ namespace UnrealMCP {
 		const FString& NewName
 	) -> FVoidResult {
 		if (NewName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("New variable name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("VariableName"));
 		}
 
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the old variable
@@ -565,7 +574,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the variable
@@ -586,35 +595,35 @@ namespace UnrealMCP {
 		if (Variable.VarType.PinCategory == UEdGraphSchema_K2::PC_Boolean) {
 			bool bValue;
 			if (!Value->TryGetBool(bValue)) {
-				return FVoidResult::Failure(TEXT("Value is not a boolean"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Value is not a boolean"));
 			}
 			DefaultValueStr = bValue ? TEXT("true") : TEXT("false");
 		}
 		else if (Variable.VarType.PinCategory == UEdGraphSchema_K2::PC_Int) {
 			double NumValue;
 			if (!Value->TryGetNumber(NumValue)) {
-				return FVoidResult::Failure(TEXT("Value is not a number"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Value is not a number"));
 			}
 			DefaultValueStr = FString::FromInt(static_cast<int32>(NumValue));
 		}
 		else if (Variable.VarType.PinCategory == UEdGraphSchema_K2::PC_Real) {
 			double NumValue;
 			if (!Value->TryGetNumber(NumValue)) {
-				return FVoidResult::Failure(TEXT("Value is not a number"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Value is not a number"));
 			}
 			DefaultValueStr = FString::SanitizeFloat(NumValue);
 		}
 		else if (Variable.VarType.PinCategory == UEdGraphSchema_K2::PC_String) {
 			FString StrValue;
 			if (!Value->TryGetString(StrValue)) {
-				return FVoidResult::Failure(TEXT("Value is not a string"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Value is not a string"));
 			}
 			DefaultValueStr = StrValue;
 		}
 		else if (Variable.VarType.PinCategory == UEdGraphSchema_K2::PC_Name) {
 			FString StrValue;
 			if (!Value->TryGetString(StrValue)) {
-				return FVoidResult::Failure(TEXT("Value is not a string"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Value is not a string"));
 			}
 			DefaultValueStr = StrValue;
 		}
@@ -622,7 +631,7 @@ namespace UnrealMCP {
 			// Handle struct types (Vector, Rotator, Transform)
 			const TSharedPtr<FJsonObject>* ValueObj;
 			if (!Value->TryGetObject(ValueObj)) {
-				return FVoidResult::Failure(TEXT("Value is not an object"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Value is not an object"));
 			}
 
 			if (Variable.VarType.PinSubCategoryObject == TBaseStructure<FVector>::Get()) {
@@ -638,11 +647,11 @@ namespace UnrealMCP {
 				DefaultValueStr = FString::Printf(TEXT("%f,%f,%f"), Pitch, Yaw, Roll);
 			}
 			else {
-				return FVoidResult::Failure(TEXT("Unsupported struct type"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Unsupported struct type"));
 			}
 		}
 		else {
-			return FVoidResult::Failure(TEXT("Unsupported variable type for default value"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Unsupported variable type for default value"));
 		}
 
 		// Set the default value
@@ -669,7 +678,7 @@ namespace UnrealMCP {
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		// Find the variable
@@ -733,12 +742,15 @@ namespace UnrealMCP {
 	}
 
 	auto FBlueprintMemberService::GetFunctions(const FString& BlueprintName) -> TResult<FGetBlueprintFunctionsResult> {
+		// Validate input parameters
+		if (BlueprintName.IsEmpty()) {
+			return TResult<FGetBlueprintFunctionsResult>::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
+		}
+
 		// Find the blueprint
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return TResult<FGetBlueprintFunctionsResult>::Failure(
-				FString::Printf(TEXT("Blueprint '%s' not found"), *BlueprintName)
-			);
+			return TResult<FGetBlueprintFunctionsResult>::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		FGetBlueprintFunctionsResult Result;

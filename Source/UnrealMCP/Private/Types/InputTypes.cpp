@@ -1,15 +1,16 @@
 ﻿#include "Types/InputTypes.h"
+#include "Core/ErrorTypes.h"
 
 namespace UnrealMCP {
 	auto FInputActionParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FInputActionParams> {
 		if (!Json.IsValid()) {
-			return TResult<FInputActionParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FInputActionParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FInputActionParams Params;
 
 		if (!Json->TryGetStringField(TEXT("name"), Params.Name)) {
-			return TResult<FInputActionParams>::Failure(TEXT("Missing 'name' parameter"));
+			return TResult<FInputActionParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'name' parameter"));
 		}
 
 		Json->TryGetStringField(TEXT("value_type"), Params.ValueType);
@@ -25,13 +26,13 @@ namespace UnrealMCP {
 	auto FInputMappingContextParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FInputMappingContextParams> {
 		if (!Json.IsValid()) {
-			return TResult<FInputMappingContextParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FInputMappingContextParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FInputMappingContextParams Params;
 
 		if (!Json->TryGetStringField(TEXT("name"), Params.Name)) {
-			return TResult<FInputMappingContextParams>::Failure(TEXT("Missing 'name' parameter"));
+			return TResult<FInputMappingContextParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'name' parameter"));
 		}
 
 		FString Path;
@@ -44,21 +45,21 @@ namespace UnrealMCP {
 
 	auto FAddMappingParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FAddMappingParams> {
 		if (!Json.IsValid()) {
-			return TResult<FAddMappingParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FAddMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FAddMappingParams Params;
 
 		if (!Json->TryGetStringField(TEXT("context_path"), Params.ContextPath)) {
-			return TResult<FAddMappingParams>::Failure(TEXT("Missing 'context_path' parameter"));
+			return TResult<FAddMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'context_path' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("action_path"), Params.ActionPath)) {
-			return TResult<FAddMappingParams>::Failure(TEXT("Missing 'action_path' parameter"));
+			return TResult<FAddMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'action_path' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("key"), Params.Key)) {
-			return TResult<FAddMappingParams>::Failure(TEXT("Missing 'key' parameter"));
+			return TResult<FAddMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'key' parameter"));
 		}
 
 		return TResult<FAddMappingParams>::Success(MoveTemp(Params));
@@ -67,13 +68,13 @@ namespace UnrealMCP {
 	auto FApplyMappingContextParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FApplyMappingContextParams> {
 		if (!Json.IsValid()) {
-			return TResult<FApplyMappingContextParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FApplyMappingContextParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FApplyMappingContextParams Params;
 
 		if (!Json->TryGetStringField(TEXT("context_path"), Params.ContextPath)) {
-			return TResult<FApplyMappingContextParams>::Failure(TEXT("Missing 'context_path' parameter"));
+			return TResult<FApplyMappingContextParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'context_path' parameter"));
 		}
 
 		if (Json->HasField(TEXT("priority"))) {
@@ -86,13 +87,13 @@ namespace UnrealMCP {
 	auto FRemoveMappingContextParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FRemoveMappingContextParams> {
 		if (!Json.IsValid()) {
-			return TResult<FRemoveMappingContextParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FRemoveMappingContextParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FRemoveMappingContextParams Params;
 
 		if (!Json->TryGetStringField(TEXT("context_path"), Params.ContextPath)) {
-			return TResult<FRemoveMappingContextParams>::Failure(TEXT("Missing 'context_path' parameter"));
+			return TResult<FRemoveMappingContextParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'context_path' parameter"));
 		}
 
 		return TResult<FRemoveMappingContextParams>::Success(MoveTemp(Params));
@@ -101,17 +102,17 @@ namespace UnrealMCP {
 	auto FLegacyInputMappingParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FLegacyInputMappingParams> {
 		if (!Json.IsValid()) {
-			return TResult<FLegacyInputMappingParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FLegacyInputMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FLegacyInputMappingParams Params;
 
 		if (!Json->TryGetStringField(TEXT("action_name"), Params.ActionName)) {
-			return TResult<FLegacyInputMappingParams>::Failure(TEXT("Missing 'action_name' parameter"));
+			return TResult<FLegacyInputMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'action_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("key"), Params.Key)) {
-			return TResult<FLegacyInputMappingParams>::Failure(TEXT("Missing 'key' parameter"));
+			return TResult<FLegacyInputMappingParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'key' parameter"));
 		}
 
 		// Optional modifier fields

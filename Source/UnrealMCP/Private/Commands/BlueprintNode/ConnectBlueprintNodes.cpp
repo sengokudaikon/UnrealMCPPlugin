@@ -1,5 +1,6 @@
 ﻿#include "Commands/BlueprintNode/ConnectBlueprintNodes.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintGraphService.h"
 
 namespace UnrealMCP {
@@ -9,27 +10,27 @@ namespace UnrealMCP {
 
 		FString BlueprintName;
 		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter")));
 		}
 
 		FString SourceNodeId;
 		if (!Params->TryGetStringField(TEXT("source_node_id"), SourceNodeId)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'source_node_id' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'source_node_id' parameter")));
 		}
 
 		FString TargetNodeId;
 		if (!Params->TryGetStringField(TEXT("target_node_id"), TargetNodeId)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'target_node_id' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'target_node_id' parameter")));
 		}
 
 		FString SourcePinName;
 		if (!Params->TryGetStringField(TEXT("source_pin"), SourcePinName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'source_pin' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'source_pin' parameter")));
 		}
 
 		FString TargetPinName;
 		if (!Params->TryGetStringField(TEXT("target_pin"), TargetPinName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'target_pin' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'target_pin' parameter")));
 		}
 
 		const FVoidResult Result = FBlueprintGraphService::ConnectNodes(

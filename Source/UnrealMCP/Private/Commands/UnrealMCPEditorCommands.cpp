@@ -1,8 +1,10 @@
 ﻿#include "Commands/UnrealMCPEditorCommands.h"
+#include "Core/ErrorTypes.h"
 #include "Commands/Blueprint/SpawnActorBlueprint.h"
 #include "Commands/Editor/DeleteActor.h"
 #include "Commands/Editor/FindActorsByName.h"
 #include "Commands/Editor/FocusViewport.h"
+#include "Commands/Editor/GetActorAvailableProperties.h"
 #include "Commands/Editor/GetActorProperties.h"
 #include "Commands/Editor/GetActorsInLevel.h"
 #include "Commands/Editor/SetActorProperty.h"
@@ -20,6 +22,7 @@ namespace UnrealMCP {
 		CommandHandlers.Add(TEXT("delete_actor"), &FDeleteActor::Handle);
 		CommandHandlers.Add(TEXT("set_actor_transform"), &FSetActorTransform::Handle);
 		CommandHandlers.Add(TEXT("get_actor_properties"), &FGetActorProperties::Handle);
+		CommandHandlers.Add(TEXT("get_actor_available_properties"), &FGetActorAvailableProperties::Handle);
 		CommandHandlers.Add(TEXT("set_actor_property"), &FSetActorProperty::Handle);
 		CommandHandlers.Add(TEXT("spawn_blueprint_actor"), &FSpawnActorBlueprint::Handle);
 		CommandHandlers.Add(TEXT("focus_viewport"), &FFocusViewport::Handle);
@@ -43,6 +46,6 @@ namespace UnrealMCP {
 			return (*Handler)(Params);
 		}
 
-		return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown editor command: %s"), *CommandType));
+		return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, FString::Printf(TEXT("Unknown editor command: %s"), *CommandType)));
 	}
 }

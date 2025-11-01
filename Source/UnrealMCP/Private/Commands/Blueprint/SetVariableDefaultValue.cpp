@@ -1,5 +1,6 @@
 #include "Commands/Blueprint/SetVariableDefaultValue.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintMemberService.h"
 
 namespace UnrealMCP {
@@ -9,7 +10,7 @@ namespace UnrealMCP {
 		if (!Params->HasField(TEXT("blueprint_name")) || !Params->HasField(TEXT("variable_name")) ||
 			!Params->HasField(TEXT("value"))) {
 			return FCommonUtils::CreateErrorResponse(
-				TEXT("Missing required parameters: blueprint_name, variable_name, and value")
+				FError(EErrorCode::InvalidInput, TEXT("Missing required parameters: blueprint_name, variable_name, and value"))
 			);
 		}
 

@@ -1,12 +1,13 @@
 ﻿#include "Commands/Blueprint/GetBlueprintFunctions.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintMemberService.h"
 
 namespace UnrealMCP {
 
 	auto FGetBlueprintFunctionsCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		if (!Params->HasField(TEXT("blueprint_name"))) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing required parameter: blueprint_name"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing required parameter: blueprint_name")));
 		}
 
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));

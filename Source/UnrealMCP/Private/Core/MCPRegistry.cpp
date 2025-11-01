@@ -1,4 +1,5 @@
 #include "Core/MCPRegistry.h"
+#include "Core/ErrorTypes.h"
 #include "K2Node.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_Event.h"
@@ -72,7 +73,7 @@ namespace UnrealMCP {
 
 		const UClass* Class = ResolveClassName(ClassName, AActor::StaticClass());
 		if (!Class) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Class '%s' not found"), *ClassName));
+			return FVoidResult::Failure(EErrorCode::InvalidParentClass, FString::Printf(TEXT("Class '%s' not found"), *ClassName));
 		}
 
 		OutInfo.Empty();
@@ -125,7 +126,7 @@ namespace UnrealMCP {
 
 		const UClass* Class = ResolveClassName(ComponentType, UActorComponent::StaticClass());
 		if (!Class) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Component type '%s' not found"), *ComponentType));
+			return FVoidResult::Failure(EErrorCode::InvalidComponentType, FString::Printf(TEXT("Component type '%s' not found"), *ComponentType));
 		}
 
 		OutInfo.Empty();
@@ -153,10 +154,21 @@ namespace UnrealMCP {
 			TEXT("set_pawn_properties"),
 			TEXT("list_blueprints"),
 			TEXT("get_blueprint_info"),
+			TEXT("get_blueprint_variables"),
+			TEXT("get_blueprint_functions"),
 			TEXT("blueprint_exists"),
 			TEXT("delete_blueprint"),
 			TEXT("duplicate_blueprint"),
-			TEXT("get_blueprint_path")
+			TEXT("get_blueprint_path"),
+			TEXT("add_function"),
+			TEXT("remove_function"),
+			TEXT("add_function_parameter"),
+			TEXT("set_function_return_type"),
+			TEXT("set_function_metadata"),
+			TEXT("remove_variable"),
+			TEXT("set_variable_default_value"),
+			TEXT("set_variable_metadata"),
+			TEXT("rename_variable")
 		};
 		OutMethods.Add(TEXT("blueprint"), BlueprintMethods);
 
@@ -166,8 +178,10 @@ namespace UnrealMCP {
 			TEXT("set_static_mesh_properties"),
 			TEXT("set_physics_properties"),
 			TEXT("set_component_property"),
+			TEXT("set_component_transform"),
 			TEXT("get_blueprint_components"),
 			TEXT("get_component_properties"),
+			TEXT("get_component_hierarchy"),
 			TEXT("remove_component"),
 			TEXT("rename_component")
 		};
@@ -175,8 +189,8 @@ namespace UnrealMCP {
 
 		// Blueprint Graph methods
 		const TArray<FString> GraphMethods = {
-			TEXT("add_blueprint_event"),
-			TEXT("add_blueprint_function_call"),
+			TEXT("add_blueprint_event_node"),
+			TEXT("add_blueprint_function_node"),
 			TEXT("add_blueprint_variable"),
 			TEXT("connect_blueprint_nodes"),
 			TEXT("find_blueprint_nodes"),
@@ -269,7 +283,7 @@ namespace UnrealMCP {
 			OutInfo.Add(TEXT("category"), TEXT("component"));
 		}
 		else {
-			return FVoidResult::Failure(FString::Printf(TEXT("Method '%s' not found in registry"), *MethodName));
+			return FVoidResult::Failure(EErrorCode::FunctionNotFound, FString::Printf(TEXT("Method '%s' not found in registry"), *MethodName));
 		}
 
 		return FVoidResult::Success();
@@ -383,7 +397,7 @@ namespace UnrealMCP {
 			OutInfo.Add(TEXT("category"), TEXT("Flow Control"));
 		}
 		else {
-			return FVoidResult::Failure(FString::Printf(TEXT("Node type '%s' not found"), *NodeType));
+			return FVoidResult::Failure(EErrorCode::NodeNotFound, FString::Printf(TEXT("Node type '%s' not found"), *NodeType));
 		}
 
 		return FVoidResult::Success();

@@ -6,6 +6,7 @@
 #include "Commands/Widget/CreateUMGWidgetBlueprint.h"
 #include "Commands/Widget/SetTextBlockBinding.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 
 namespace UnrealMCP {
 
@@ -26,6 +27,6 @@ namespace UnrealMCP {
 			return (*Handler)(Params);
 		}
 
-		return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown UMG command: %s"), *CommandType));
+		return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, FString::Printf(TEXT("Unknown UMG command: %s"), *CommandType)));
 	}
 }

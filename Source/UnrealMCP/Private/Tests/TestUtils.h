@@ -5,6 +5,8 @@
 #include "Containers/Array.h"
 #include "Misc/AutomationTest.h"
 #include "Types/BlueprintTypes.h"
+#include "Core/ErrorTypes.h"
+#include "Core/Result.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -212,6 +214,195 @@ namespace UnrealMCPTest {
 			if (World && Actor) {
 				World->DestroyActor(Actor);
 			}
+		}
+
+		/**
+		 * Validate error contains the expected error code and optionally checks context
+		 * This is the preferred way to validate errors - check error codes, not message text!
+		 */
+		static auto ValidateErrorCode(const UnrealMCP::FVoidResult& Result,
+		                             UnrealMCP::EErrorCode ExpectedErrorCode,
+		                             const FString& ExpectedContext,
+		                             FAutomationTestBase* Test) -> bool {
+			if (Result.IsSuccess()) {
+				Test->AddError(FString::Printf(
+					TEXT("Expected error code %d but operation succeeded"),
+					static_cast<int32>(ExpectedErrorCode)));
+				return false;
+			}
+
+			UnrealMCP::EErrorCode ActualErrorCode = Result.GetErrorCode();
+			if (ActualErrorCode != ExpectedErrorCode) {
+				Test->AddError(FString::Printf(
+					TEXT("Expected error code %d (%s) but got %d (%s)"),
+					static_cast<int32>(ExpectedErrorCode),
+					*UnrealMCP::FError::GetErrorCodeName(ExpectedErrorCode),
+					static_cast<int32>(ActualErrorCode),
+					*UnrealMCP::FError::GetErrorCodeName(ActualErrorCode)));
+				return false;
+			}
+
+			// Optionally check context if provided
+			if (!ExpectedContext.IsEmpty()) {
+				const FString& ActualContext = Result.GetError().Context;
+				if (!ActualContext.Contains(ExpectedContext)) {
+					Test->AddError(FString::Printf(
+						TEXT("Expected error context '%s' but got '%s'"),
+						*ExpectedContext,
+						*ActualContext));
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate error contains the expected error code for templated results
+		 */
+		template <typename T>
+		static auto ValidateErrorCode(const UnrealMCP::TResult<T>& Result,
+		                             UnrealMCP::EErrorCode ExpectedErrorCode,
+		                             const FString& ExpectedContext,
+		                             FAutomationTestBase* Test) -> bool {
+			if (Result.IsSuccess()) {
+				Test->AddError(FString::Printf(
+					TEXT("Expected error code %d but operation succeeded"),
+					static_cast<int32>(ExpectedErrorCode)));
+				return false;
+			}
+
+			UnrealMCP::EErrorCode ActualErrorCode = Result.GetErrorCode();
+			if (ActualErrorCode != ExpectedErrorCode) {
+				Test->AddError(FString::Printf(
+					TEXT("Expected error code %d (%s) but got %d (%s)"),
+					static_cast<int32>(ExpectedErrorCode),
+					*UnrealMCP::FError::GetErrorCodeName(ExpectedErrorCode),
+					static_cast<int32>(ActualErrorCode),
+					*UnrealMCP::FError::GetErrorCodeName(ActualErrorCode)));
+				return false;
+			}
+
+			// Optionally check context if provided
+			if (!ExpectedContext.IsEmpty()) {
+				const FString& ActualContext = Result.GetError().Context;
+				if (!ActualContext.Contains(ExpectedContext)) {
+					Test->AddError(FString::Printf(
+						TEXT("Expected error context '%s' but got '%s'"),
+						*ExpectedContext,
+						*ActualContext));
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Legacy: Validate error message contains expected context (for backward compatibility)
+		 * DEPRECATED: Use ValidateErrorCode instead!
+		 */
+		static auto ValidateErrorMessage(const FString& ErrorMessage,
+										  const FString& OperationType,   // "spawn", "add", "set", etc.
+										  const FString& ResourceType,    // "Blueprint", "Actor", "Component", etc.
+										  const FString& ResourceName,    // The specific item name
+										  FAutomationTestBase* Test) -> bool {
+			Test->AddWarning(TEXT("ValidateErrorMessage is deprecated. Use ValidateErrorCode instead."));
+
+			bool bValid = true;
+
+			// Check operation is mentioned
+			if (!ErrorMessage.Contains(OperationType)) {
+				Test->AddError(FString::Printf(
+					TEXT("Error missing operation context. Expected '%s' in: %s"),
+					*OperationType,
+					*ErrorMessage));
+				bValid = false;
+			}
+
+			// Check resource type is mentioned
+			if (!ErrorMessage.Contains(ResourceType)) {
+				Test->AddError(FString::Printf(
+					TEXT("Error missing resource type. Expected '%s' in: %s"),
+					*ResourceType,
+					*ErrorMessage));
+				bValid = false;
+			}
+
+			// Check specific resource is mentioned
+			if (!ErrorMessage.Contains(ResourceName)) {
+				Test->AddError(FString::Printf(
+					TEXT("Error missing resource name. Expected '%s' in: %s"),
+					*ResourceName,
+					*ErrorMessage));
+				bValid = false;
+			}
+
+			return bValid;
+		}
+
+		/**
+		 * Validate that two different resource names produce different error messages
+		 * (ensures errors are specific, not generic)
+		 */
+		static auto ValidateErrorsAreDifferent(const FString& Error1,
+											   const FString& Error2,
+											   const FString& ResourceName1,
+											   const FString& ResourceName2,
+											   FAutomationTestBase* Test) -> bool {
+			if (Error1 == Error2) {
+				Test->AddError(FString::Printf(
+					TEXT("Error messages should differ for different resources. Both: %s"),
+					*Error1));
+				return false;
+			}
+
+			// Verify first error mentions the correct resource
+			if (!Error1.Contains(ResourceName1)) {
+				Test->AddError(FString::Printf(
+					TEXT("First error should mention '%s', got: %s"),
+					*ResourceName1,
+					*Error1));
+				return false;
+			}
+
+			// Verify second error mentions the correct resource
+			if (!Error2.Contains(ResourceName2)) {
+				Test->AddError(FString::Printf(
+					TEXT("Second error should mention '%s', got: %s"),
+					*ResourceName2,
+					*Error2));
+				return false;
+			}
+
+			return true;
+		}
+
+		/**
+		 * Validate error distinguishes between different failure types
+		 * For example: missing blueprint vs. invalid component type
+		 */
+		static auto ValidateErrorTypeDistinction(const FString& Error,
+												 const FString& ExpectedFailureReason,
+												 const FString& UnexpectedReason,
+												 FAutomationTestBase* Test) -> bool {
+			if (!Error.Contains(ExpectedFailureReason)) {
+				Test->AddError(FString::Printf(
+					TEXT("Error should mention '%s', got: %s"),
+					*ExpectedFailureReason,
+					*Error));
+				return false;
+			}
+
+			// Optional: check it doesn't confuse this with a different error type
+			if (!UnexpectedReason.IsEmpty() && Error.Contains(UnexpectedReason)) {
+				Test->AddWarning(FString::Printf(
+					TEXT("Error mentions both '%s' and '%s' - may be confusing"),
+					*ExpectedFailureReason,
+					*UnexpectedReason));
+			}
+
+			return true;
 		}
 	};
 }

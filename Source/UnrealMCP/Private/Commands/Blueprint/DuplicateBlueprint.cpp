@@ -4,6 +4,7 @@
 #include "ObjectTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Engine/Blueprint.h"
 #include "Misc/PackageName.h"
 #include "Services/BlueprintIntrospectionService.h"
@@ -15,7 +16,7 @@ namespace UnrealMCP {
 	auto FDuplicateBlueprintCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 
 		if (!Params->HasField(TEXT("source_name")) || !Params->HasField(TEXT("new_name"))) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing required parameters: source_name and new_name"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing required parameters: source_name and new_name")));
 		}
 
 		const FString SourceName = Params->GetStringField(TEXT("source_name"));
@@ -24,20 +25,20 @@ namespace UnrealMCP {
 			Params->HasField(TEXT("path")) ? Params->GetStringField(TEXT("path")) : TEXT("/Game/Blueprints/");
 
 		if (NewName.IsEmpty()) {
-			return FCommonUtils::CreateErrorResponse(TEXT("New blueprint name cannot be empty"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("New blueprint name cannot be empty")));
 		}
 
 		const FString SourcePath = FBlueprintIntrospectionService::GetBlueprintPath(SourceName);
 		if (SourcePath.IsEmpty()) {
 			return FCommonUtils::CreateErrorResponse(
-				FString::Printf(TEXT("Source blueprint '%s' not found"), *SourceName)
+				FError(EErrorCode::BlueprintNotFound, FString::Printf(TEXT("Source blueprint '%s' not found"), *SourceName))
 			);
 		}
 
 		UBlueprint* SourceBlueprint = LoadObject<UBlueprint>(nullptr, *SourcePath);
 		if (!SourceBlueprint) {
 			return FCommonUtils::CreateErrorResponse(
-				FString::Printf(TEXT("Failed to load source blueprint '%s'"), *SourceName)
+				FError(EErrorCode::BlueprintNotFound, FString::Printf(TEXT("Failed to load source blueprint '%s'"), *SourceName))
 			);
 		}
 
@@ -46,7 +47,7 @@ namespace UnrealMCP {
 		if (const FString NewAssetPath = FString::Printf(TEXT("%s.%s"), *NewPackagePath, *NewName);
 			FBlueprintIntrospectionService::BlueprintExists(NewAssetPath)) {
 			return FCommonUtils::CreateErrorResponse(
-				FString::Printf(TEXT("Blueprint '%s' already exists at path '%s'"), *NewName, *NewPackagePath)
+				FError(EErrorCode::InvalidInput, FString::Printf(TEXT("Blueprint '%s' already exists at path '%s'"), *NewName, *NewPackagePath))
 			);
 		}
 
@@ -93,7 +94,7 @@ namespace UnrealMCP {
 			}
 		}
 
-		return FCommonUtils::CreateErrorResponse(TEXT("Failed to duplicate blueprint"));
+		return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, TEXT("Failed to duplicate blueprint")));
 	}
 
 }

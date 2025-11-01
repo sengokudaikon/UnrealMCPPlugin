@@ -28,13 +28,13 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (SourceNodeId.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Source node ID cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Source node ID cannot be empty"));
 		}
 		if (TargetNodeId.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Target node ID cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Target node ID cannot be empty"));
 		}
 
 		FString Error;
@@ -52,7 +52,7 @@ namespace UnrealMCP {
 		UEdGraphNode* TargetNode = FindNodeByGuid(EventGraph, TargetNodeId);
 
 		if (!SourceNode || !TargetNode) {
-			return FVoidResult::Failure(TEXT("Source or target node not found"));
+			return FVoidResult::Failure(EErrorCode::NodeNotFound, TEXT("Source or target node not found"));
 		}
 
 		if (FCommonUtils::ConnectGraphNodes(EventGraph, SourceNode, SourcePinName, TargetNode, TargetPinName)) {
@@ -60,7 +60,7 @@ namespace UnrealMCP {
 			return FVoidResult::Success();
 		}
 
-		return FVoidResult::Failure(TEXT("Failed to connect nodes"));
+		return FVoidResult::Failure(EErrorCode::NodeConnectionFailed, TEXT("Failed to connect nodes"));
 	}
 
 	auto FBlueprintGraphService::AddEventNode(
@@ -70,10 +70,10 @@ namespace UnrealMCP {
 	) -> TResult<UK2Node_Event*> {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return TResult<UK2Node_Event*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UK2Node_Event*>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (EventName.IsEmpty()) {
-			return TResult<UK2Node_Event*>::Failure(TEXT("Event name cannot be empty"));
+			return TResult<UK2Node_Event*>::Failure(EErrorCode::InvalidInput, TEXT("Event name cannot be empty"));
 		}
 
 		FString Error;
@@ -89,7 +89,7 @@ namespace UnrealMCP {
 
 		UK2Node_Event* EventNode = FCommonUtils::CreateEventNode(EventGraph, EventName, NodePosition);
 		if (!EventNode) {
-			return TResult<UK2Node_Event*>::Failure(TEXT("Failed to create event node"));
+			return TResult<UK2Node_Event*>::Failure(EErrorCode::NodeCreationFailed, TEXT("Failed to create event node"));
 		}
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
@@ -105,10 +105,10 @@ namespace UnrealMCP {
 	) -> TResult<UK2Node_CallFunction*> {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return TResult<UK2Node_CallFunction*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UK2Node_CallFunction*>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (FunctionName.IsEmpty()) {
-			return TResult<UK2Node_CallFunction*>::Failure(TEXT("Function name cannot be empty"));
+			return TResult<UK2Node_CallFunction*>::Failure(EErrorCode::InvalidInput, TEXT("Function name cannot be empty"));
 		}
 
 		FString Error;
@@ -212,10 +212,10 @@ namespace UnrealMCP {
 	) -> TResult<UK2Node_VariableGet*> {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return TResult<UK2Node_VariableGet*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UK2Node_VariableGet*>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (ComponentName.IsEmpty()) {
-			return TResult<UK2Node_VariableGet*>::Failure(TEXT("Component name cannot be empty"));
+			return TResult<UK2Node_VariableGet*>::Failure(EErrorCode::InvalidInput, TEXT("Component name cannot be empty"));
 		}
 
 		FString Error;
@@ -231,7 +231,7 @@ namespace UnrealMCP {
 
 		UK2Node_VariableGet* GetComponentNode = NewObject<UK2Node_VariableGet>(EventGraph);
 		if (!GetComponentNode) {
-			return TResult<UK2Node_VariableGet*>::Failure(TEXT("Failed to create get component node"));
+			return TResult<UK2Node_VariableGet*>::Failure(EErrorCode::NodeCreationFailed, TEXT("Failed to create get component node"));
 		}
 
 		FMemberReference& VarRef = GetComponentNode->VariableReference;
@@ -256,7 +256,7 @@ namespace UnrealMCP {
 	) -> TResult<UK2Node_Self*> {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return TResult<UK2Node_Self*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UK2Node_Self*>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 
 		FString Error;
@@ -272,7 +272,7 @@ namespace UnrealMCP {
 
 		UK2Node_Self* SelfNode = FCommonUtils::CreateSelfReferenceNode(EventGraph, NodePosition);
 		if (!SelfNode) {
-			return TResult<UK2Node_Self*>::Failure(TEXT("Failed to create self node"));
+			return TResult<UK2Node_Self*>::Failure(EErrorCode::NodeCreationFailed, TEXT("Failed to create self node"));
 		}
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
@@ -286,10 +286,10 @@ namespace UnrealMCP {
 	) -> TResult<UK2Node_InputAction*> {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return TResult<UK2Node_InputAction*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UK2Node_InputAction*>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (ActionName.IsEmpty()) {
-			return TResult<UK2Node_InputAction*>::Failure(TEXT("Action name cannot be empty"));
+			return TResult<UK2Node_InputAction*>::Failure(EErrorCode::InvalidInput, TEXT("Action name cannot be empty"));
 		}
 
 		FString Error;
@@ -306,7 +306,7 @@ namespace UnrealMCP {
 		UK2Node_InputAction* InputActionNode =
 			FCommonUtils::CreateInputActionNode(EventGraph, ActionName, NodePosition);
 		if (!InputActionNode) {
-			return TResult<UK2Node_InputAction*>::Failure(TEXT("Failed to create input action node"));
+			return TResult<UK2Node_InputAction*>::Failure(EErrorCode::NodeCreationFailed, TEXT("Failed to create input action node"));
 		}
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
@@ -321,10 +321,10 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (NodeType.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Node type cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Node type cannot be empty"));
 		}
 
 		FString Error;
@@ -340,7 +340,7 @@ namespace UnrealMCP {
 
 		if (NodeType == TEXT("Event")) {
 			if (!EventName.IsSet()) {
-				return FVoidResult::Failure(TEXT("Missing 'event_name' parameter for Event node search"));
+				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Missing 'event_name' parameter for Event node search"));
 			}
 
 			for (UEdGraphNode* Node : EventGraph->Nodes) {
@@ -362,13 +362,13 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 		if (VariableName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Variable name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Variable name cannot be empty"));
 		}
 		if (VariableType.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Variable type cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Variable type cannot be empty"));
 		}
 
 		FString Error;
@@ -460,7 +460,7 @@ namespace UnrealMCP {
 
 				const UEdGraphSchema_K2* K2Schema = Cast<const UEdGraphSchema_K2>(EventGraph->GetSchema());
 				if (!K2Schema) {
-					return FVoidResult::Failure(TEXT("Failed to get K2Schema"));
+					return FVoidResult::Failure(EErrorCode::OperationFailed, TEXT("Failed to get K2Schema"));
 				}
 
 				K2Schema->TrySetDefaultObject(*ParamPin, Class);

@@ -1,4 +1,5 @@
 ﻿#include "Services/InputService.h"
+#include "Core/ErrorTypes.h"
 #include "Editor.h"
 #include "EnhancedInputLibrary.h"
 #include "EnhancedInputSubsystems.h"
@@ -15,7 +16,7 @@ namespace UnrealMCP {
 
 	auto FInputService::CreateInputAction(const FInputActionParams& Params) -> TResult<UInputAction*> {
 		if (Params.Name.IsEmpty()) {
-			return TResult<UInputAction*>::Failure(TEXT("Input action name cannot be empty"));
+			return TResult<UInputAction*>::Failure(EErrorCode::InvalidInput, TEXT("CreateInputAction"), TEXT("Name cannot be empty"));
 		}
 
 		const FString AssetName = FString::Printf(TEXT("IA_%s"), *Params.Name);
@@ -23,7 +24,7 @@ namespace UnrealMCP {
 
 		UPackage* Package = CreatePackage(*PackagePath);
 		if (!Package) {
-			return TResult<UInputAction*>::Failure(TEXT("Failed to create package for input action"));
+			return TResult<UInputAction*>::Failure(EErrorCode::FailedToCreateAsset, PackagePath, TEXT("Failed to create package"));
 		}
 
 		UInputAction* InputAction = NewObject<UInputAction>(
@@ -32,7 +33,7 @@ namespace UnrealMCP {
 			RF_Public | RF_Standalone
 		);
 		if (!InputAction) {
-			return TResult<UInputAction*>::Failure(TEXT("Failed to instantiate Input Action object"));
+			return TResult<UInputAction*>::Failure(EErrorCode::FailedToCreateAsset, AssetName, TEXT("Failed to instantiate Input Action object"));
 		}
 
 		InputAction->ValueType = static_cast<EInputActionValueType>(ParseValueType(Params.ValueType));
@@ -40,7 +41,7 @@ namespace UnrealMCP {
 		FAssetRegistryModule::AssetCreated(InputAction);
 
 		if (!SavePackage(Package, InputAction, PackagePath)) {
-			return TResult<UInputAction*>::Failure(TEXT("Failed to save Input Action asset to disk"));
+			return TResult<UInputAction*>::Failure(EErrorCode::FailedToSaveAsset, PackagePath);
 		}
 
 		return TResult<UInputAction*>::Success(InputAction);
@@ -49,7 +50,7 @@ namespace UnrealMCP {
 	auto FInputService::CreateInputMappingContext(
 		const FInputMappingContextParams& Params) -> TResult<UInputMappingContext*> {
 		if (Params.Name.IsEmpty()) {
-			return TResult<UInputMappingContext*>::Failure(TEXT("Mapping context name cannot be empty"));
+			return TResult<UInputMappingContext*>::Failure(EErrorCode::InvalidInput, TEXT("CreateInputMappingContext"), TEXT("Name cannot be empty"));
 		}
 
 		const FString AssetName = FString::Printf(TEXT("IMC_%s"), *Params.Name);
@@ -57,7 +58,7 @@ namespace UnrealMCP {
 
 		UPackage* Package = CreatePackage(*PackagePath);
 		if (!Package) {
-			return TResult<UInputMappingContext*>::Failure(TEXT("Failed to create package for mapping context"));
+			return TResult<UInputMappingContext*>::Failure(EErrorCode::FailedToCreateAsset, PackagePath, TEXT("Failed to create package"));
 		}
 
 		UInputMappingContext* MappingContext = NewObject<UInputMappingContext>(
@@ -66,14 +67,14 @@ namespace UnrealMCP {
 			RF_Public | RF_Standalone
 		);
 		if (!MappingContext) {
-			return TResult<UInputMappingContext*>::Failure(TEXT("Failed to instantiate Input Mapping Context object"));
+			return TResult<UInputMappingContext*>::Failure(EErrorCode::FailedToCreateAsset, AssetName, TEXT("Failed to instantiate Input Mapping Context object"));
 		}
 
 		Package->MarkPackageDirty();
 		FAssetRegistryModule::AssetCreated(MappingContext);
 
 		if (!SavePackage(Package, MappingContext, PackagePath)) {
-			return TResult<UInputMappingContext*>::Failure(TEXT("Failed to save Input Mapping Context asset to disk"));
+			return TResult<UInputMappingContext*>::Failure(EErrorCode::FailedToSaveAsset, PackagePath);
 		}
 
 		return TResult<UInputMappingContext*>::Success(MappingContext);
@@ -81,24 +82,24 @@ namespace UnrealMCP {
 
 	auto FInputService::AddMappingToContext(const FAddMappingParams& Params) -> FVoidResult {
 		if (Params.ContextPath.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Input mapping context path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("AddMappingToContext"), TEXT("Context path cannot be empty"));
 		}
 		if (Params.ActionPath.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Input action path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("AddMappingToContext"), TEXT("Action path cannot be empty"));
 		}
 		if (Params.Key.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Key name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("AddMappingToContext"), TEXT("Key name cannot be empty"));
 		}
 
 		FString Error;
 		UInputMappingContext* MappingContext = LoadInputMappingContext(Params.ContextPath, Error);
 		if (!MappingContext) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::InputMappingNotFound, Params.ContextPath, Error);
 		}
 
 		const UInputAction* InputAction = LoadInputAction(Params.ActionPath, Error);
 		if (!InputAction) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::InputActionNotFound, Params.ActionPath, Error);
 		}
 
 		MappingContext->MapKey(InputAction, FKey(*Params.Key));
@@ -108,7 +109,7 @@ namespace UnrealMCP {
 
 		const FString PackageName = MappingContext->GetOutermost()->GetName();
 		if (!SavePackage(MappingContext->GetOutermost(), MappingContext, PackageName)) {
-			return FVoidResult::Failure(TEXT("Failed to save Input Mapping Context after adding mapping"));
+			return FVoidResult::Failure(EErrorCode::FailedToSaveAsset, PackageName);
 		}
 
 		return FVoidResult::Success();
@@ -116,21 +117,21 @@ namespace UnrealMCP {
 
 	auto FInputService::RemoveMappingFromContext(const FAddMappingParams& Params) -> FVoidResult {
 		if (Params.ContextPath.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Input mapping context path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("RemoveMappingFromContext"), TEXT("Context path cannot be empty"));
 		}
 		if (Params.ActionPath.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Input action path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("RemoveMappingFromContext"), TEXT("Action path cannot be empty"));
 		}
 
 		FString Error;
 		UInputMappingContext* MappingContext = LoadInputMappingContext(Params.ContextPath, Error);
 		if (!MappingContext) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::InputMappingNotFound, Params.ContextPath, Error);
 		}
 
 		const UInputAction* InputAction = LoadInputAction(Params.ActionPath, Error);
 		if (!InputAction) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::InputActionNotFound, Params.ActionPath, Error);
 		}
 
 		MappingContext->UnmapKey(InputAction, FKey());
@@ -140,7 +141,7 @@ namespace UnrealMCP {
 
 		const FString PackageName = MappingContext->GetOutermost()->GetName();
 		if (!SavePackage(MappingContext->GetOutermost(), MappingContext, PackageName)) {
-			return FVoidResult::Failure(TEXT("Failed to save Input Mapping Context after removing mapping"));
+			return FVoidResult::Failure(EErrorCode::FailedToSaveAsset, PackageName);
 		}
 
 		return FVoidResult::Success();
@@ -204,18 +205,18 @@ namespace UnrealMCP {
 
 	auto FInputService::ApplyMappingContext(const FApplyMappingContextParams& Params) -> FVoidResult {
 		if (Params.ContextPath.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Input mapping context path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("ApplyMappingContext"), TEXT("Context path cannot be empty"));
 		}
 
 		FString Error;
 		const UInputMappingContext* MappingContext = LoadInputMappingContext(Params.ContextPath, Error);
 		if (!MappingContext) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::InputMappingNotFound, Params.ContextPath, Error);
 		}
 
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = GetInputSubsystem(Error);
 		if (!Subsystem) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("EnhancedInputLocalPlayerSubsystem"), Error);
 		}
 
 		Subsystem->AddMappingContext(MappingContext, Params.Priority);
@@ -224,18 +225,18 @@ namespace UnrealMCP {
 
 	auto FInputService::RemoveMappingContext(const FRemoveMappingContextParams& Params) -> FVoidResult {
 		if (Params.ContextPath.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Input mapping context path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("RemoveMappingContext"), TEXT("Context path cannot be empty"));
 		}
 
 		FString Error;
 		const UInputMappingContext* MappingContext = LoadInputMappingContext(Params.ContextPath, Error);
 		if (!MappingContext) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::InputMappingNotFound, Params.ContextPath, Error);
 		}
 
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = GetInputSubsystem(Error);
 		if (!Subsystem) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("EnhancedInputLocalPlayerSubsystem"), Error);
 		}
 
 		Subsystem->RemoveMappingContext(MappingContext);
@@ -246,7 +247,7 @@ namespace UnrealMCP {
 		FString Error;
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = GetInputSubsystem(Error);
 		if (!Subsystem) {
-			return FVoidResult::Failure(Error);
+			return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("EnhancedInputLocalPlayerSubsystem"), Error);
 		}
 
 		Subsystem->ClearAllMappings();
@@ -278,17 +279,17 @@ namespace UnrealMCP {
 
 	auto FInputService::CreateLegacyInputMapping(const FLegacyInputMappingParams& Params) -> FVoidResult {
 		if (Params.ActionName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Action name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("CreateLegacyInputMapping"), TEXT("Action name cannot be empty"));
 		}
 
 		if (Params.Key.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Key cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("CreateLegacyInputMapping"), TEXT("Key cannot be empty"));
 		}
 
 		// Get the input settings
 		UInputSettings* InputSettings = GetMutableDefault<UInputSettings>();
 		if (!InputSettings) {
-			return FVoidResult::Failure(TEXT("Failed to get input settings"));
+			return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("UInputSettings"));
 		}
 
 		// Create the input action mapping

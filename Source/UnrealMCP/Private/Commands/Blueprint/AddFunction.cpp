@@ -1,5 +1,6 @@
 ﻿#include "Commands/Blueprint/AddFunction.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintMemberService.h"
 
 namespace UnrealMCP {
@@ -7,7 +8,7 @@ namespace UnrealMCP {
 	auto FAddFunctionCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		if (!Params->HasField(TEXT("blueprint_name")) || !Params->HasField(TEXT("function_name"))) {
 			return FCommonUtils::CreateErrorResponse(
-				TEXT("Missing required parameters: blueprint_name and function_name")
+				FError(EErrorCode::InvalidInput, TEXT("Missing required parameters: blueprint_name and function_name"))
 			);
 		}
 

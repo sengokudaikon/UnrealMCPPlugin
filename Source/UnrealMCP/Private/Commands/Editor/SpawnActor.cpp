@@ -1,5 +1,6 @@
 ﻿#include "Commands/Editor/SpawnActor.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 #include "Services/ActorService.h"
@@ -12,12 +13,12 @@ namespace UnrealMCP {
 
 		FString ActorClass;
 		if (!Params->TryGetStringField(TEXT("actor_class"), ActorClass)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'actor_class' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'actor_class' parameter")));
 		}
 
 		FString ActorName;
 		if (!Params->TryGetStringField(TEXT("actor_name"), ActorName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'actor_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'actor_name' parameter")));
 		}
 
 		TOptional<FVector> Location;

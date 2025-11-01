@@ -1,4 +1,5 @@
 ﻿#include "Services/ViewportService.h"
+#include "Core/ErrorTypes.h"
 #include "Editor.h"
 #include "EditorViewportClient.h"
 #include "ImageUtils.h"
@@ -15,14 +16,14 @@ namespace UnrealMCP {
 		const TOptional<FVector>& Location
 	) -> FVoidResult {
 		if (!GEditor) {
-			return FVoidResult::Failure(TEXT("GEditor is null"));
+			return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("GEditor"));
 		}
 
 		// If actor name is provided, focus on that actor
 		if (ActorName.IsSet()) {
 			const UWorld* World = GEditor->GetEditorWorldContext().World();
 			if (!World) {
-				return FVoidResult::Failure(TEXT("Failed to get editor world"));
+				return FVoidResult::Failure(EErrorCode::WorldNotFound);
 			}
 
 			// Find the actor
@@ -38,7 +39,7 @@ namespace UnrealMCP {
 			}
 
 			if (!TargetActor) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Actor not found: %s"), *ActorName.GetValue()));
+				return FVoidResult::Failure(EErrorCode::ActorNotFound, ActorName.GetValue());
 			}
 
 			// Select the actor and focus on it
@@ -53,11 +54,11 @@ namespace UnrealMCP {
 				ViewportClient->SetViewLocation(Location.GetValue());
 			}
 			else {
-				return FVoidResult::Failure(TEXT("Failed to get viewport client"));
+				return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("ViewportClient"));
 			}
 		}
 		else {
-			return FVoidResult::Failure(TEXT("Either actor_name or location must be provided"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("FocusViewport"), TEXT("Either actor_name or location must be provided"));
 		}
 
 		return FVoidResult::Success();
@@ -65,12 +66,12 @@ namespace UnrealMCP {
 
 	auto FViewportService::TakeScreenshot(const FString& FilePath) -> TResult<FString> {
 		if (!GEditor) {
-			return TResult<FString>::Failure(TEXT("GEditor is null"));
+			return TResult<FString>::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("GEditor"));
 		}
 
 		FViewport* Viewport = GEditor->GetActiveViewport();
 		if (!Viewport) {
-			return TResult<FString>::Failure(TEXT("No active viewport"));
+			return TResult<FString>::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("ActiveViewport"));
 		}
 
 		TArray<FColor> Bitmap;
@@ -86,10 +87,10 @@ namespace UnrealMCP {
 			if (FFileHelper::SaveArrayToFile(CompressedBitmap, *FilePath)) {
 				return TResult<FString>::Success(FilePath);
 			}
-			return TResult<FString>::Failure(FString::Printf(TEXT("Failed to save screenshot to: %s"), *FilePath));
+			return TResult<FString>::Failure(EErrorCode::FailedToSaveAsset, FilePath, TEXT("Could not write screenshot file"));
 		}
 
-		return TResult<FString>::Failure(TEXT("Failed to read viewport pixels"));
+		return TResult<FString>::Failure(EErrorCode::OperationFailed, TEXT("TakeScreenshot"), TEXT("Failed to read viewport pixels"));
 	}
 
 }

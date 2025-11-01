@@ -1,5 +1,6 @@
 ﻿#include "Commands/Editor/GetActorProperties.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "GameFramework/Actor.h"
 #include "Services/ActorService.h"
@@ -12,7 +13,7 @@ namespace UnrealMCP {
 
 		FString ActorName;
 		if (!Params->TryGetStringField(TEXT("name"), ActorName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'name' parameter")));
 		}
 
 		TMap<FString, FString> Properties;

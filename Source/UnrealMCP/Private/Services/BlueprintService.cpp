@@ -1,4 +1,5 @@
 ﻿#include "Services/BlueprintService.h"
+#include "Core/ErrorTypes.h"
 #include "Editor.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
@@ -23,25 +24,23 @@ namespace UnrealMCP {
 	auto FBlueprintService::SpawnActorBlueprint(const FBlueprintSpawnParams& Params) -> TResult<AActor*> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<AActor*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<AActor*>::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (Params.ActorName.IsEmpty()) {
-			return TResult<AActor*>::Failure(TEXT("Actor name cannot be empty"));
+			return TResult<AActor*>::Failure(EErrorCode::InvalidInput, TEXT("ActorName"));
 		}
 
 		// Find blueprint
 		const UBlueprint* Blueprint = FCommonUtils::FindBlueprint(Params.BlueprintName);
 		if (!Blueprint) {
-			return TResult<AActor*>::Failure(
-				FString::Printf(TEXT("Blueprint not found: %s"), *Params.BlueprintName)
-			);
+			return TResult<AActor*>::Failure(EErrorCode::BlueprintNotFound, Params.BlueprintName);
 		}
 
 		// Get editor world
 		UWorld* World = GEditor->GetEditorWorldContext().World();
 		if (!World) {
 			UE_LOG(LogTemp, Error, TEXT("SpawnActorBlueprint: Failed to get editor world context"));
-			return TResult<AActor*>::Failure(TEXT("Failed to get editor world"));
+			return TResult<AActor*>::Failure(EErrorCode::WorldNotFound, TEXT("Failed to get editor world"));
 		}
 
 		// Validate blueprint status
@@ -73,12 +72,11 @@ namespace UnrealMCP {
 					break;
 			}
 
-			return TResult<AActor*>::Failure(
-				FString::Printf(
-					TEXT("Blueprint '%s' is not ready to spawn (Status: %s)"),
-					*Params.BlueprintName,
-					*StatusMessage)
-			);
+			return TResult<AActor*>::Failure(EErrorCode::BlueprintNotReady, FString::Printf(
+				TEXT("Blueprint '%s' is not ready to spawn (Status: %s)"),
+				*Params.BlueprintName,
+				*StatusMessage
+			));
 		}
 
 		if (!Blueprint->GeneratedClass) {
@@ -88,11 +86,10 @@ namespace UnrealMCP {
 				TEXT("SpawnActorBlueprint: Blueprint '%s' has no generated class - may not be compiled properly"),
 				*Blueprint->GetName()
 			);
-			return TResult<AActor*>::Failure(
-				FString::Printf(
-					TEXT("Blueprint '%s' has no generated class - may not be compiled properly"),
-					*Params.BlueprintName)
-			);
+		return TResult<AActor*>::Failure(EErrorCode::BlueprintNotCompiled, FString::Printf(
+				TEXT("Blueprint '%s' has no generated class - may not be compiled properly"),
+				*Params.BlueprintName
+			));
 		}
 
 		if (!Blueprint->GeneratedClass->IsChildOf<AActor>()) {
@@ -102,9 +99,7 @@ namespace UnrealMCP {
 				TEXT("SpawnActorBlueprint: Blueprint '%s' generated class is not a child of AActor"),
 				*Blueprint->GetName()
 			);
-			return TResult<AActor*>::Failure(
-				FString::Printf(TEXT("Blueprint '%s' is not an Actor-based blueprint"), *Params.BlueprintName)
-			);
+			return TResult<AActor*>::Failure(EErrorCode::InvalidBlueprintType, FString::Printf(TEXT("Blueprint '%s' is not an Actor-based blueprint"), *Params.BlueprintName));
 		}
 
 		// Log complexity warnings
@@ -141,6 +136,7 @@ namespace UnrealMCP {
 		FTransform SpawnTransform;
 		SpawnTransform.SetLocation(Params.Location.Get(FVector::ZeroVector));
 		SpawnTransform.SetRotation(FQuat(Params.Rotation.Get(FRotator::ZeroRotator)));
+		SpawnTransform.SetScale3D(Params.Scale.Get(FVector::OneVector));
 
 		// Handle name conflicts
 		FString FinalActorName = Params.ActorName;
@@ -199,13 +195,10 @@ namespace UnrealMCP {
 				Blueprint->ParentClass ? *Blueprint->ParentClass->GetName() : TEXT("None")
 			);
 
-			return TResult<AActor*>::Failure(
-				FString::Printf(
-					TEXT(
-						"Failed to spawn blueprint actor '%s' - blueprint may have compilation errors or missing dependencies"),
+			return TResult<AActor*>::Failure(EErrorCode::FailedToSpawnActor, FString::Printf(
+					TEXT("Failed to spawn blueprint actor '%s' - blueprint may have compilation errors or missing dependencies"),
 					*Params.BlueprintName
-				)
-			);
+				));
 		}
 
 		// Set actor label
@@ -225,36 +218,33 @@ namespace UnrealMCP {
 	auto FBlueprintService::AddComponent(const FComponentParams& Params) -> TResult<UBlueprint*> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<UBlueprint*>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (Params.ComponentName.IsEmpty()) {
-			return TResult<UBlueprint*>::Failure(TEXT("Component name cannot be empty"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::InvalidInput, TEXT("ComponentName"));
 		}
 		if (Params.ComponentType.IsEmpty()) {
-			return TResult<UBlueprint*>::Failure(TEXT("Component type cannot be empty"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::InvalidInput, TEXT("ComponentType"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(Params.BlueprintName);
 		if (!Blueprint) {
-			return TResult<UBlueprint*>::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *Params.BlueprintName)
-			);
+			return TResult<UBlueprint*>::Failure(EErrorCode::BlueprintNotFound, Params.BlueprintName);
 		}
 
 		const FString ValidationError = ValidateBlueprintForComponentOps(Blueprint);
 		if (!ValidationError.IsEmpty()) {
-			return TResult<UBlueprint*>::Failure(ValidationError);
+			return TResult<UBlueprint*>::Failure(EErrorCode::BlueprintInvalid, ValidationError);
 		}
 
 		UClass* ComponentClass = ResolveComponentClass(Params.ComponentType);
 		if (!ComponentClass) {
-			return TResult<UBlueprint*>::Failure(
-				FString::Printf(TEXT("Unknown component type: %s"), *Params.ComponentType)
-			);
+			return TResult<UBlueprint*>::Failure(EErrorCode::InvalidComponentType, Params.ComponentType);
 		}
 
 		USCS_Node* NewNode = Blueprint->SimpleConstructionScript->CreateNode(ComponentClass, *Params.ComponentName);
 		if (!NewNode) {
-			return TResult<UBlueprint*>::Failure(TEXT("Failed to create component node"));
+			return TResult<UBlueprint*>::Failure(EErrorCode::FailedToCreateComponent, Params.ComponentName);
 		}
 
 		if (USceneComponent* SceneComponent = Cast<USceneComponent>(NewNode->ComponentTemplate)) {
@@ -364,32 +354,32 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (ComponentName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Component name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("ComponentName"));
 		}
 		if (PropertyParams.PropertyName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Property name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("PropertyName"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		if (const FString ValidationError = ValidateBlueprintForComponentOps(Blueprint); !ValidationError.IsEmpty()) {
-			return FVoidResult::Failure(ValidationError);
+			return FVoidResult::Failure(EErrorCode::BlueprintInvalid, ValidationError);
 		}
 
 		const USCS_Node* ComponentNode = FindComponentNode(Blueprint, ComponentName);
 		if (!ComponentNode) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Component not found: %s"), *ComponentName));
+			return FVoidResult::Failure(EErrorCode::ComponentNotFound, ComponentName);
 		}
 
 		UObject* ComponentTemplate = ComponentNode->ComponentTemplate;
 		if (!ComponentTemplate) {
-			return FVoidResult::Failure(TEXT("Invalid component template"));
+			return FVoidResult::Failure(EErrorCode::InvalidComponentType, ComponentName);
 		}
 
 		FString ErrorMessage;
@@ -399,7 +389,7 @@ namespace UnrealMCP {
 			PropertyParams.PropertyValue,
 			ErrorMessage
 		)) {
-			return FVoidResult::Failure(ErrorMessage);
+			return FVoidResult::Failure(EErrorCode::PropertySetFailed, ErrorMessage);
 		}
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
@@ -418,15 +408,15 @@ namespace UnrealMCP {
 	auto FBlueprintService::SetPhysicsProperties(const FPhysicsParams& Params) -> FVoidResult {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (Params.ComponentName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Component name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("ComponentName"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(Params.BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *Params.BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, Params.BlueprintName);
 		}
 
 		const FString ValidationError = ValidateBlueprintForComponentOps(Blueprint);
@@ -436,12 +426,12 @@ namespace UnrealMCP {
 
 		const USCS_Node* ComponentNode = FindComponentNode(Blueprint, Params.ComponentName);
 		if (!ComponentNode) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Component not found: %s"), *Params.ComponentName));
+			return FVoidResult::Failure(EErrorCode::ComponentNotFound, Params.ComponentName);
 		}
 
 		UPrimitiveComponent* PrimComponent = Cast<UPrimitiveComponent>(ComponentNode->ComponentTemplate);
 		if (!PrimComponent) {
-			return FVoidResult::Failure(TEXT("Component is not a primitive component"));
+			return FVoidResult::Failure(EErrorCode::InvalidComponentType, TEXT("Component is not a primitive component"));
 		}
 
 		PrimComponent->SetSimulatePhysics(Params.bSimulatePhysics);
@@ -476,38 +466,38 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (ComponentName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Component name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("ComponentName"));
 		}
 		if (StaticMesh.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Static mesh path cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("StaticMeshPath"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		if (const FString ValidationError = ValidateBlueprintForComponentOps(Blueprint); !ValidationError.IsEmpty()) {
-			return FVoidResult::Failure(ValidationError);
+			return FVoidResult::Failure(EErrorCode::BlueprintInvalid, ValidationError);
 		}
 
 		const USCS_Node* ComponentNode = FindComponentNode(Blueprint, ComponentName);
 		if (!ComponentNode) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Component not found: %s"), *ComponentName));
+			return FVoidResult::Failure(EErrorCode::ComponentNotFound, ComponentName);
 		}
 
 		UStaticMeshComponent* MeshComponent = Cast<UStaticMeshComponent>(ComponentNode->ComponentTemplate);
 		if (!MeshComponent) {
-			return FVoidResult::Failure(TEXT("Component is not a static mesh component"));
+			return FVoidResult::Failure(EErrorCode::InvalidComponentType, TEXT("Component is not a static mesh component"));
 		}
 
 		if (!StaticMesh.IsEmpty()) {
 			UStaticMesh* MeshAsset = Cast<UStaticMesh>(UEditorAssetLibrary::LoadAsset(StaticMesh));
 			if (!MeshAsset) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Failed to load static mesh: %s"), *StaticMesh));
+				return FVoidResult::Failure(EErrorCode::AssetNotFound, FString::Printf(TEXT("Failed to load static mesh: %s"), *StaticMesh));
 			}
 			MeshComponent->SetStaticMesh(MeshAsset);
 		}
@@ -516,7 +506,7 @@ namespace UnrealMCP {
 			UMaterialInterface* MaterialAsset =
 				Cast<UMaterialInterface>(UEditorAssetLibrary::LoadAsset(Material.GetValue()));
 			if (!MaterialAsset) {
-				return FVoidResult::Failure(FString::Printf(TEXT("Failed to load material: %s"), *Material.GetValue()));
+				return FVoidResult::Failure(EErrorCode::AssetNotFound, FString::Printf(TEXT("Failed to load material: %s"), *Material.GetValue()));
 			}
 			MeshComponent->SetMaterial(0, MaterialAsset);
 		}
@@ -534,20 +524,20 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (PropertyParams.PropertyName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Property name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("PropertyName"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		UObject* DefaultObject = Blueprint->GeneratedClass->GetDefaultObject();
 		if (!DefaultObject) {
-			return FVoidResult::Failure(TEXT("Failed to get blueprint class default object"));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, TEXT("Failed to get blueprint class default object"));
 		}
 
 		if (FString ErrorMessage; !FCommonUtils::SetObjectProperty(
@@ -556,7 +546,7 @@ namespace UnrealMCP {
 			PropertyParams.PropertyValue,
 			ErrorMessage
 		)) {
-			return FVoidResult::Failure(ErrorMessage);
+			return FVoidResult::Failure(EErrorCode::PropertySetFailed, ErrorMessage);
 		}
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
@@ -578,20 +568,20 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		// Validate input parameters
 		if (BlueprintName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Blueprint name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (!PropertyParams.IsValid()) {
-			return FVoidResult::Failure(TEXT("Invalid property parameters"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Invalid property parameters"));
 		}
 
 		UBlueprint* Blueprint = FCommonUtils::FindBlueprint(BlueprintName);
 		if (!Blueprint) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Blueprint not found: %s"), *BlueprintName));
+			return FVoidResult::Failure(EErrorCode::BlueprintNotFound, BlueprintName);
 		}
 
 		UObject* DefaultObject = Blueprint->GeneratedClass->GetDefaultObject();
 		if (!DefaultObject) {
-			return FVoidResult::Failure(TEXT("Failed to get default object"));
+			return FVoidResult::Failure(EErrorCode::OperationFailed, TEXT("Failed to get default object"));
 		}
 
 		bool bAnyPropertiesSet = false;
@@ -643,7 +633,7 @@ namespace UnrealMCP {
 		}
 
 		if (!bAnyPropertiesSet) {
-			return FVoidResult::Failure(TEXT("No pawn properties specified or all failed to set"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("No pawn properties specified or all failed to set"));
 		}
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
@@ -716,10 +706,10 @@ namespace UnrealMCP {
 		const FComponentTransformParams& Params) -> TResult<FComponentTransformResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<FComponentTransformResult>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 		if (Params.ComponentName.IsEmpty()) {
-			return TResult<FComponentTransformResult>::Failure(TEXT("Component name cannot be empty"));
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::InvalidInput, TEXT("ComponentName"));
 		}
 
 		// Find blueprint
@@ -727,31 +717,25 @@ namespace UnrealMCP {
 		                                               *FBlueprintIntrospectionService::GetBlueprintPath(
 			                                               Params.BlueprintName));
 		if (!Blueprint) {
-			return TResult<FComponentTransformResult>::Failure(
-				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
-			);
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::BlueprintNotFound, Params.BlueprintName);
 		}
 
 		// Validate blueprint for component operations
 		const FString ValidationError = ValidateBlueprintForComponentOps(Blueprint);
 		if (!ValidationError.IsEmpty()) {
-			return TResult<FComponentTransformResult>::Failure(ValidationError);
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::BlueprintInvalid, ValidationError);
 		}
 
 		// Find component node
 		USCS_Node* TargetNode = FindComponentNode(Blueprint, Params.ComponentName);
 		if (!TargetNode || !TargetNode->ComponentTemplate) {
-			return TResult<FComponentTransformResult>::Failure(
-				FString::Printf(TEXT("Component '%s' not found in blueprint"), *Params.ComponentName)
-			);
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::ComponentNotFound, Params.ComponentName);
 		}
 
 		// Verify it's a scene component
 		USceneComponent* SceneComp = Cast<USceneComponent>(TargetNode->ComponentTemplate);
 		if (!SceneComp) {
-			return TResult<FComponentTransformResult>::Failure(
-				TEXT("Component is not a SceneComponent and doesn't have transform properties")
-			);
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::InvalidComponentType, TEXT("Component is not a SceneComponent and doesn't have transform properties"));
 		}
 
 		bool bModified = false;
@@ -773,9 +757,7 @@ namespace UnrealMCP {
 		}
 
 		if (!bModified) {
-			return TResult<FComponentTransformResult>::Failure(
-				TEXT("No valid transform parameters provided to modify")
-			);
+			return TResult<FComponentTransformResult>::Failure(EErrorCode::InvalidInput, TEXT("No valid transform parameters provided to modify"));
 		}
 
 		// Mark blueprint as modified and compile
@@ -794,28 +776,24 @@ namespace UnrealMCP {
 	auto FBlueprintService::DeleteBlueprint(const FDeleteBlueprintParams& Params) -> TResult<FDeleteBlueprintResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<FDeleteBlueprintResult>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<FDeleteBlueprintResult>::Failure(EErrorCode::InvalidInput, TEXT("BlueprintName"));
 		}
 
 		// Find the blueprint
 		const FString BlueprintPath = FBlueprintIntrospectionService::GetBlueprintPath(Params.BlueprintName);
 		if (BlueprintPath.IsEmpty()) {
-			return TResult<FDeleteBlueprintResult>::Failure(
-				FString::Printf(TEXT("Blueprint '%s' not found"), *Params.BlueprintName)
-			);
+			return TResult<FDeleteBlueprintResult>::Failure(EErrorCode::BlueprintNotFound, Params.BlueprintName);
 		}
 
 		UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *BlueprintPath);
 		if (!Blueprint) {
-			return TResult<FDeleteBlueprintResult>::Failure(
-				FString::Printf(TEXT("Failed to load blueprint '%s'"), *Params.BlueprintName)
-			);
+			return TResult<FDeleteBlueprintResult>::Failure(EErrorCode::BlueprintNotFound, FString::Printf(TEXT("Failed to load blueprint '%s'"), *Params.BlueprintName));
 		}
 
 		// Get the package
 		const UPackage* Package = Blueprint->GetOutermost();
 		if (!Package) {
-			return TResult<FDeleteBlueprintResult>::Failure(TEXT("Failed to get blueprint package"));
+			return TResult<FDeleteBlueprintResult>::Failure(EErrorCode::AssetNotFound, TEXT("Failed to get blueprint package"));
 		}
 
 		// Delete the asset
@@ -836,9 +814,7 @@ namespace UnrealMCP {
 			return TResult<FDeleteBlueprintResult>::Success(MoveTemp(Result));
 		}
 
-		return TResult<FDeleteBlueprintResult>::Failure(
-			TEXT("Failed to delete blueprint - it may be in use or referenced elsewhere")
-		);
+		return TResult<FDeleteBlueprintResult>::Failure(EErrorCode::OperationFailed, TEXT("Failed to delete blueprint - it may be in use or referenced elsewhere"));
 	}
 
 }

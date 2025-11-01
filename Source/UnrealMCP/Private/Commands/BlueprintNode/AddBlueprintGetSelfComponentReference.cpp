@@ -1,6 +1,7 @@
 ﻿#include "Commands/BlueprintNode/AddBlueprintGetSelfComponentReference.h"
 #include "K2Node_VariableGet.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintGraphService.h"
 
 namespace UnrealMCP {
@@ -9,12 +10,12 @@ namespace UnrealMCP {
 	) -> TSharedPtr<FJsonObject> {
 		FString BlueprintName;
 		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter")));
 		}
 
 		FString ComponentName;
 		if (!Params->TryGetStringField(TEXT("component_name"), ComponentName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'component_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter")));
 		}
 
 		FVector2D NodePosition(0.0f, 0.0f);

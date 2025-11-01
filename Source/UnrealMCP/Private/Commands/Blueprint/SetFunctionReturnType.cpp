@@ -1,5 +1,6 @@
 #include "Commands/Blueprint/SetFunctionReturnType.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintMemberService.h"
 
 namespace UnrealMCP {
@@ -9,7 +10,7 @@ namespace UnrealMCP {
 		if (!Params->HasField(TEXT("blueprint_name")) || !Params->HasField(TEXT("function_name")) ||
 			!Params->HasField(TEXT("return_type"))) {
 			return FCommonUtils::CreateErrorResponse(
-				TEXT("Missing required parameters: blueprint_name, function_name, and return_type")
+				FError(EErrorCode::InvalidInput, TEXT("Missing required parameters: blueprint_name, function_name, and return_type"))
 			);
 		}
 

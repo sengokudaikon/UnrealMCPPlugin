@@ -23,10 +23,10 @@
 #include "UObject/UObjectIterator.h"
 
 // JSON Utilities
-auto FCommonUtils::CreateErrorResponse(const FString& Message) -> TSharedPtr<FJsonObject> {
+auto FCommonUtils::CreateErrorResponse(const UnrealMCP::FError& Error) -> TSharedPtr<FJsonObject> {
 	TSharedPtr<FJsonObject> ResponseObject = MakeShared<FJsonObject>();
 	ResponseObject->SetBoolField(TEXT("success"), false);
-	ResponseObject->SetStringField(TEXT("error"), Message);
+	ResponseObject->SetStringField(TEXT("error"), Error.GetMessage());
 	return ResponseObject;
 }
 

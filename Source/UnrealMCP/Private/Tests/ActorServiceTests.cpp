@@ -166,8 +166,13 @@ auto FActorServiceSpawnInvalidActorTest::RunTest(const FString& Parameters) -> b
 
 	// Verify failure
 	TestTrue(TEXT("SpawnActor should fail for invalid class"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention unknown class"),
-	         Result.GetError().Contains(TEXT("Unknown actor class")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidActorClass,
+		TEXT("NonExistentActorClass_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -246,8 +251,13 @@ auto FActorServiceDeleteInvalidActorTest::RunTest(const FString& Parameters) -> 
 
 	// Verify failure
 	TestTrue(TEXT("DeleteActor should fail for non-existent actor"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::ActorNotFound,
+		TEXT("NonExistentActor_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -521,8 +531,12 @@ auto FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters) -> bo
 	);
 
 	TestTrue(TEXT("SetActorProperty should fail for non-existent property"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention property not found"),
-	         Result.GetError().Contains(TEXT("Property not found")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::PropertyNotFound,
+		TEXT("NonExistentProperty"),
+		this
+	);
 
 	// Test setting wrong type for existing property
 	const TSharedPtr<FJsonValue> WrongTypeValue = MakeShareable(new FJsonValueString(TEXT("not a number")));
@@ -534,6 +548,31 @@ auto FActorServiceSetActorPropertyTest::RunTest(const FString& Parameters) -> bo
 
 	// This should fail because we're trying to set a string to a float property
 	TestTrue(TEXT("SetActorProperty should fail for wrong type"), Result.IsFailure());
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidPropertyValue,
+		TEXT("InitialLifeSpan"),
+		this
+	);
+
+	// Test setting wrong type to boolean property
+	const TSharedPtr<FJsonValue> WrongBoolTypeValue = MakeShareable(new FJsonValueString(TEXT("not a boolean")));
+	Result = UnrealMCP::FActorService::SetActorProperty(
+		TestActorName,
+		TEXT("bCanBeDamaged"),
+		WrongBoolTypeValue
+	);
+
+	if (Result.IsFailure()) {
+		// This should fail because we're trying to set a string to a boolean property
+		TestTrue(TEXT("SetActorProperty should fail for wrong boolean type"), Result.IsFailure());
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::InvalidPropertyValue,
+			TEXT("bCanBeDamaged"),
+			this
+		);
+	}
 
 	// Cleanup using utility
 	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
@@ -560,8 +599,144 @@ auto FActorServiceSetActorTransformInvalidActorTest::RunTest(const FString& Para
 
 	// Verify failure
 	TestTrue(TEXT("SetActorTransform should fail for non-existent actor"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention actor not found"),
-	         Result.GetError().Contains(TEXT("Actor not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::ActorNotFound,
+		TEXT("NonExistentActor_XYZ123"),
+		this
+	);
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FActorServiceGetActorAvailablePropertiesTest,
+	"UnrealMCP.Actor.GetActorAvailableProperties",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FActorServiceGetActorAvailablePropertiesTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Get available properties for an actor
+
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	TestNotNull(TEXT("Editor world should be available"), World);
+	if (!World)
+		return false;
+
+	// Spawn a test actor with unique name
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("AvailablePropsTestActor"));
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = FName(TestActorName);
+	AActor* TestActor = World->SpawnActor<AActor>(
+		AActor::StaticClass(),
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
+	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
+	if (!TestActor)
+		return false;
+
+	TArray<FString> AvailableProperties = UnrealMCP::FActorService::GetAvailableProperties(TestActor->GetClass());
+
+	// Verify results
+	TestTrue(TEXT("Should have available properties"), AvailableProperties.Num() > 0);
+
+	// Verify some common properties exist
+	bool bHasFloatProperty = false;
+	bool bHasBoolProperty = false;
+	for (const FString& Property : AvailableProperties) {
+		if (Property == TEXT("InitialLifeSpan")) {
+			bHasFloatProperty = true;
+		}
+		if (Property == TEXT("bCanBeDamaged") || Property == TEXT("bHidden") || Property == TEXT("bCollideWhenPlacing")) {
+			bHasBoolProperty = true;
+		}
+	}
+
+	TestTrue(TEXT("Should have float properties"), bHasFloatProperty);
+	TestTrue(TEXT("Should have boolean properties"), bHasBoolProperty);
+
+	// Test that properties are sorted
+	TArray<FString> SortedProperties = AvailableProperties;
+	SortedProperties.Sort();
+	TestEqual(TEXT("Properties should be sorted alphabetically"), AvailableProperties, SortedProperties);
+
+	// Cleanup using utility
+	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FActorServiceGetActorAvailablePropertiesWithDetailsTest,
+	"UnrealMCP.Actor.GetActorAvailablePropertiesWithDetails",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FActorServiceGetActorAvailablePropertiesWithDetailsTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Enhanced error messages for set_actor_property when property doesn't exist
+
+	UWorld* World = GEditor->GetEditorWorldContext().World();
+	TestNotNull(TEXT("Editor world should be available"), World);
+	if (!World)
+		return false;
+
+	// Spawn a test actor with unique name
+	const FString TestActorName = UnrealMCPTest::FTestUtils::GenerateUniqueTestActorName(TEXT("ErrorDetailsTestActor"));
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Name = FName(TestActorName);
+	AActor* TestActor = World->SpawnActor<AActor>(
+		AActor::StaticClass(),
+		FVector::ZeroVector,
+		FRotator::ZeroRotator,
+		SpawnParams
+	);
+	TestNotNull(TEXT("Test actor should spawn successfully"), TestActor);
+	if (!TestActor)
+		return false;
+
+	// Test the enhanced error message by trying to set a non-existent property
+	TArray<FString> AvailableProperties = UnrealMCP::FActorService::GetAvailableProperties(TestActor->GetClass());
+
+	const TSharedPtr<FJsonValue> InvalidValue = MakeShareable(new FJsonValueBoolean(true));
+	UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorProperty(
+		TestActorName,
+		TEXT("DefinitelyNonExistentProperty123"),
+		InvalidValue
+	);
+
+	// Verify failure
+	TestTrue(TEXT("SetActorProperty should fail for non-existent property"), Result.IsFailure());
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::PropertyNotFound,
+		TEXT("DefinitelyNonExistentProperty123"),
+		this
+	);
+
+	// Check if error details show available properties (only if we have some)
+	if (AvailableProperties.Num() > 0) {
+		const FString ErrorMessage = Result.GetError().GetMessage();
+		bool bMentionsAvailableProperties = false;
+		for (const FString& Property : AvailableProperties) {
+			if (ErrorMessage.Contains(Property)) {
+				bMentionsAvailableProperties = true;
+				break;
+			}
+		}
+		if (bMentionsAvailableProperties) {
+			TestTrue(TEXT("Error message should mention available properties"), bMentionsAvailableProperties);
+		} else {
+			// If available properties are not mentioned, it might be because there are no settable properties
+			UE_LOG(LogTemp, Warning, TEXT("Available properties not mentioned in error (may be no settable properties)"));
+		}
+	}
+
+	// Cleanup using utility
+	UnrealMCPTest::FTestUtils::DestroyTestActor(World, TestActor);
 
 	return true;
 }

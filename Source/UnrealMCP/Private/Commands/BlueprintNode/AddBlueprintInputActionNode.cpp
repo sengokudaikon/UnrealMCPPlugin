@@ -1,6 +1,7 @@
 ﻿#include "Commands/BlueprintNode/AddBlueprintInputActionNode.h"
 #include "K2Node_InputAction.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintGraphService.h"
 
 namespace UnrealMCP {
@@ -10,12 +11,12 @@ namespace UnrealMCP {
 
 		FString BlueprintName;
 		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter")));
 		}
 
 		FString ActionName;
 		if (!Params->TryGetStringField(TEXT("action_name"), ActionName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'action_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'action_name' parameter")));
 		}
 
 		FVector2D NodePosition(0.0f, 0.0f);

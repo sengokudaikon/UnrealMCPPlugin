@@ -197,7 +197,7 @@ auto FBlueprintCreationDuplicateTest::RunTest(const FString& Parameters) -> bool
 
 	if (SecondResult.IsFailure()) {
 		// Verify error message mentions the issue
-		const FString Error = SecondResult.GetError();
+		const FString Error = SecondResult.GetErrorMessage();
 		TestTrue(TEXT("Error message should indicate duplicate/existing asset"),
 		         Error.Contains(TEXT("exists")) || Error.Contains(TEXT("duplicate")) || Error.Contains(
 			         TEXT("already")));
@@ -264,7 +264,7 @@ auto FBlueprintCompileNonExistentTest::RunTest(const FString& Parameters) -> boo
 	TestTrue(TEXT("Compiling non-existent blueprint should fail"), Result.IsFailure());
 
 	if (Result.IsFailure()) {
-		const FString Error = Result.GetError();
+		const FString Error = Result.GetErrorMessage();
 		TestTrue(TEXT("Error should mention blueprint not found"),
 		         Error.Contains(TEXT("not found")) || Error.Contains(TEXT("does not exist")) || Error.Contains(
 			         TEXT("failed to load")));
@@ -330,7 +330,7 @@ auto FBlueprintCreationEmptyNameTest::RunTest(const FString& Parameters) -> bool
 
 	if (Result.IsFailure()) {
 		// Verify the failure indicates a validation error
-		const FString Error = Result.GetError();
+		const FString Error = Result.GetErrorMessage();
 		TestTrue(TEXT("Error should indicate name validation issue"),
 		         Error.Contains(TEXT("empty")) || Error.Contains(TEXT("name")));
 	}
@@ -426,7 +426,7 @@ auto FBlueprintCompilationEmptyNameTest::RunTest(const FString& Parameters) -> b
 	TestTrue(TEXT("Compiling empty name should fail"), Result.IsFailure());
 
 	if (Result.IsFailure()) {
-		const FString Error = Result.GetError();
+		const FString Error = Result.GetErrorMessage();
 		TestTrue(TEXT("Error should indicate name validation issue"),
 		         Error.Contains(TEXT("empty")) || Error.Contains(TEXT("name")));
 	}

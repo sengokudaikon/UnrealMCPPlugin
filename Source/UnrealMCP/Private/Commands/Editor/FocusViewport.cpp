@@ -1,5 +1,6 @@
 ﻿#include "Commands/Editor/FocusViewport.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "Services/ViewportService.h"
 
@@ -21,7 +22,7 @@ namespace UnrealMCP {
 		}
 
 		if (!TargetActor.IsSet() && !Location.IsSet()) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Either 'target' or 'location' must be provided"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Either 'target' or 'location' must be provided")));
 		}
 
 		const FVoidResult Result = FViewportService::FocusViewport(

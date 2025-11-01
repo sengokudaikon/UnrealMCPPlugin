@@ -1,4 +1,5 @@
 ﻿#include "Services/WidgetService.h"
+#include "Core/ErrorTypes.h"
 #include "EdGraphSchema_K2.h"
 #include "Editor.h"
 #include "EditorAssetLibrary.h"
@@ -21,25 +22,23 @@ namespace UnrealMCP {
 	auto FWidgetService::CreateWidget(const FWidgetCreationParams& Params) -> TResult<UWidgetBlueprint*> {
 		// Validate input parameters
 		if (Params.Name.IsEmpty()) {
-			return TResult<UWidgetBlueprint*>::Failure(TEXT("Widget name cannot be empty"));
+			return TResult<UWidgetBlueprint*>::Failure(EErrorCode::InvalidInput, TEXT("CreateWidget"));
 		}
 		if (Params.PackagePath.IsEmpty()) {
-			return TResult<UWidgetBlueprint*>::Failure(TEXT("Package path cannot be empty"));
+			return TResult<UWidgetBlueprint*>::Failure(EErrorCode::InvalidInput, TEXT("CreateWidget"));
 		}
 
 		const FString FullPath = Params.PackagePath / Params.Name;
 
 		// Check if asset already exists
 		if (UEditorAssetLibrary::DoesAssetExist(FullPath)) {
-			return TResult<UWidgetBlueprint*>::Failure(
-				FString::Printf(TEXT("Widget Blueprint '%s' already exists"), *Params.Name)
-			);
+			return TResult<UWidgetBlueprint*>::Failure(EErrorCode::FailedToCreateWidget, Params.Name);
 		}
 
 		// Create package
 		UPackage* Package = CreatePackage(*FullPath);
 		if (!Package) {
-			return TResult<UWidgetBlueprint*>::Failure(TEXT("Failed to create package"));
+			return TResult<UWidgetBlueprint*>::Failure(EErrorCode::FailedToCreateWidget, Params.Name);
 		}
 
 		// Create Widget Blueprint
@@ -55,7 +54,7 @@ namespace UnrealMCP {
 
 		UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(NewBlueprint);
 		if (!WidgetBlueprint) {
-			return TResult<UWidgetBlueprint*>::Failure(TEXT("Failed to create Widget Blueprint"));
+			return TResult<UWidgetBlueprint*>::Failure(EErrorCode::FailedToCreateWidget, Params.Name);
 		}
 
 		// Add a default Canvas Panel if one doesn't exist
@@ -78,19 +77,17 @@ namespace UnrealMCP {
 	auto FWidgetService::AddTextBlock(const FTextBlockParams& Params) -> TResult<UTextBlock*> {
 		// Validate input parameters
 		if (Params.WidgetName.IsEmpty()) {
-			return TResult<UTextBlock*>::Failure(TEXT("Widget name cannot be empty"));
+			return TResult<UTextBlock*>::Failure(EErrorCode::InvalidInput, TEXT("AddTextBlock"));
 		}
 		if (Params.TextBlockName.IsEmpty()) {
-			return TResult<UTextBlock*>::Failure(TEXT("Text block name cannot be empty"));
+			return TResult<UTextBlock*>::Failure(EErrorCode::InvalidInput, TEXT("AddTextBlock"));
 		}
 
 		const FString FullPath = ResolveWidgetPath(Params.WidgetName);
 
 		UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
 		if (!WidgetBlueprint) {
-			return TResult<UTextBlock*>::Failure(
-				FString::Printf(TEXT("Widget Blueprint '%s' not found"), *Params.WidgetName)
-			);
+			return TResult<UTextBlock*>::Failure(EErrorCode::WidgetNotFound, Params.WidgetName);
 		}
 
 		// Validate canvas root before proceeding
@@ -105,7 +102,7 @@ namespace UnrealMCP {
 			FName(*Params.TextBlockName)
 		);
 		if (!TextBlock) {
-			return TResult<UTextBlock*>::Failure(TEXT("Failed to create Text Block widget"));
+			return TResult<UTextBlock*>::Failure(EErrorCode::FailedToCreateWidget, Params.TextBlockName);
 		}
 
 		// Register the widget with the blueprint's GUID system
@@ -140,19 +137,17 @@ namespace UnrealMCP {
 	auto FWidgetService::AddButton(const FButtonParams& Params) -> TResult<UButton*> {
 		// Validate input parameters
 		if (Params.WidgetName.IsEmpty()) {
-			return TResult<UButton*>::Failure(TEXT("Widget name cannot be empty"));
+			return TResult<UButton*>::Failure(EErrorCode::InvalidInput, TEXT("AddButton"));
 		}
 		if (Params.ButtonName.IsEmpty()) {
-			return TResult<UButton*>::Failure(TEXT("Button name cannot be empty"));
+			return TResult<UButton*>::Failure(EErrorCode::InvalidInput, TEXT("AddButton"));
 		}
 
 		const FString FullPath = ResolveWidgetPath(Params.WidgetName);
 
 		UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
 		if (!WidgetBlueprint) {
-			return TResult<UButton*>::Failure(
-				FString::Printf(TEXT("Widget Blueprint '%s' not found"), *Params.WidgetName)
-			);
+			return TResult<UButton*>::Failure(EErrorCode::WidgetNotFound, Params.WidgetName);
 		}
 
 		// Validate canvas root before proceeding
@@ -167,7 +162,7 @@ namespace UnrealMCP {
 			FName(*Params.ButtonName)
 		);
 		if (!Button) {
-			return TResult<UButton*>::Failure(TEXT("Failed to create Button widget"));
+			return TResult<UButton*>::Failure(EErrorCode::FailedToCreateWidget, Params.ButtonName);
 		}
 
 		// Register the widget with the blueprint's GUID system
@@ -189,36 +184,32 @@ namespace UnrealMCP {
 	auto FWidgetService::BindWidgetEvent(const FWidgetEventBindingParams& Params) -> FVoidResult {
 		// Validate input parameters
 		if (Params.WidgetName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Widget name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BindWidgetEvent"));
 		}
 		if (Params.WidgetComponentName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Widget component name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BindWidgetEvent"));
 		}
 		if (Params.EventName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Event name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("BindWidgetEvent"));
 		}
 
 		const FString FullPath = ResolveWidgetPath(Params.WidgetName);
 
 		UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
 		if (!WidgetBlueprint) {
-			return FVoidResult::Failure(
-				FString::Printf(TEXT("Widget Blueprint '%s' not found"), *Params.WidgetName)
-			);
+			return FVoidResult::Failure(EErrorCode::WidgetNotFound, Params.WidgetName);
 		}
 
 		// Get the event graph
 		const UEdGraph* EventGraph = FBlueprintEditorUtils::FindEventGraph(WidgetBlueprint);
 		if (!EventGraph) {
-			return FVoidResult::Failure(TEXT("Failed to find or create event graph"));
+			return FVoidResult::Failure(EErrorCode::FailedToBindWidgetEvent, Params.WidgetName);
 		}
 
 		// Find the widget component in the blueprint
 		const UWidget* Widget = WidgetBlueprint->WidgetTree->FindWidget(FName(*Params.WidgetComponentName));
 		if (!Widget) {
-			return FVoidResult::Failure(
-				FString::Printf(TEXT("Failed to find widget component: %s"), *Params.WidgetComponentName)
-			);
+			return FVoidResult::Failure(EErrorCode::ComponentNotFound, Params.WidgetComponentName);
 		}
 
 		// Create the event node using the utility
@@ -239,31 +230,27 @@ namespace UnrealMCP {
 	auto FWidgetService::SetTextBlockBinding(const FTextBlockBindingParams& Params) -> FVoidResult {
 		// Validate input parameters
 		if (Params.WidgetName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Widget name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("SetTextBlockBinding"));
 		}
 		if (Params.TextBlockName.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Text block name cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("SetTextBlockBinding"));
 		}
 		if (Params.BindingProperty.IsEmpty()) {
-			return FVoidResult::Failure(TEXT("Binding property cannot be empty"));
+			return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("SetTextBlockBinding"));
 		}
 
 		const FString FullPath = ResolveWidgetPath(Params.WidgetName);
 
 		UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
 		if (!WidgetBlueprint) {
-			return FVoidResult::Failure(
-				FString::Printf(TEXT("Widget Blueprint '%s' not found"), *Params.WidgetName)
-			);
+			return FVoidResult::Failure(EErrorCode::WidgetNotFound, Params.WidgetName);
 		}
 
 		// Find the TextBlock widget
 		const UTextBlock* TextBlock = Cast<UTextBlock>(
 			WidgetBlueprint->WidgetTree->FindWidget(FName(*Params.TextBlockName)));
 		if (!TextBlock) {
-			return FVoidResult::Failure(
-				FString::Printf(TEXT("Failed to find TextBlock widget: %s"), *Params.TextBlockName)
-			);
+			return FVoidResult::Failure(EErrorCode::ComponentNotFound, Params.TextBlockName);
 		}
 
 		// Create a variable for binding if it doesn't exist
@@ -350,22 +337,20 @@ namespace UnrealMCP {
 	auto FWidgetService::GetWidgetClass(const FAddWidgetToViewportParams& Params) -> TResult<UClass*> {
 		// Validate input parameters
 		if (Params.WidgetName.IsEmpty()) {
-			return TResult<UClass*>::Failure(TEXT("Widget name cannot be empty"));
+			return TResult<UClass*>::Failure(EErrorCode::InvalidInput, TEXT("GetWidgetClass"));
 		}
 
 		const FString FullPath = ResolveWidgetPath(Params.WidgetName);
 
 		const UWidgetBlueprint* WidgetBlueprint = Cast<UWidgetBlueprint>(UEditorAssetLibrary::LoadAsset(FullPath));
 		if (!WidgetBlueprint) {
-			return TResult<UClass*>::Failure(
-				FString::Printf(TEXT("Widget Blueprint '%s' not found"), *Params.WidgetName)
-			);
+			return TResult<UClass*>::Failure(EErrorCode::WidgetNotFound, Params.WidgetName);
 		}
 
 		// Get the widget class
 		UClass* WidgetClass = WidgetBlueprint->GeneratedClass;
 		if (!WidgetClass) {
-			return TResult<UClass*>::Failure(TEXT("Failed to generate widget class"));
+			return TResult<UClass*>::Failure(EErrorCode::InvalidWidgetType, Params.WidgetName);
 		}
 
 		return TResult<UClass*>::Success(WidgetClass);
@@ -397,12 +382,12 @@ namespace UnrealMCP {
 
 	auto FWidgetService::ValidateCanvasRoot(const UWidgetBlueprint* WidgetBlueprint) -> FVoidResult {
 		if (!WidgetBlueprint || !WidgetBlueprint->WidgetTree) {
-			return FVoidResult::Failure(TEXT("Invalid Widget Blueprint"));
+			return FVoidResult::Failure(EErrorCode::InvalidWidgetType, TEXT("ValidateCanvasRoot"));
 		}
 
 		const UCanvasPanel* RootCanvas = Cast<UCanvasPanel>(WidgetBlueprint->WidgetTree->RootWidget);
 		if (!RootCanvas) {
-			return FVoidResult::Failure(TEXT("Root widget must be a Canvas Panel"));
+			return FVoidResult::Failure(EErrorCode::InvalidWidgetType, TEXT("CanvasPanel"));
 		}
 
 		return FVoidResult::Success();

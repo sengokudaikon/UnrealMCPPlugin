@@ -23,7 +23,9 @@
 #include "GameFramework/Actor.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/Paths.h"
+#include "Services/BlueprintCreationService.h"
 #include "Services/BlueprintService.h"
+#include "Tests/TestUtils.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FBlueprintServiceSpawnInvalidActorBlueprintTest,
@@ -39,13 +41,54 @@ auto FBlueprintServiceSpawnInvalidActorBlueprintTest::RunTest(const FString& Par
 	Params.ActorName = TEXT("TestActor");
 	Params.Location = FVector(100.0f, 200.0f, 300.0f);
 	Params.Rotation = FRotator::ZeroRotator;
+	Params.Scale = FVector(1.5f, 1.5f, 1.5f);
 
 	const UnrealMCP::TResult<AActor*> Result = UnrealMCP::FBlueprintService::SpawnActorBlueprint(Params);
 
 	// Verify failure
 	TestTrue(TEXT("SpawnActorBlueprint should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		Params.BlueprintName,
+		this
+	);
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FBlueprintServiceSpawnParamsIncludesScaleTest,
+	"UnrealMCP.Blueprint.SpawnParamsIncludesScale",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FBlueprintServiceSpawnParamsIncludesScaleTest::RunTest(const FString& Parameters) -> bool {
+	// Test: Verify that FBlueprintSpawnParams properly includes and validates scale parameter
+
+	UnrealMCP::FBlueprintSpawnParams Params;
+	Params.BlueprintName = TEXT("NonExistentBlueprint_XYZ123");
+	Params.ActorName = TEXT("TestActorWithScale");
+	Params.Location = FVector(0.0f, 0.0f, 0.0f);
+	Params.Rotation = FRotator::ZeroRotator;
+	Params.Scale = FVector(2.0f, 2.0f, 2.0f);
+
+	// Verify scale is set
+	TestTrue(TEXT("Scale should be set"), Params.Scale.IsSet());
+	TestEqual(TEXT("Scale X should be 2.0"), Params.Scale.GetValue().X, 2.0);
+	TestEqual(TEXT("Scale Y should be 2.0"), Params.Scale.GetValue().Y, 2.0);
+	TestEqual(TEXT("Scale Z should be 2.0"), Params.Scale.GetValue().Z, 2.0);
+
+	// Test default scale behavior (when not set)
+	UnrealMCP::FBlueprintSpawnParams ParamsNoScale;
+	ParamsNoScale.BlueprintName = TEXT("TestBlueprint");
+	ParamsNoScale.ActorName = TEXT("TestActorNoScale");
+
+	TestFalse(TEXT("Scale should not be set when not specified"), ParamsNoScale.Scale.IsSet());
+	TestEqual(TEXT("Default scale should be (1,1,1)"),
+		ParamsNoScale.Scale.Get(FVector::OneVector),
+		FVector::OneVector);
 
 	return true;
 }
@@ -71,8 +114,13 @@ auto FBlueprintServiceAddComponentToInvalidBlueprintTest::RunTest(const FString&
 
 	// Verify failure
 	TestTrue(TEXT("AddComponent should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		Params.BlueprintName,
+		this
+	);
 
 	return true;
 }
@@ -86,8 +134,18 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 auto FBlueprintServiceAddComponentWithInvalidTypeTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Adding component with invalid component type should fail
 
+	// First create a test blueprint
+	UnrealMCP::FBlueprintCreationParams BlueprintParams;
+	BlueprintParams.Name = TEXT("AddComponentTestBlueprint");
+	BlueprintParams.PackagePath = TEXT("/Game/Tests/BlueprintService/");
+	BlueprintParams.ParentClass = TEXT("Actor");
+
+	const auto BlueprintResult = UnrealMCP::FBlueprintCreationService::CreateBlueprint(BlueprintParams);
+	TestTrue(TEXT("Test blueprint should be created"), BlueprintResult.IsSuccess());
+
+	// Test adding component with invalid component type
 	UnrealMCP::FComponentParams Params;
-	Params.BlueprintName = TEXT("SomeBlueprint"); // This will fail before validation
+	Params.BlueprintName = BlueprintParams.Name;
 	Params.ComponentType = TEXT("NonExistentComponentType_XYZ123");
 	Params.ComponentName = TEXT("TestComponent");
 
@@ -96,9 +154,15 @@ auto FBlueprintServiceAddComponentWithInvalidTypeTest::RunTest(const FString& Pa
 	// Verify failure
 	TestTrue(TEXT("AddComponent should fail for invalid component type"), Result.IsFailure());
 
-	// It might fail due to blueprint not existing first, which is expected
-	// The key is that it fails gracefully with an error message
-	TestTrue(TEXT("Should have an error message"), !Result.GetError().IsEmpty());
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidComponentType,
+		Params.ComponentType,
+		this
+	);
+
+	// Cleanup
+	UnrealMCPTest::FTestUtils::CleanupTestBlueprintByName(BlueprintParams.Name, BlueprintParams.PackagePath);
 
 	return true;
 }
@@ -121,16 +185,22 @@ auto FBlueprintServiceSetComponentPropertyInvalidBlueprintTest::RunTest(const FS
 	JsonValue->SetBoolField(TEXT("value"), true);
 	PropertyParams.PropertyValue = MakeShareable(new FJsonValueBoolean(true));
 
+	const FString BlueprintName = TEXT("NonExistentBlueprint_XYZ123");
 	const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintService::SetComponentProperty(
-		TEXT("NonExistentBlueprint_XYZ123"),
+		BlueprintName,
 		TEXT("TestComponent"),
 		PropertyParams
 	);
 
 	// Verify failure
 	TestTrue(TEXT("SetComponentProperty should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		BlueprintName,
+		this
+	);
 
 	return true;
 }
@@ -157,8 +227,13 @@ auto FBlueprintServiceSetPhysicsPropertiesInvalidBlueprintTest::RunTest(const FS
 
 	// Verify failure
 	TestTrue(TEXT("SetPhysicsProperties should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		Params.BlueprintName,
+		this
+	);
 
 	return true;
 }
@@ -181,8 +256,13 @@ auto FBlueprintServiceSetStaticMeshPropertiesInvalidBlueprintTest::RunTest(const
 
 	// Verify failure
 	TestTrue(TEXT("SetStaticMeshProperties should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		TEXT("NonExistentBlueprint_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -206,7 +286,13 @@ auto FBlueprintServiceSetStaticMeshPropertiesInvalidMeshTest::RunTest(const FStr
 
 	// Verify failure
 	TestTrue(TEXT("SetStaticMeshProperties should fail"), Result.IsFailure());
-	TestTrue(TEXT("Should have an error message"), !Result.GetError().IsEmpty());
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		TEXT("SomeBlueprint"),
+		this
+	);
 
 	return true;
 }
@@ -236,8 +322,13 @@ auto FBlueprintServiceSetBlueprintPropertyInvalidBlueprintTest::RunTest(const FS
 
 	// Verify failure
 	TestTrue(TEXT("SetBlueprintProperty should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		TEXT("NonExistentBlueprint_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -265,8 +356,13 @@ auto FBlueprintServiceSetPawnPropertiesInvalidBlueprintTest::RunTest(const FStri
 
 	// Verify failure
 	TestTrue(TEXT("SetPawnProperties should fail for non-existent blueprint"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention not found or failed"),
-	         Result.GetError().Contains(TEXT("not found")) || Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		TEXT("NonExistentBlueprint_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -298,7 +394,13 @@ auto FBlueprintServiceSetPawnPropertiesWithValidBlueprintTest::RunTest(const FSt
 	// This should fail, but the important part is that it handles the JSON input correctly
 	// and fails due to the blueprint not existing, not due to JSON parsing errors
 	TestTrue(TEXT("Should fail gracefully"), Result.IsFailure());
-	TestTrue(TEXT("Error should be meaningful"), !Result.GetError().IsEmpty());
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::BlueprintNotFound,
+		TEXT("SomePawnBlueprint"),
+		this
+	);
 
 	return true;
 }
@@ -317,35 +419,53 @@ auto FBlueprintServiceComponentParameterValidationTest::RunTest(const FString& P
 		UnrealMCP::FComponentParams Params;
 		Params.BlueprintName = TEXT("SomeBlueprint");
 		Params.ComponentType = TEXT("StaticMeshComponent");
-		Params.ComponentName = TEXT(""); // Empty component name
+		Params.ComponentName = TEXT("");
 
 		UnrealMCP::TResult<UBlueprint*> Result = UnrealMCP::FBlueprintService::AddComponent(Params);
 		TestTrue(TEXT("Should fail with empty component name"), Result.IsFailure());
-		TestTrue(TEXT("Error should be meaningful"), !Result.GetError().IsEmpty());
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::InvalidInput,
+			TEXT("ComponentName"),
+			this
+		);
 	}
 
 	// Test with empty component type
 	{
 		UnrealMCP::FComponentParams Params;
 		Params.BlueprintName = TEXT("SomeBlueprint");
-		Params.ComponentType = TEXT(""); // Empty component type
+		Params.ComponentType = TEXT("");
 		Params.ComponentName = TEXT("TestComponent");
 
 		UnrealMCP::TResult<UBlueprint*> Result = UnrealMCP::FBlueprintService::AddComponent(Params);
 		TestTrue(TEXT("Should fail with empty component type"), Result.IsFailure());
-		TestTrue(TEXT("Error should be meaningful"), !Result.GetError().IsEmpty());
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::InvalidInput,
+			TEXT("ComponentType"),
+			this
+		);
 	}
 
 	// Test with empty blueprint name
 	{
 		UnrealMCP::FComponentParams Params;
-		Params.BlueprintName = TEXT(""); // Empty blueprint name
+		Params.BlueprintName = TEXT("");
 		Params.ComponentType = TEXT("StaticMeshComponent");
 		Params.ComponentName = TEXT("TestComponent");
 
 		UnrealMCP::TResult<UBlueprint*> Result = UnrealMCP::FBlueprintService::AddComponent(Params);
 		TestTrue(TEXT("Should fail with empty blueprint name"), Result.IsFailure());
-		TestTrue(TEXT("Error should be meaningful"), !Result.GetError().IsEmpty());
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::InvalidInput,
+			TEXT("BlueprintName"),
+			this
+		);
 	}
 
 	return true;
@@ -374,6 +494,13 @@ auto FBlueprintServicePhysicsParameterValidationTest::RunTest(const FString& Par
 		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintService::SetPhysicsProperties(Params);
 		// Should fail, but not due to parameter validation (due to blueprint not existing)
 		TestTrue(TEXT("Should fail gracefully with negative mass"), Result.IsFailure());
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::BlueprintNotFound,
+			TEXT("SomeBlueprint"),
+			this
+		);
 	}
 
 	// Test with extreme damping values
@@ -390,6 +517,13 @@ auto FBlueprintServicePhysicsParameterValidationTest::RunTest(const FString& Par
 		const UnrealMCP::FVoidResult Result = UnrealMCP::FBlueprintService::SetPhysicsProperties(Params);
 		// Should fail, but not due to parameter validation (due to blueprint not existing)
 		TestTrue(TEXT("Should fail gracefully with extreme damping"), Result.IsFailure());
+
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::BlueprintNotFound,
+			TEXT("SomeBlueprint"),
+			this
+		);
 	}
 
 	return true;

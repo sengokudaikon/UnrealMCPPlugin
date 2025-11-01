@@ -20,6 +20,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Services/ViewportService.h"
+#include "Tests/TestUtils.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FViewportServiceFocusOnActorTest,
@@ -112,8 +113,13 @@ auto FViewportServiceFocusOnInvalidActorTest::RunTest(const FString& Parameters)
 
 	// Verify failure
 	TestTrue(TEXT("FocusViewport should fail for non-existent actor"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention 'not found'"),
-	         Result.GetError().Contains(TEXT("not found")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::ActorNotFound,
+		TEXT("NonExistentActor_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -135,8 +141,13 @@ auto FViewportServiceFocusWithoutParametersTest::RunTest(const FString& Paramete
 	// Verify failure
 	TestTrue(TEXT("FocusViewport should fail when neither actor nor location provided"),
 	         Result.IsFailure());
-	TestTrue(TEXT("Error message should mention required parameters"),
-	         Result.GetError().Contains(TEXT("must be provided")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("FocusViewport"),
+		this
+	);
 
 	return true;
 }
@@ -221,8 +232,13 @@ auto FViewportServiceScreenshotInvalidPathTest::RunTest(const FString& Parameter
 
 	// Verify failure
 	TestTrue(TEXT("TakeScreenshot should fail for invalid path"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention save failure"),
-	         Result.GetError().Contains(TEXT("Failed")));
+
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::FailedToSaveAsset,
+		TEXT("Z:/"),
+		this
+	);
 
 	return true;
 }

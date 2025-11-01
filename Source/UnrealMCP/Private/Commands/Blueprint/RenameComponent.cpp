@@ -1,5 +1,6 @@
 ﻿#include "Commands/Blueprint/RenameComponent.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "Services/BlueprintIntrospectionService.h"
 

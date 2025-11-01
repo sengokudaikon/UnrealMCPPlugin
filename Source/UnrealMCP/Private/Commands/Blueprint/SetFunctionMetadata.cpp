@@ -1,5 +1,6 @@
 #include "Commands/Blueprint/SetFunctionMetadata.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintMemberService.h"
 
 namespace UnrealMCP {
@@ -7,9 +8,7 @@ namespace UnrealMCP {
 	auto FSetFunctionMetadataCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 
 		if (!Params->HasField(TEXT("blueprint_name")) || !Params->HasField(TEXT("function_name"))) {
-			return FCommonUtils::CreateErrorResponse(
-				TEXT("Missing required parameters: blueprint_name and function_name")
-			);
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing required parameters: blueprint_name and function_name")));
 		}
 
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));

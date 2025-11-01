@@ -1,24 +1,25 @@
 ﻿#include "Types/ComponentTypes.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 
 namespace UnrealMCP {
 	auto FComponentParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FComponentParams> {
 		if (!Json.IsValid()) {
-			return TResult<FComponentParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FComponentParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FComponentParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_type"), Params.ComponentType)) {
-			return TResult<FComponentParams>::Failure(TEXT("Missing 'component_type' parameter"));
+			return TResult<FComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_type' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_name"), Params.ComponentName)) {
-			return TResult<FComponentParams>::Failure(TEXT("Missing 'component_name' parameter"));
+			return TResult<FComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter"));
 		}
 
 		FString MeshType;
@@ -48,21 +49,21 @@ namespace UnrealMCP {
 	auto FPropertyParams::FromJson(const TSharedPtr<FJsonObject>& Json,
 	                               const FString& TargetFieldName) -> TResult<FPropertyParams> {
 		if (!Json.IsValid()) {
-			return TResult<FPropertyParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FPropertyParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FPropertyParams Params;
 
 		if (!Json->TryGetStringField(*TargetFieldName, Params.TargetName)) {
-			return TResult<FPropertyParams>::Failure(FString::Printf(TEXT("Missing '%s' parameter"), *TargetFieldName));
+			return TResult<FPropertyParams>::Failure(EErrorCode::InvalidInput, FString::Printf(TEXT("Missing '%s' parameter"), *TargetFieldName));
 		}
 
 		if (!Json->TryGetStringField(TEXT("property_name"), Params.PropertyName)) {
-			return TResult<FPropertyParams>::Failure(TEXT("Missing 'property_name' parameter"));
+			return TResult<FPropertyParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'property_name' parameter"));
 		}
 
 		if (!Json->HasField(TEXT("property_value"))) {
-			return TResult<FPropertyParams>::Failure(TEXT("Missing 'property_value' parameter"));
+			return TResult<FPropertyParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'property_value' parameter"));
 		}
 
 		Params.PropertyValue = Json->Values.FindRef(TEXT("property_value"));
@@ -72,17 +73,17 @@ namespace UnrealMCP {
 
 	auto FPhysicsParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FPhysicsParams> {
 		if (!Json.IsValid()) {
-			return TResult<FPhysicsParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FPhysicsParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FPhysicsParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FPhysicsParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FPhysicsParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_name"), Params.ComponentName)) {
-			return TResult<FPhysicsParams>::Failure(TEXT("Missing 'component_name' parameter"));
+			return TResult<FPhysicsParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter"));
 		}
 
 		if (Json->HasField(TEXT("simulate_physics"))) {
@@ -110,17 +111,17 @@ namespace UnrealMCP {
 
 	auto FStaticMeshParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FStaticMeshParams> {
 		if (!Json.IsValid()) {
-			return TResult<FStaticMeshParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FStaticMeshParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FStaticMeshParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FStaticMeshParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FStaticMeshParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_name"), Params.ComponentName)) {
-			return TResult<FStaticMeshParams>::Failure(TEXT("Missing 'component_name' parameter"));
+			return TResult<FStaticMeshParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter"));
 		}
 
 		FString StaticMesh;
@@ -139,17 +140,17 @@ namespace UnrealMCP {
 	auto FComponentTransformParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FComponentTransformParams> {
 		if (!Json.IsValid()) {
-			return TResult<FComponentTransformParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FComponentTransformParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FComponentTransformParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FComponentTransformParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FComponentTransformParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_name"), Params.ComponentName)) {
-			return TResult<FComponentTransformParams>::Failure(TEXT("Missing 'component_name' parameter"));
+			return TResult<FComponentTransformParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter"));
 		}
 
 		// Optional transform fields
@@ -168,7 +169,7 @@ namespace UnrealMCP {
 		// Validate that at least one transform property is provided
 		if (!Params.Location.IsSet() && !Params.Rotation.IsSet() && !Params.Scale.IsSet()) {
 			return TResult<FComponentTransformParams>::Failure(
-				TEXT("At least one transform property must be provided (location, rotation, or scale)"));
+				EErrorCode::InvalidInput, TEXT("At least one transform property must be provided (location, rotation, or scale)"));
 		}
 
 		return TResult<FComponentTransformParams>::Success(MoveTemp(Params));
@@ -204,13 +205,13 @@ namespace UnrealMCP {
 	auto FComponentHierarchyParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FComponentHierarchyParams> {
 		if (!Json.IsValid()) {
-			return TResult<FComponentHierarchyParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FComponentHierarchyParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FComponentHierarchyParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FComponentHierarchyParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FComponentHierarchyParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		return TResult<FComponentHierarchyParams>::Success(MoveTemp(Params));
@@ -227,17 +228,17 @@ namespace UnrealMCP {
 	auto FComponentPropertiesParams::FromJson(
 		const TSharedPtr<FJsonObject>& Json) -> TResult<FComponentPropertiesParams> {
 		if (!Json.IsValid()) {
-			return TResult<FComponentPropertiesParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FComponentPropertiesParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FComponentPropertiesParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FComponentPropertiesParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FComponentPropertiesParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_name"), Params.ComponentName)) {
-			return TResult<FComponentPropertiesParams>::Failure(TEXT("Missing 'component_name' parameter"));
+			return TResult<FComponentPropertiesParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter"));
 		}
 
 		return TResult<FComponentPropertiesParams>::Success(MoveTemp(Params));
@@ -253,17 +254,17 @@ namespace UnrealMCP {
 
 	auto FRemoveComponentParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FRemoveComponentParams> {
 		if (!Json.IsValid()) {
-			return TResult<FRemoveComponentParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FRemoveComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FRemoveComponentParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FRemoveComponentParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FRemoveComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("component_name"), Params.ComponentName)) {
-			return TResult<FRemoveComponentParams>::Failure(TEXT("Missing 'component_name' parameter"));
+			return TResult<FRemoveComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'component_name' parameter"));
 		}
 
 		return TResult<FRemoveComponentParams>::Success(MoveTemp(Params));
@@ -279,21 +280,21 @@ namespace UnrealMCP {
 
 	auto FRenameComponentParams::FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FRenameComponentParams> {
 		if (!Json.IsValid()) {
-			return TResult<FRenameComponentParams>::Failure(TEXT("Invalid JSON object"));
+			return TResult<FRenameComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Invalid JSON object"));
 		}
 
 		FRenameComponentParams Params;
 
 		if (!Json->TryGetStringField(TEXT("blueprint_name"), Params.BlueprintName)) {
-			return TResult<FRenameComponentParams>::Failure(TEXT("Missing 'blueprint_name' parameter"));
+			return TResult<FRenameComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("old_name"), Params.OldName)) {
-			return TResult<FRenameComponentParams>::Failure(TEXT("Missing 'old_name' parameter"));
+			return TResult<FRenameComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'old_name' parameter"));
 		}
 
 		if (!Json->TryGetStringField(TEXT("new_name"), Params.NewName)) {
-			return TResult<FRenameComponentParams>::Failure(TEXT("Missing 'new_name' parameter"));
+			return TResult<FRenameComponentParams>::Failure(EErrorCode::InvalidInput, TEXT("Missing 'new_name' parameter"));
 		}
 
 		return TResult<FRenameComponentParams>::Success(MoveTemp(Params));

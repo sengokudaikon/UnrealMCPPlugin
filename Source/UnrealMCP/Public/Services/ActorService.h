@@ -100,16 +100,24 @@ namespace UnrealMCP {
 			const TSharedPtr<FJsonValue>& PropertyValue
 		) -> FVoidResult;
 
+		/**
+		 * Helper to find an actor by name in the current world
+		 */
+		static auto FindActorByName(const FString& ActorName) -> AActor*;
+
+		/**
+		 * Helper to get all available properties for an actor class
+		 *
+		 * @param ActorClass The actor class to inspect
+		 * @return Array of available property names
+		 */
+		static auto GetAvailableProperties(UClass* ActorClass) -> TArray<FString>;
+
 	private:
 		/**
 		 * Helper to get the current editor world
 		 */
 		static auto GetEditorWorld() -> UWorld*;
-
-		/**
-		 * Helper to find an actor by name in the current world
-		 */
-		static auto FindActorByName(const FString& ActorName) -> AActor*;
 
 		/**
 		 * Helper to map actor class string to UClass

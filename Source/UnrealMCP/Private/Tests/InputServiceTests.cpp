@@ -23,6 +23,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Services/InputService.h"
+#include "Tests/TestUtils.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 	FInputServiceCreateInputActionTest,
@@ -87,8 +88,12 @@ auto FInputServiceCreateInvalidInputActionTest::RunTest(const FString& Parameter
 
 	// Verify failure
 	TestTrue(TEXT("CreateInputAction should fail with empty name"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention name cannot be empty"),
-	         Result.GetError().Contains(TEXT("cannot be empty")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("CreateInputAction"),
+		this
+	);
 
 	return true;
 }
@@ -154,8 +159,12 @@ auto FInputServiceCreateInvalidMappingContextTest::RunTest(const FString& Parame
 
 	// Verify failure
 	TestTrue(TEXT("CreateInputMappingContext should fail with empty name"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention name cannot be empty"),
-	         Result.GetError().Contains(TEXT("cannot be empty")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("CreateInputMappingContext"),
+		this
+	);
 
 	return true;
 }
@@ -178,8 +187,12 @@ auto FInputServiceAddMappingToInvalidContextTest::RunTest(const FString& Paramet
 
 	// Verify failure
 	TestTrue(TEXT("AddMappingToContext should fail for non-existent context"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention failed to load"),
-	         Result.GetError().Contains(TEXT("Failed to load")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InputMappingNotFound,
+		TEXT("/Game/Input/NonExistentContext_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -202,8 +215,12 @@ auto FInputServiceAddMappingWithEmptyParametersTest::RunTest(const FString& Para
 
 	// Verify failure
 	TestTrue(TEXT("AddMappingToContext should fail with empty context path"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention path cannot be empty"),
-	         Result.GetError().Contains(TEXT("cannot be empty")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("AddMappingToContext"),
+		this
+	);
 
 	return true;
 }
@@ -226,8 +243,12 @@ auto FInputServiceRemoveMappingFromInvalidContextTest::RunTest(const FString& Pa
 
 	// Verify failure
 	TestTrue(TEXT("RemoveMappingFromContext should fail for non-existent context"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention failed to load"),
-	         Result.GetError().Contains(TEXT("Failed to load")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InputMappingNotFound,
+		TEXT("/Game/Input/NonExistentContext_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -249,8 +270,12 @@ auto FInputServiceApplyInvalidMappingContextTest::RunTest(const FString& Paramet
 
 	// Verify failure
 	TestTrue(TEXT("ApplyMappingContext should fail for non-existent context"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention failed to load"),
-	         Result.GetError().Contains(TEXT("Failed to load")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InputMappingNotFound,
+		TEXT("/Game/Input/NonExistentContext_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -272,8 +297,12 @@ auto FInputServiceApplyMappingContextWithEmptyPathTest::RunTest(const FString& P
 
 	// Verify failure
 	TestTrue(TEXT("ApplyMappingContext should fail with empty path"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention path cannot be empty"),
-	         Result.GetError().Contains(TEXT("cannot be empty")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("ApplyMappingContext"),
+		this
+	);
 
 	return true;
 }
@@ -294,8 +323,12 @@ auto FInputServiceRemoveInvalidMappingContextTest::RunTest(const FString& Parame
 
 	// Verify failure
 	TestTrue(TEXT("RemoveMappingContext should fail for non-existent context"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention failed to load"),
-	         Result.GetError().Contains(TEXT("Failed to load")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InputMappingNotFound,
+		TEXT("/Game/Input/NonExistentContext_XYZ123"),
+		this
+	);
 
 	return true;
 }
@@ -315,10 +348,12 @@ auto FInputServiceClearAllMappingContextsTest::RunTest(const FString& Parameters
 	// but let's check the result appropriately
 	if (Result.IsFailure()) {
 		// It's okay if it fails due to world/subsystem not being available
-		TestTrue(TEXT("If it fails, should be due to world/subsystem issues"),
-		         Result.GetError().Contains(TEXT("world")) ||
-		         Result.GetError().Contains(TEXT("player controller")) ||
-		         Result.GetError().Contains(TEXT("subsystem")));
+		UnrealMCPTest::FTestUtils::ValidateErrorCode(
+			Result,
+			UnrealMCP::EErrorCode::EditorSubsystemNotFound,
+			TEXT(""),
+			this
+		);
 	}
 	else {
 		// If it succeeds, that's also fine
@@ -377,8 +412,12 @@ auto FInputServiceCreateLegacyInputMappingWithEmptyNameTest::RunTest(const FStri
 
 	// Verify failure
 	TestTrue(TEXT("CreateLegacyInputMapping should fail with empty action name"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention action name cannot be empty"),
-	         Result.GetError().Contains(TEXT("Action name cannot be empty")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("CreateLegacyInputMapping"),
+		this
+	);
 
 	return true;
 }
@@ -404,8 +443,12 @@ auto FInputServiceCreateLegacyInputMappingWithEmptyKeyTest::RunTest(const FStrin
 
 	// Verify failure
 	TestTrue(TEXT("CreateLegacyInputMapping should fail with empty key"), Result.IsFailure());
-	TestTrue(TEXT("Error message should mention key cannot be empty"),
-	         Result.GetError().Contains(TEXT("Key cannot be empty")));
+	UnrealMCPTest::FTestUtils::ValidateErrorCode(
+		Result,
+		UnrealMCP::EErrorCode::InvalidInput,
+		TEXT("CreateLegacyInputMapping"),
+		this
+	);
 
 	return true;
 }

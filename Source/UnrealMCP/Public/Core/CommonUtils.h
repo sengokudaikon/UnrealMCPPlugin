@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "Core/ErrorTypes.h"
 
 // Forward declarations
 class AActor;
@@ -22,7 +23,7 @@ class UFunction;
 class UNREALMCP_API FCommonUtils {
 public:
 	// JSON utilities
-	static auto CreateErrorResponse(const FString& Message) -> TSharedPtr<FJsonObject>;
+	static auto CreateErrorResponse(const UnrealMCP::FError& Error) -> TSharedPtr<FJsonObject>;
 
 	static auto CreateSuccessResponse(const TSharedPtr<FJsonObject>& Data = nullptr) -> TSharedPtr<FJsonObject>;
 

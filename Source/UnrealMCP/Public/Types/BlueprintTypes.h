@@ -13,6 +13,7 @@ namespace UnrealMCP {
 		FString ActorName;
 		TOptional<FVector> Location;
 		TOptional<FRotator> Rotation;
+		TOptional<FVector> Scale;
 
 		/** Parse from JSON parameters */
 		static auto FromJson(const TSharedPtr<FJsonObject>& Json) -> TResult<FBlueprintSpawnParams>;

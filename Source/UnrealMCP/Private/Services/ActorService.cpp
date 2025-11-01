@@ -1,4 +1,5 @@
 ﻿#include "Services/ActorService.h"
+#include "Core/ErrorTypes.h"
 #include "Editor.h"
 #include "ScopedTransaction.h"
 #include "Camera/CameraActor.h"
@@ -19,7 +20,7 @@ namespace UnrealMCP {
 	auto FActorService::GetActorsInLevel(TArray<FString>& OutActorNames) -> FVoidResult {
 		const UWorld* World = GetEditorWorld();
 		if (!World) {
-			return FVoidResult::Failure(TEXT("Failed to get editor world"));
+			return FVoidResult::Failure(EErrorCode::WorldNotFound);
 		}
 
 		TArray<AActor*> AllActors;
@@ -37,7 +38,7 @@ namespace UnrealMCP {
 	auto FActorService::FindActorsByName(const FString& NamePattern, TArray<FString>& OutActorNames) -> FVoidResult {
 		const UWorld* World = GetEditorWorld();
 		if (!World) {
-			return FVoidResult::Failure(TEXT("Failed to get editor world"));
+			return FVoidResult::Failure(EErrorCode::WorldNotFound);
 		}
 
 		TArray<AActor*> AllActors;
@@ -60,12 +61,12 @@ namespace UnrealMCP {
 	) -> TResult<AActor*> {
 		UWorld* World = GetEditorWorld();
 		if (!World) {
-			return TResult<AActor*>::Failure(TEXT("Failed to get editor world"));
+			return TResult<AActor*>::Failure(EErrorCode::WorldNotFound);
 		}
 
 		UClass* Class = GetActorClassByName(ActorClass);
 		if (!Class) {
-			return TResult<AActor*>::Failure(FString::Printf(TEXT("Unknown actor class: %s"), *ActorClass));
+			return TResult<AActor*>::Failure(EErrorCode::InvalidActorClass, ActorClass);
 		}
 
 		const FVector SpawnLocation = Location.Get(FVector::ZeroVector);
@@ -77,7 +78,35 @@ namespace UnrealMCP {
 
 		AActor* SpawnedActor = World->SpawnActor<AActor>(Class, SpawnLocation, SpawnRotation, SpawnParams);
 		if (!SpawnedActor) {
-			return TResult<AActor*>::Failure(TEXT("Failed to spawn actor"));
+			return TResult<AActor*>::Failure(EErrorCode::FailedToSpawnActor, ActorName);
+		}
+
+		// Ensure the spawn location and rotation are properly applied
+		// Some actor types may override their transform during initialization
+		if (Location.IsSet() || Rotation.IsSet()) {
+			SpawnedActor->Modify();
+
+			// Get the root component for transform operations
+			USceneComponent* RootComponent = SpawnedActor->GetRootComponent();
+			if (!RootComponent) {
+				// Create a default scene component as root for actors that don't have one
+				USceneComponent* NewRoot = NewObject<USceneComponent>(SpawnedActor);
+				SpawnedActor->SetRootComponent(NewRoot);
+				NewRoot->RegisterComponent();
+				RootComponent = NewRoot;
+			}
+
+			RootComponent->Modify();
+
+			// Apply the spawn transform
+			const FVector NewLocation = Location.IsSet() ? Location.GetValue() : RootComponent->GetRelativeLocation();
+			const FRotator NewRotation = Rotation.IsSet() ? Rotation.GetValue() : RootComponent->GetRelativeRotation();
+
+			const FTransform NewTransform(NewRotation, NewLocation, RootComponent->GetRelativeScale3D());
+			RootComponent->SetRelativeTransform(NewTransform, false, nullptr, ETeleportType::ResetPhysics);
+
+			RootComponent->UpdateComponentToWorld();
+			SpawnedActor->UpdateAllReplicatedComponents();
 		}
 
 		return TResult<AActor*>::Success(SpawnedActor);
@@ -86,16 +115,16 @@ namespace UnrealMCP {
 	auto FActorService::DeleteActor(const FString& ActorName) -> FVoidResult {
 		AActor* Actor = FindActorByName(ActorName);
 		if (!Actor) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Actor not found: %s"), *ActorName));
+			return FVoidResult::Failure(EErrorCode::ActorNotFound, ActorName);
 		}
 
 		UEditorActorSubsystem* EditorActorSubsystem = GEditor->GetEditorSubsystem<UEditorActorSubsystem>();
 		if (!EditorActorSubsystem) {
-			return FVoidResult::Failure(TEXT("Failed to get EditorActorSubsystem"));
+			return FVoidResult::Failure(EErrorCode::EditorSubsystemNotFound, TEXT("UEditorActorSubsystem"));
 		}
 
 		if (!EditorActorSubsystem->DestroyActor(Actor)) {
-			return FVoidResult::Failure(TEXT("Failed to destroy actor"));
+			return FVoidResult::Failure(EErrorCode::FailedToDestroyActor, ActorName);
 		}
 
 		return FVoidResult::Success();
@@ -109,7 +138,7 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		AActor* Actor = FindActorByName(ActorName);
 		if (!Actor) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Actor not found: %s"), *ActorName));
+			return FVoidResult::Failure(EErrorCode::ActorNotFound, ActorName);
 		}
 
 		// Use a scoped transaction to ensure proper editor integration
@@ -147,7 +176,7 @@ namespace UnrealMCP {
 	                                       TMap<FString, FString>& OutProperties) -> FVoidResult {
 		const AActor* Actor = FindActorByName(ActorName);
 		if (!Actor) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Actor not found: %s"), *ActorName));
+			return FVoidResult::Failure(EErrorCode::ActorNotFound, ActorName);
 		}
 
 		// Get basic transform properties
@@ -177,19 +206,40 @@ namespace UnrealMCP {
 	) -> FVoidResult {
 		AActor* Actor = FindActorByName(ActorName);
 		if (!Actor) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Actor not found: %s"), *ActorName));
+			return FVoidResult::Failure(EErrorCode::ActorNotFound, ActorName);
 		}
 
 		FProperty* Property = FindFProperty<FProperty>(Actor->GetClass(), *PropertyName);
 		if (!Property) {
-			return FVoidResult::Failure(FString::Printf(TEXT("Property not found: %s"), *PropertyName));
+			// Provide helpful information about available properties
+			TArray<FString> AvailableProperties = GetAvailableProperties(Actor->GetClass());
+
+			FString Details = FString::Printf(TEXT("Property '%s' not found on actor '%s'"), *PropertyName, *ActorName);
+			if (AvailableProperties.Num() > 0) {
+				Details += TEXT(". Available properties: ");
+				for (int32 i = 0; i < FMath::Min(5, AvailableProperties.Num()); i++) {
+					Details += AvailableProperties[i];
+					if (i < FMath::Min(5, AvailableProperties.Num()) - 1) {
+						Details += TEXT(", ");
+					}
+				}
+				if (AvailableProperties.Num() > 5) {
+					Details += TEXT("...");
+				}
+			} else {
+				Details += TEXT(". No settable properties found on this actor.");
+			}
+
+			return FVoidResult::Failure(EErrorCode::PropertyNotFound, PropertyName, Details);
 		}
 
 		if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(Property)) {
 			bool BoolValue;
 			if (!PropertyValue->TryGetBool(BoolValue)) {
 				return FVoidResult::Failure(
-					FString::Printf(TEXT("Property '%s' expects a boolean value"), *PropertyName));
+					EErrorCode::InvalidPropertyValue,
+					PropertyName,
+					FString::Printf(TEXT("Property '%s' is a boolean. Expected: true/false or 1/0"), *PropertyName));
 			}
 			BoolProp->SetPropertyValue_InContainer(Actor, BoolValue);
 		}
@@ -197,7 +247,9 @@ namespace UnrealMCP {
 			double NumberValue;
 			if (!PropertyValue->TryGetNumber(NumberValue)) {
 				return FVoidResult::Failure(
-					FString::Printf(TEXT("Property '%s' expects a number value"), *PropertyName));
+					EErrorCode::InvalidPropertyValue,
+					PropertyName,
+					FString::Printf(TEXT("Property '%s' is a float. Expected: number (e.g., 1.5, 3.14)"), *PropertyName));
 			}
 			const float Value = static_cast<float>(NumberValue);
 			FloatProp->SetPropertyValue_InContainer(Actor, Value);
@@ -206,7 +258,9 @@ namespace UnrealMCP {
 			double NumberValue;
 			if (!PropertyValue->TryGetNumber(NumberValue)) {
 				return FVoidResult::Failure(
-					FString::Printf(TEXT("Property '%s' expects a number value"), *PropertyName));
+					EErrorCode::InvalidPropertyValue,
+					PropertyName,
+					FString::Printf(TEXT("Property '%s' is an integer. Expected: whole number (e.g., 1, -5, 42)"), *PropertyName));
 			}
 			const int32 Value = FMath::RoundToInt(NumberValue);
 			IntProp->SetPropertyValue_InContainer(Actor, Value);
@@ -215,12 +269,19 @@ namespace UnrealMCP {
 			FString StringValue;
 			if (!PropertyValue->TryGetString(StringValue)) {
 				return FVoidResult::Failure(
-					FString::Printf(TEXT("Property '%s' expects a string value"), *PropertyName));
+					EErrorCode::InvalidPropertyValue,
+					PropertyName,
+					FString::Printf(TEXT("Property '%s' is a string. Expected: text in quotes (e.g., \"MyActor\")"), *PropertyName));
 			}
 			StrProp->SetPropertyValue_InContainer(Actor, StringValue);
 		}
 		else {
-			return FVoidResult::Failure(FString::Printf(TEXT("Unsupported property type: %s"), *PropertyName));
+			// Provide detailed information about unsupported property types
+			FString PropertyType = Property->GetClass()->GetName();
+			FString Details = FString::Printf(
+				TEXT("Unsupported type: %s. Supported types: boolean, float, integer, string"),
+				*PropertyType);
+			return FVoidResult::Failure(EErrorCode::InvalidPropertyValue, PropertyName, Details);
 		}
 
 		return FVoidResult::Success();
@@ -249,6 +310,33 @@ namespace UnrealMCP {
 		}
 
 		return nullptr;
+	}
+
+	auto FActorService::GetAvailableProperties(UClass* ActorClass) -> TArray<FString> {
+		TArray<FString> OutProperties;
+
+		// Get all properties of the actor class
+		TFieldIterator<FProperty> PropIt(ActorClass);
+
+		while (PropIt) {
+			FProperty* Property = *PropIt;
+			if (Property) {
+				// Only include settable property types
+				if (CastField<FBoolProperty>(Property) ||
+					CastField<FFloatProperty>(Property) ||
+					CastField<FIntProperty>(Property) ||
+					CastField<FStrProperty>(Property)) {
+
+					OutProperties.Add(Property->GetName());
+				}
+			}
+			++PropIt;
+		}
+
+		// Sort properties alphabetically for consistent output
+		OutProperties.Sort();
+
+		return OutProperties;
 	}
 
 	auto FActorService::GetActorClassByName(const FString& ClassName) -> UClass* {

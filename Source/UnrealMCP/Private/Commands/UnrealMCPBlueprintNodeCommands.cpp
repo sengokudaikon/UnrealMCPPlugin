@@ -8,6 +8,7 @@
 #include "Commands/BlueprintNode/AddBlueprintVariable.h"
 #include "Commands/BlueprintNode/ConnectBlueprintNodes.h"
 #include "Commands/BlueprintNode/FindBlueprintNodes.h"
+#include "Core/ErrorTypes.h"
 #include "Core/CommonUtils.h"
 
 namespace UnrealMCP {
@@ -33,7 +34,6 @@ namespace UnrealMCP {
 			return (*Handler)(Params);
 		}
 
-		return FCommonUtils::CreateErrorResponse(
-			FString::Printf(TEXT("Unknown blueprint node command: %s"), *CommandType));
+		return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, FString::Printf(TEXT("Unknown blueprint node command: %s"), *CommandType)));
 	}
 }

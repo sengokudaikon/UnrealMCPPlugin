@@ -3,6 +3,7 @@
 #include "Commands/Registry/GetSupportedComponentTypes.h"
 #include "Commands/Registry/GetSupportedParentClasses.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 
 namespace UnrealMCP {
 
@@ -19,7 +20,7 @@ namespace UnrealMCP {
 		const FCommandHandler* Handler = CommandHandlers.Find(CommandType);
 		if (!Handler) {
 			const FString ErrorMsg = FString::Printf(TEXT("Unknown registry command: %s"), *CommandType);
-			return FCommonUtils::CreateErrorResponse(ErrorMsg);
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, ErrorMsg));
 		}
 
 		// Execute command handler

@@ -252,7 +252,7 @@ namespace UnrealMCP {
 		const FComponentHierarchyParams& Params) -> TResult<FComponentHierarchyResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<FComponentHierarchyResult>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<FComponentHierarchyResult>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 
 		// Find blueprint
@@ -265,7 +265,7 @@ namespace UnrealMCP {
 
 		const USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
 		if (!SCS) {
-			return TResult<FComponentHierarchyResult>::Failure(TEXT("Blueprint has no construction script"));
+			return TResult<FComponentHierarchyResult>::Failure(EErrorCode::BlueprintHasNoConstructionScript, TEXT("Blueprint has no construction script"));
 		}
 
 		// Build hierarchy - add ALL nodes to flat array
@@ -359,11 +359,11 @@ namespace UnrealMCP {
 		const FComponentPropertiesParams& Params) -> TResult<FComponentPropertiesResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<FComponentPropertiesResult>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<FComponentPropertiesResult>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 
 		if (Params.ComponentName.IsEmpty()) {
-			return TResult<FComponentPropertiesResult>::Failure(TEXT("Component name cannot be empty"));
+			return TResult<FComponentPropertiesResult>::Failure(EErrorCode::InvalidInput, TEXT("Component name cannot be empty"));
 		}
 
 		// Find blueprint
@@ -377,7 +377,7 @@ namespace UnrealMCP {
 		// Find the component in the blueprint
 		const USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
 		if (!SCS) {
-			return TResult<FComponentPropertiesResult>::Failure(TEXT("Blueprint has no construction script"));
+			return TResult<FComponentPropertiesResult>::Failure(EErrorCode::BlueprintHasNoConstructionScript, TEXT("Blueprint has no construction script"));
 		}
 
 		const USCS_Node* TargetNode = nullptr;
@@ -495,11 +495,11 @@ namespace UnrealMCP {
 		const FRemoveComponentParams& Params) -> TResult<FRemoveComponentResult> {
 		// Validate input parameters
 		if (Params.BlueprintName.IsEmpty()) {
-			return TResult<FRemoveComponentResult>::Failure(TEXT("Blueprint name cannot be empty"));
+			return TResult<FRemoveComponentResult>::Failure(EErrorCode::InvalidInput, TEXT("Blueprint name cannot be empty"));
 		}
 
 		if (Params.ComponentName.IsEmpty()) {
-			return TResult<FRemoveComponentResult>::Failure(TEXT("Component name cannot be empty"));
+			return TResult<FRemoveComponentResult>::Failure(EErrorCode::InvalidInput, TEXT("Component name cannot be empty"));
 		}
 
 		// Find blueprint
@@ -513,7 +513,7 @@ namespace UnrealMCP {
 		// Find the component in the blueprint
 		USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
 		if (!SCS) {
-			return TResult<FRemoveComponentResult>::Failure(TEXT("Blueprint has no construction script"));
+			return TResult<FRemoveComponentResult>::Failure(EErrorCode::BlueprintHasNoConstructionScript, TEXT("Blueprint has no construction script"));
 		}
 
 		USCS_Node* NodeToRemove = nullptr;
@@ -556,7 +556,7 @@ namespace UnrealMCP {
 		const FRenameComponentParams& Params) -> TResult<FRenameComponentResult> {
 		// Validate input
 		if (Params.NewName.IsEmpty()) {
-			return TResult<FRenameComponentResult>::Failure(TEXT("New component name cannot be empty"));
+			return TResult<FRenameComponentResult>::Failure(EErrorCode::InvalidInput, TEXT("New component name cannot be empty"));
 		}
 
 		// Find the blueprint
@@ -570,7 +570,7 @@ namespace UnrealMCP {
 		// Validate blueprint has construction script
 		const USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript;
 		if (!SCS) {
-			return TResult<FRenameComponentResult>::Failure(TEXT("Blueprint has no construction script"));
+			return TResult<FRenameComponentResult>::Failure(EErrorCode::BlueprintHasNoConstructionScript, TEXT("Blueprint has no construction script"));
 		}
 
 		// Find the component to rename

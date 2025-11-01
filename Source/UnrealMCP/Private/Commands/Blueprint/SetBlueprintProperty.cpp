@@ -1,6 +1,7 @@
 ﻿#include "Commands/Blueprint/SetBlueprintProperty.h"
 
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Core/MCPTypes.h"
 #include "Core/Result.h"
 #include "Services/BlueprintService.h"
@@ -10,7 +11,7 @@ namespace UnrealMCP {
 	auto FSetBlueprintProperty::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		FString BlueprintName;
 		if (!Params->TryGetStringField(TEXT("blueprint_name"), BlueprintName)) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing 'blueprint_name' parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'blueprint_name' parameter")));
 		}
 
 		TResult<FPropertyParams> ParamsResult =

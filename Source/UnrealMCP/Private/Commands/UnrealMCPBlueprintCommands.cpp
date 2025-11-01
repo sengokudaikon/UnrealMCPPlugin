@@ -13,6 +13,7 @@
 #include "Commands/Blueprint/GetBlueprintInfo.h"
 #include "Commands/Blueprint/GetBlueprintPath.h"
 #include "Commands/Blueprint/GetBlueprintVariables.h"
+#include "Core/ErrorTypes.h"
 #include "Commands/Blueprint/GetComponentHierarchy.h"
 #include "Commands/Blueprint/GetComponentProperties.h"
 #include "Commands/Blueprint/ListBlueprints.h"
@@ -90,6 +91,6 @@ namespace UnrealMCP {
 			return (*Handler)(Params);
 		}
 
-		return FCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown blueprint command: %s"), *CommandType));
+		return FCommonUtils::CreateErrorResponse(FError(EErrorCode::OperationFailed, FString::Printf(TEXT("Unknown blueprint command: %s"), *CommandType)));
 	}
 }

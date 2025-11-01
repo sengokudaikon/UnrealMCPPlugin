@@ -1,12 +1,13 @@
 ﻿#include "Commands/Blueprint/BlueprintExists.h"
 #include "Core/CommonUtils.h"
+#include "Core/ErrorTypes.h"
 #include "Services/BlueprintIntrospectionService.h"
 
 namespace UnrealMCP {
 
 	auto FBlueprintExistsCommand::Handle(const TSharedPtr<FJsonObject>& Params) -> TSharedPtr<FJsonObject> {
 		if (!Params->HasField(TEXT("blueprint_name"))) {
-			return FCommonUtils::CreateErrorResponse(TEXT("Missing blueprint_name parameter"));
+			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing blueprint_name parameter")));
 		}
 
 		const FString BlueprintName = Params->GetStringField(TEXT("blueprint_name"));
