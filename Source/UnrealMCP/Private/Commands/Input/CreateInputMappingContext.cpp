@@ -26,9 +26,11 @@ namespace UnrealMCP {
 
 		const auto& [Name, Path] = ParamsResult.GetValue();
 
+		const FString AssetName = Name.StartsWith(TEXT("IMC_")) ? Name : FString::Printf(TEXT("IMC_%s"), *Name);
+
 		return FCommonUtils::CreateSuccessResponse([&](const TSharedPtr<FJsonObject>& Data) {
 			Data->SetStringField(TEXT("name"), Name);
-			Data->SetStringField(TEXT("asset_path"), Path / FString::Printf(TEXT("IMC_%s"), *Name));
+			Data->SetStringField(TEXT("asset_path"), Path / AssetName);
 		});
 	}
 }

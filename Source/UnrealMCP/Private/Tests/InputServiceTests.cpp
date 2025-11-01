@@ -35,18 +35,19 @@ auto FInputServiceCreateInputActionTest::RunTest(const FString& Parameters) -> b
 	// Test: Create a basic boolean input action
 
 	UnrealMCP::FInputActionParams Params;
-	Params.Name = TEXT("Jump");
+	Params.Name = TEXT("TestJumpAction");
 	Params.ValueType = TEXT("Boolean");
 	Params.Path = TEXT("/Game/Input");
 
 	UnrealMCP::TResult<UInputAction*> Result = UnrealMCP::FInputService::CreateInputAction(Params);
 
+	
 	// Verify success
 	TestTrue(TEXT("CreateInputAction should succeed"), Result.IsSuccess());
 	UInputAction* InputAction = Result.GetValue();
 	TestTrue(TEXT("InputAction should not be null"), InputAction != nullptr);
 	if (InputAction) {
-		TestEqual(TEXT("Action name should be prefixed with IA_"), InputAction->GetFName().ToString(), TEXT("IA_Jump"));
+		TestEqual(TEXT("Action name should be prefixed with IA_"), InputAction->GetFName().ToString(), TEXT("IA_TestJumpAction"));
 		TestEqual(TEXT("Value type should be Boolean"),
 		          static_cast<uint8>(InputAction->ValueType),
 		          static_cast<uint8>(EInputActionValueType::Boolean));

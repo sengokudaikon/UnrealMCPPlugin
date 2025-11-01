@@ -701,7 +701,7 @@ auto FActorServiceGetActorAvailablePropertiesWithDetailsTest::RunTest(const FStr
 	TArray<FString> AvailableProperties = UnrealMCP::FActorService::GetAvailableProperties(TestActor->GetClass());
 
 	const TSharedPtr<FJsonValue> InvalidValue = MakeShareable(new FJsonValueBoolean(true));
-	UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorProperty(
+	const UnrealMCP::FVoidResult Result = UnrealMCP::FActorService::SetActorProperty(
 		TestActorName,
 		TEXT("DefinitelyNonExistentProperty123"),
 		InvalidValue

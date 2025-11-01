@@ -9,8 +9,12 @@
 #include "Engine/World.h"
 #include "GameFramework/InputSettings.h"
 #include "GameFramework/PlayerController.h"
+#include "GameFramework/GameModeBase.h"
+#include "Engine/Engine.h"
+#include "Kismet/GameplayStatics.h"
 #include "Misc/Paths.h"
 #include "UObject/SavePackage.h"
+#include "HAL/PlatformFileManager.h"
 
 namespace UnrealMCP {
 
@@ -19,8 +23,20 @@ namespace UnrealMCP {
 			return TResult<UInputAction*>::Failure(EErrorCode::InvalidInput, TEXT("CreateInputAction"), TEXT("Name cannot be empty"));
 		}
 
-		const FString AssetName = FString::Printf(TEXT("IA_%s"), *Params.Name);
+		// Don't add IA_ prefix if name already has it
+		const FString AssetName = Params.Name.StartsWith(TEXT("IA_")) ? Params.Name : FString::Printf(TEXT("IA_%s"), *Params.Name);
 		const FString PackagePath = Params.Path / AssetName;
+
+		
+		// Check if asset already exists
+		const UPackage* ExistingPackage = FindPackage(nullptr, *PackagePath);
+		if (ExistingPackage) {
+			return TResult<UInputAction*>::Failure(
+				EErrorCode::FailedToCreateAsset,
+				PackagePath,
+				TEXT("Input Action already exists at this path")
+			);
+		}
 
 		UPackage* Package = CreatePackage(*PackagePath);
 		if (!Package) {
@@ -53,8 +69,20 @@ namespace UnrealMCP {
 			return TResult<UInputMappingContext*>::Failure(EErrorCode::InvalidInput, TEXT("CreateInputMappingContext"), TEXT("Name cannot be empty"));
 		}
 
-		const FString AssetName = FString::Printf(TEXT("IMC_%s"), *Params.Name);
+		// Don't add IMC_ prefix if name already has it
+		const FString AssetName = Params.Name.StartsWith(TEXT("IMC_")) ? Params.Name : FString::Printf(TEXT("IMC_%s"), *Params.Name);
 		const FString PackagePath = Params.Path / AssetName;
+
+		
+		// Check if asset already exists
+		const UPackage* ExistingPackage = FindPackage(nullptr, *PackagePath);
+		if (ExistingPackage) {
+			return TResult<UInputMappingContext*>::Failure(
+				EErrorCode::FailedToCreateAsset,
+				PackagePath,
+				TEXT("Input Mapping Context already exists at this path")
+			);
+		}
 
 		UPackage* Package = CreatePackage(*PackagePath);
 		if (!Package) {
@@ -196,6 +224,16 @@ namespace UnrealMCP {
 			FPackageName::GetAssetPackageExtension()
 		);
 
+		// Ensure the directory exists
+		const FString DirectoryPath = FPaths::GetPath(PackageFileName);
+		if (!FPaths::DirectoryExists(DirectoryPath)) {
+			IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+			if (!PlatformFile.CreateDirectoryTree(*DirectoryPath)) {
+				UE_LOG(LogTemp, Error, TEXT("Failed to create directory: %s"), *DirectoryPath);
+				return false;
+			}
+		}
+
 		FSavePackageArgs SaveArgs;
 		SaveArgs.TopLevelFlags = RF_Public | RF_Standalone;
 		SaveArgs.SaveFlags = SAVE_NoError;
@@ -263,7 +301,12 @@ namespace UnrealMCP {
 
 		const APlayerController* PlayerController = World->GetFirstPlayerController();
 		if (!PlayerController) {
-			OutError = TEXT("No player controller found");
+			// Check if we're in PIE mode
+			if (World->WorldType == EWorldType::PIE) {
+				OutError = TEXT("No player controller found in PIE mode - ensure you have a Player Controller in your level");
+			} else {
+				OutError = TEXT("No player controller in editor (expected - enter PIE mode to test input mappings)");
+			}
 			return nullptr;
 		}
 
@@ -306,6 +349,46 @@ namespace UnrealMCP {
 
 		// Save the configuration
 		InputSettings->SaveConfig();
+		return FVoidResult::Success();
+	}
+
+	auto FInputService::CreatePlayerControllerInEditor() -> FVoidResult {
+		UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
+		if (!World) {
+			return FVoidResult::Failure(EErrorCode::OperationFailed, TEXT("CreatePlayerControllerInEditor"), TEXT("Failed to get editor world"));
+		}
+
+		// Check if we already have a PlayerController
+		const APlayerController* ExistingController = World->GetFirstPlayerController();
+		if (ExistingController) {
+			return FVoidResult::Success(); // PlayerController already exists
+		}
+
+		// Try to spawn a PlayerController
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = nullptr;
+		SpawnParams.Instigator = nullptr;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.bDeferConstruction = false;
+
+		// Get the default PlayerController class from the game mode or use APlayerController as fallback
+		TSubclassOf<APlayerController> ControllerClass = APlayerController::StaticClass();
+		if (World->GetAuthGameMode()) {
+			ControllerClass = World->GetAuthGameMode()->PlayerControllerClass;
+		}
+
+		APlayerController* NewController = World->SpawnActor<APlayerController>(ControllerClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+		if (!NewController) {
+			return FVoidResult::Failure(EErrorCode::OperationFailed, TEXT("CreatePlayerControllerInEditor"), TEXT("Failed to spawn PlayerController"));
+		}
+
+		// Initialize the controller
+		if (World->GetGameInstance()) {
+			// Create a new player and assign it to this controller
+			UGameplayStatics::CreatePlayer(World, 0, true);
+			NewController->SetPlayer(0); // Set as player 0
+		}
+
 		return FVoidResult::Success();
 	}
 

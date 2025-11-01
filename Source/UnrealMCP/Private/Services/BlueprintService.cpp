@@ -43,12 +43,13 @@ namespace UnrealMCP {
 			return TResult<AActor*>::Failure(EErrorCode::WorldNotFound, TEXT("Failed to get editor world"));
 		}
 
-		// Validate blueprint status
+		// Validate and handle blueprint status
 		if (Blueprint->Status != BS_UpToDate) {
+			// Log the current status
 			UE_LOG(
 				LogTemp,
-				Error,
-				TEXT("SpawnActorBlueprint: Blueprint '%s' is not up to date (Status: %d)"),
+				Log,
+				TEXT("SpawnActorBlueprint: Blueprint '%s' is not up to date (Status: %d), attempting to compile"),
 				*Blueprint->GetName(),
 				static_cast<int32>(Blueprint->Status)
 			);
@@ -72,11 +73,52 @@ namespace UnrealMCP {
 					break;
 			}
 
-			return TResult<AActor*>::Failure(EErrorCode::BlueprintNotReady, FString::Printf(
-				TEXT("Blueprint '%s' is not ready to spawn (Status: %s)"),
-				*Params.BlueprintName,
-				*StatusMessage
-			));
+			// Try to compile the blueprint if it's dirty or being created
+			if (Blueprint->Status == BS_Dirty || Blueprint->Status == BS_BeingCreated) {
+				UE_LOG(LogTemp, Log, TEXT("SpawnActorBlueprint: Attempting to compile blueprint '%s'"), *Blueprint->GetName());
+
+				UBlueprint* MutableBlueprint = const_cast<UBlueprint*>(Blueprint);
+				if (MutableBlueprint) {
+					// Save the blueprint first to persist any unsaved changes
+					bool bSaved = UEditorAssetLibrary::SaveLoadedAsset(MutableBlueprint);
+					if (!bSaved) {
+						UE_LOG(LogTemp, Warning, TEXT("SpawnActorBlueprint: Failed to save blueprint '%s' before compilation"), *Blueprint->GetName());
+					}
+
+					// Compile the blueprint
+					FKismetEditorUtilities::CompileBlueprint(MutableBlueprint);
+
+					// Check if compilation was successful
+					if (MutableBlueprint->Status == BS_UpToDate && MutableBlueprint->GeneratedClass) {
+						UE_LOG(LogTemp, Log, TEXT("SpawnActorBlueprint: Successfully compiled blueprint '%s'"), *Blueprint->GetName());
+						Blueprint = MutableBlueprint; // Update the pointer to the compiled blueprint
+					} else {
+						// Compilation failed
+						FString ErrorStatus;
+						switch (MutableBlueprint->Status) {
+							case BS_Error:
+								ErrorStatus = TEXT("Compilation errors");
+								break;
+							default:
+								ErrorStatus = FString::Printf(TEXT("Status %d"), static_cast<int32>(MutableBlueprint->Status));
+								break;
+						}
+
+						return TResult<AActor*>::Failure(EErrorCode::BlueprintNotReady, FString::Printf(
+							TEXT("Blueprint '%s' failed to compile after attempt (Status: %s)"),
+							*Params.BlueprintName,
+							*ErrorStatus
+						));
+					}
+				}
+			} else {
+				// For other statuses (Error, Unknown), don't attempt compilation
+				return TResult<AActor*>::Failure(EErrorCode::BlueprintNotReady, FString::Printf(
+					TEXT("Blueprint '%s' is not ready to spawn (Status: %s)"),
+					*Params.BlueprintName,
+					*StatusMessage
+				));
+			}
 		}
 
 		if (!Blueprint->GeneratedClass) {
@@ -441,8 +483,9 @@ namespace UnrealMCP {
 		PrimComponent->SetEnableGravity(Params.bEnableGravity);
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
+	FKismetEditorUtilities::CompileBlueprint(Blueprint);
 
-		UE_LOG(
+	UE_LOG(
 			LogTemp,
 			Display,
 			TEXT("SetPhysicsProperties - Set physics on component %s: Simulate=%d, Mass=%f, LDamp=%f, ADamp=%f, "
@@ -727,7 +770,7 @@ namespace UnrealMCP {
 		}
 
 		// Find component node
-		USCS_Node* TargetNode = FindComponentNode(Blueprint, Params.ComponentName);
+		const USCS_Node* TargetNode = FindComponentNode(Blueprint, Params.ComponentName);
 		if (!TargetNode || !TargetNode->ComponentTemplate) {
 			return TResult<FComponentTransformResult>::Failure(EErrorCode::ComponentNotFound, Params.ComponentName);
 		}

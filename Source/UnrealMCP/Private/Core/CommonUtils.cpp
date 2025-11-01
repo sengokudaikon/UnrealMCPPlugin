@@ -298,7 +298,6 @@ auto FCommonUtils::ParsePinType(const FString& TypeString, FEdGraphPinType& OutP
 }
 
 auto FCommonUtils::PinTypeToString(const FEdGraphPinType& PinType) -> FString {
-	// Handle basic types with subcategory specifics
 	if (PinType.PinCategory == UEdGraphSchema_K2::PC_Real) {
 		if (PinType.PinSubCategory == UEdGraphSchema_K2::PC_Float) {
 			return TEXT("float");
@@ -340,7 +339,6 @@ auto FCommonUtils::PinTypeToString(const FEdGraphPinType& PinType) -> FString {
 		return TEXT("struct");
 	}
 
-	// Fallback to just the category name
 	return PinType.PinCategory.ToString();
 }
 
@@ -357,30 +355,82 @@ auto FCommonUtils::CreateEventNode(UEdGraph* Graph,
 		return nullptr;
 	}
 
-	// Check for existing event node with this exact name
-	for (UEdGraphNode* Node : Graph->Nodes) {
-		if (UK2Node_Event* EventNode = Cast<UK2Node_Event>(Node); EventNode && EventNode->EventReference.GetMemberName()
-			== FName(*EventName)) {
-			// Update position of existing node
-			EventNode->NodePosX = Position.X;
-			EventNode->NodePosY = Position.Y;
-			UE_LOG(LogTemp,
-			       Display,
-			       TEXT("Using existing event node with name %s (ID: %s), updated position to (%.1f, %.1f)"),
-			       *EventName,
-			       *EventNode->NodeGuid.ToString(),
-			       Position.X,
-			       Position.Y);
-			return EventNode;
+	UClass* EventSourceClass = nullptr;
+	const UFunction* EventFunction = nullptr;
+
+	if (UClass* BlueprintClass = Blueprint->GeneratedClass) {
+		EventFunction = BlueprintClass->FindFunctionByName(FName(*EventName));
+		if (EventFunction) {
+			EventSourceClass = BlueprintClass;
+		}
+
+		if (!EventFunction) {
+			for (UClass* ParentClass = BlueprintClass->GetSuperClass(); ParentClass; ParentClass = ParentClass->
+			     GetSuperClass()) {
+				EventFunction = ParentClass->FindFunctionByName(FName(*EventName));
+				if (EventFunction) {
+					EventSourceClass = ParentClass;
+					break;
+				}
+			}
+		}
+
+
+		if (!EventFunction && BlueprintClass->IsChildOf(AActor::StaticClass())) {
+			TMap<FString, FString> EventNameMapping = {
+				{TEXT("BeginPlay"), TEXT("ReceiveBeginPlay")},
+				{TEXT("EndPlay"), TEXT("ReceiveEndPlay")},
+				{TEXT("ActorBeginPlay"), TEXT("ReceiveBeginPlay")}, // ActorBeginPlay is the same as BeginPlay
+				{TEXT("Tick"), TEXT("ReceiveTick")},
+				{TEXT("ReceiveBeginPlay"), TEXT("ReceiveBeginPlay")},
+				{TEXT("ReceiveEndPlay"), TEXT("ReceiveEndPlay")},
+				{TEXT("ReceiveTick"), TEXT("ReceiveTick")}
+			};
+
+			TArray<FString> NamesToTry = {EventName};
+			if (EventNameMapping.Contains(EventName)) {
+				NamesToTry.Add(EventNameMapping[EventName]);
+			}
+
+			for (const FString& NameToTry : NamesToTry) {
+				EventFunction = AActor::StaticClass()->FindFunctionByName(FName(*NameToTry));
+				if (EventFunction) {
+					EventSourceClass = AActor::StaticClass();
+					UE_LOG(LogTemp,
+					       Display,
+					       TEXT("Found common Actor event '%s' using fallback method (tried: %s)"),
+					       *EventName,
+					       *NameToTry);
+					break;
+				}
+			}
 		}
 	}
 
-	// No existing node found, create a new one
-	UK2Node_Event* EventNode = nullptr;
+	if (EventSourceClass && EventFunction) {
+		const FName ActualFunctionName = EventFunction->GetFName();
+		for (UEdGraphNode* Node : Graph->Nodes) {
+			if (UK2Node_Event* ExistingEventNode = Cast<UK2Node_Event>(Node);
+				ExistingEventNode && ExistingEventNode->EventReference.GetMemberName() == ActualFunctionName) {
+				ExistingEventNode->NodePosX = Position.X;
+				ExistingEventNode->NodePosY = Position.Y;
+				UE_LOG(LogTemp,
+				       Display,
+				       TEXT(
+					       "Using existing event node with name %s (function: %s, ID: %s), updated position to (%.1f, %.1f)"
+				       ),
+				       *EventName,
+				       *ActualFunctionName.ToString(),
+				       *ExistingEventNode->NodeGuid.ToString(),
+				       Position.X,
+				       Position.Y);
+				return ExistingEventNode;
+			}
+		}
 
-	if (UClass* BlueprintClass = Blueprint->GeneratedClass; BlueprintClass->FindFunctionByName(FName(*EventName))) {
-		EventNode = NewObject<UK2Node_Event>(Graph);
-		EventNode->EventReference.SetExternalMember(FName(*EventName), BlueprintClass);
+		UK2Node_Event* EventNode = NewObject<UK2Node_Event>(Graph);
+
+		EventNode->EventReference.SetExternalMember(ActualFunctionName, EventSourceClass);
 		EventNode->NodePosX = Position.X;
 		EventNode->NodePosY = Position.Y;
 		Graph->AddNode(EventNode, true);
@@ -388,15 +438,22 @@ auto FCommonUtils::CreateEventNode(UEdGraph* Graph,
 		EventNode->AllocateDefaultPins();
 		UE_LOG(LogTemp,
 		       Display,
-		       TEXT("Created new event node with name %s (ID: %s)"),
+		       TEXT("Created new event node with name %s (function: %s, ID: %s) from class %s"),
 		       *EventName,
-		       *EventNode->NodeGuid.ToString());
+		       *EventFunction->GetName(),
+		       *EventNode->NodeGuid.ToString(),
+		       *EventSourceClass->GetName());
+		return EventNode;
 	}
-	else {
-		UE_LOG(LogTemp, Error, TEXT("Failed to find function for event name: %s"), *EventName);
-	}
-
-	return EventNode;
+	const FString ClassName = Blueprint->GeneratedClass ? Blueprint->GeneratedClass->GetName() : TEXT("None");
+	const FString ParentClassName = Blueprint->ParentClass ? Blueprint->ParentClass->GetName() : TEXT("None");
+	UE_LOG(LogTemp,
+	       Warning,
+	       TEXT("Failed to find function for event name: %s in class hierarchy (Blueprint: %s, Parent: %s)"),
+	       *EventName,
+	       *ClassName,
+	       *ParentClassName);
+	return nullptr;
 }
 
 auto FCommonUtils::CreateFunctionCallNode(UEdGraph* Graph,

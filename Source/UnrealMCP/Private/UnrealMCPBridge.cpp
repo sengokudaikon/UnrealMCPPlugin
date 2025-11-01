@@ -229,6 +229,23 @@ auto UUnrealMCPBridge::InitializeCommandRouting() -> void {
 	CommandRoutingMap.Add(TEXT("get_blueprint_components"), ECommandHandlerType::Blueprint);
 	CommandRoutingMap.Add(TEXT("get_blueprint_variables"), ECommandHandlerType::Blueprint);
 	CommandRoutingMap.Add(TEXT("get_blueprint_path"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("get_blueprint_functions"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("get_component_properties"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("get_component_hierarchy"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("remove_component"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("rename_component"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("set_component_transform"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("delete_blueprint"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("duplicate_blueprint"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("remove_variable"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("set_variable_default_value"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("set_variable_metadata"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("rename_variable"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("add_function"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("remove_function"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("add_function_parameter"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("set_function_return_type"), ECommandHandlerType::Blueprint);
+	CommandRoutingMap.Add(TEXT("set_function_metadata"), ECommandHandlerType::Blueprint);
 
 	// Blueprint node commands
 	CommandRoutingMap.Add(TEXT("connect_blueprint_nodes"), ECommandHandlerType::BlueprintNode);
@@ -250,6 +267,7 @@ auto UUnrealMCPBridge::InitializeCommandRouting() -> void {
 	CommandRoutingMap.Add(TEXT("apply_mapping_context"), ECommandHandlerType::Input);
 	CommandRoutingMap.Add(TEXT("remove_mapping_context"), ECommandHandlerType::Input);
 	CommandRoutingMap.Add(TEXT("clear_all_mapping_contexts"), ECommandHandlerType::Input);
+	CommandRoutingMap.Add(TEXT("create_player_controller_in_editor"), ECommandHandlerType::Input);
 
 	// UMG/Widget commands
 	CommandRoutingMap.Add(TEXT("create_umg_widget_blueprint"), ECommandHandlerType::Widget);

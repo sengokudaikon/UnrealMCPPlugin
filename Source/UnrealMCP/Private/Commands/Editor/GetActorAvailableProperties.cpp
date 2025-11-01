@@ -16,7 +16,7 @@ namespace UnrealMCP {
 			return FCommonUtils::CreateErrorResponse(FError(EErrorCode::InvalidInput, TEXT("Missing 'name' parameter")));
 		}
 
-		AActor* Actor = FActorService::FindActorByName(ActorName);
+		const AActor* Actor = FActorService::FindActorByName(ActorName);
 		if (!Actor) {
 			TArray<FString> AvailableActors;
 			FActorService::GetActorsInLevel(AvailableActors);
@@ -47,7 +47,7 @@ namespace UnrealMCP {
 			Data->SetStringField(TEXT("actor"), ActorName);
 			Data->SetStringField(TEXT("class"), Actor->GetClass()->GetName());
 
-			TSharedPtr<FJsonObject> PropertiesArray = MakeShareable(new FJsonObject());
+			const TSharedPtr<FJsonObject> PropertiesArray = MakeShareable(new FJsonObject());
 			TArray<TSharedPtr<FJsonValue>> PropertiesJson;
 
 			for (const FString& Property : AvailableProperties) {

@@ -276,9 +276,8 @@ namespace UnrealMCP {
 			StrProp->SetPropertyValue_InContainer(Actor, StringValue);
 		}
 		else {
-			// Provide detailed information about unsupported property types
-			FString PropertyType = Property->GetClass()->GetName();
-			FString Details = FString::Printf(
+			const FString PropertyType = Property->GetClass()->GetName();
+			const FString Details = FString::Printf(
 				TEXT("Unsupported type: %s. Supported types: boolean, float, integer, string"),
 				*PropertyType);
 			return FVoidResult::Failure(EErrorCode::InvalidPropertyValue, PropertyName, Details);

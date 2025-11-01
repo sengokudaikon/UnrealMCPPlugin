@@ -6,6 +6,7 @@
 #include "Commands/Input/CreateEnhancedInputAction.h"
 #include "Commands/Input/CreateInputMappingContext.h"
 #include "Commands/Input/CreateLegacyInputMapping.h"
+#include "Commands/Input/CreatePlayerControllerInEditor.h"
 #include "Commands/Input/RemoveEnhancedInputMapping.h"
 #include "Commands/Input/RemoveMappingContext.h"
 #include "Core/CommonUtils.h"
@@ -23,6 +24,7 @@ namespace UnrealMCP {
 		CommandHandlers.Add(TEXT("apply_mapping_context"), &FApplyMappingContext::Handle);
 		CommandHandlers.Add(TEXT("remove_mapping_context"), &FRemoveMappingContext::Handle);
 		CommandHandlers.Add(TEXT("clear_all_mapping_contexts"), &FClearAllMappingContexts::Handle);
+		CommandHandlers.Add(TEXT("create_player_controller_in_editor"), &FCreatePlayerControllerInEditor::Handle);
 	}
 
 	auto FUnrealMCPInputCommands::HandleCommand(const FString& CommandType,

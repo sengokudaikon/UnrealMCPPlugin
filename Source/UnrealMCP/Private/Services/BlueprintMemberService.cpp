@@ -166,7 +166,7 @@ namespace UnrealMCP {
 		const auto ParamFName = FName(*ParamName);
 
 		// Create a user defined pin for the parameter
-		TSharedPtr<FUserPinInfo> NewParam = MakeShared<FUserPinInfo>();
+		const TSharedPtr<FUserPinInfo> NewParam = MakeShared<FUserPinInfo>();
 		NewParam->PinName = ParamFName;
 		NewParam->PinType = PinType;
 		NewParam->DesiredPinDirection = EGPD_Output; // Parameters are outputs from the entry node
@@ -258,7 +258,7 @@ namespace UnrealMCP {
 
 		// If pin doesn't exist, add it
 		if (!bPinExists) {
-			TSharedPtr<FUserPinInfo> NewReturnPin = MakeShared<FUserPinInfo>();
+			const TSharedPtr<FUserPinInfo> NewReturnPin = MakeShared<FUserPinInfo>();
 			NewReturnPin->PinName = ReturnValueName;
 			NewReturnPin->PinType = PinType;
 			NewReturnPin->DesiredPinDirection = EGPD_Input; // Return values are inputs to the result node

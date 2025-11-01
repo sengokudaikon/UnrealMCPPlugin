@@ -123,6 +123,16 @@ namespace UnrealMCP {
 		 */
 		static auto CreateLegacyInputMapping(const FLegacyInputMappingParams& Params) -> FVoidResult;
 
+		/**
+		 * Create a PlayerController in the editor world for testing input mappings
+		 *
+		 * Spawns a default PlayerController in the current editor world if one doesn't exist.
+		 * This allows testing input mappings in the editor context without needing to enter PIE mode.
+		 *
+		 * Returns Success if PlayerController was created or already exists, or Failure with an error message
+		 */
+		static auto CreatePlayerControllerInEditor() -> FVoidResult;
+
 	private:
 		/**
 		 * Helper to parse value type string to EInputActionValueType enum

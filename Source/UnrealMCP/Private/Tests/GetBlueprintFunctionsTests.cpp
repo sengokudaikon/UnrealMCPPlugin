@@ -20,7 +20,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FBlueprintMemberServiceGetFunctionsErrorHandlin
 auto FBlueprintMemberServiceGetFunctionsErrorHandling::RunTest(const FString& Parameters) -> bool {
 	// Test 1: Empty blueprint name
 	{
-		auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT(""));
+		const auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT(""));
 		TestTrue(TEXT("Empty blueprint name should fail"), Result.IsFailure());
 
 		UnrealMCPTest::FTestUtils::ValidateErrorCode(
@@ -33,7 +33,7 @@ auto FBlueprintMemberServiceGetFunctionsErrorHandling::RunTest(const FString& Pa
 
 	// Test 2: Null/invalid blueprint name
 	{
-		auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT("NonExistentBlueprint"));
+		const auto Result = UnrealMCP::FBlueprintMemberService::GetFunctions(TEXT("NonExistentBlueprint"));
 		TestTrue(TEXT("Non-existent blueprint should fail"), Result.IsFailure());
 
 		UnrealMCPTest::FTestUtils::ValidateErrorCode(
@@ -75,7 +75,7 @@ auto FBlueprintMemberServiceGetFunctionsEmptyBlueprint::RunTest(const FString& P
 	TestTrue(TEXT("Functions array should be empty"), FunctionsResult.Functions.Num() == 0);
 
 	// Test ToJson method on empty result
-	auto Json = FunctionsResult.ToJson();
+	const auto Json = FunctionsResult.ToJson();
 	TestTrue(TEXT("JSON conversion should succeed"), Json.IsValid());
 	TestTrue(TEXT("JSON should have functions array"), Json->HasField(TEXT("functions")));
 	TestTrue(TEXT("JSON should have count field"), Json->HasField(TEXT("count")));
@@ -104,7 +104,7 @@ auto FBlueprintMemberServiceGetFunctionsWithCustomFunctions::RunTest(const FStri
 	TestNotNull(TEXT("Test blueprint should be created"), TestBlueprint);
 
 	// Add a custom function
-	FString TestFunctionName = FString::Printf(TEXT("TestFunction_%s"), *FGuid::NewGuid().ToString());
+	const FString TestFunctionName = FString::Printf(TEXT("TestFunction_%s"), *FGuid::NewGuid().ToString());
 	UEdGraph* FunctionGraph = FBlueprintEditorUtils::CreateNewGraph(
 		TestBlueprint,
 		FName(*TestFunctionName),
@@ -119,7 +119,7 @@ auto FBlueprintMemberServiceGetFunctionsWithCustomFunctions::RunTest(const FStri
 	FBlueprintEditorUtils::AddFunctionGraph<UClass>(TestBlueprint, FunctionGraph, false, nullptr);
 
 	// Find the entry node in the function graph
-	UK2Node_FunctionEntry* EntryNode = nullptr;
+	const UK2Node_FunctionEntry* EntryNode = nullptr;
 	for (UEdGraphNode* Node : FunctionGraph->Nodes) {
 		if (UK2Node_FunctionEntry* Entry = Cast<UK2Node_FunctionEntry>(Node)) {
 			EntryNode = Entry;
@@ -172,7 +172,7 @@ auto FBlueprintMemberServiceGetFunctionsWithCustomFunctions::RunTest(const FStri
 			TestTrue(TEXT("Function should have node count >= 0"), FunctionInfo.NodeCount >= 0);
 
 			// Test JSON serialization for individual function
-			auto FunctionJson = FunctionInfo.ToJson();
+			const auto FunctionJson = FunctionInfo.ToJson();
 			TestTrue(TEXT("Function JSON should be valid"), FunctionJson.IsValid());
 			TestTrue(TEXT("Function JSON should have name"), FunctionJson->HasField(TEXT("name")));
 			TestTrue(TEXT("Function JSON should have category"), FunctionJson->HasField(TEXT("category")));
@@ -190,7 +190,7 @@ auto FBlueprintMemberServiceGetFunctionsWithCustomFunctions::RunTest(const FStri
 	TestTrue(TEXT("Test function should be found in results"), FoundTestFunction);
 
 	// Test complete result JSON serialization
-	auto Json = FunctionsResult.ToJson();
+	const auto Json = FunctionsResult.ToJson();
 	TestTrue(TEXT("Result JSON should be valid"), Json.IsValid());
 	TestTrue(TEXT("Result JSON should have functions array"), Json->HasField(TEXT("functions")));
 	TestTrue(TEXT("Result JSON should have count field"), Json->HasField(TEXT("count")));
@@ -221,7 +221,7 @@ auto FBlueprintMemberServiceGetFunctionsMetadataExtraction::RunTest(const FStrin
 	TestNotNull(TEXT("Metadata blueprint should be created"), MetadataBlueprint);
 
 	// Add a custom function
-	FString TestFunctionName = FString::Printf(TEXT("TestMetadataFunction_%s"), *FGuid::NewGuid().ToString());
+	const FString TestFunctionName = FString::Printf(TEXT("TestMetadataFunction_%s"), *FGuid::NewGuid().ToString());
 	UEdGraph* FunctionGraph = FBlueprintEditorUtils::CreateNewGraph(
 		MetadataBlueprint,
 		FName(*TestFunctionName),
@@ -234,7 +234,7 @@ auto FBlueprintMemberServiceGetFunctionsMetadataExtraction::RunTest(const FStrin
 	FBlueprintEditorUtils::AddFunctionGraph<UClass>(MetadataBlueprint, FunctionGraph, false, nullptr);
 
 	// Find the entry node in the function graph
-	UK2Node_FunctionEntry* EntryNode = nullptr;
+	const UK2Node_FunctionEntry* EntryNode = nullptr;
 	for (UEdGraphNode* Node : FunctionGraph->Nodes) {
 		if (UK2Node_FunctionEntry* Entry = Cast<UK2Node_FunctionEntry>(Node)) {
 			EntryNode = Entry;
@@ -264,10 +264,10 @@ auto FBlueprintMemberServiceGetFunctionsMetadataExtraction::RunTest(const FStrin
 	FKismetEditorUtilities::CompileBlueprint(MetadataBlueprint);
 
 	// Set metadata on the function
-	FString TestCategory = TEXT("TestCategory");
-	FString TestTooltip = TEXT("Test function tooltip");
+	const FString TestCategory = TEXT("TestCategory");
+	const FString TestTooltip = TEXT("Test function tooltip");
 
-	auto SetMetadataResult = UnrealMCP::FBlueprintMemberService::SetFunctionMetadata(
+	const auto SetMetadataResult = UnrealMCP::FBlueprintMemberService::SetFunctionMetadata(
 		MetadataBlueprint->GetName(),
 		TestFunctionName,
 		TOptional<FString>(TestCategory),
@@ -329,7 +329,7 @@ auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const F
 	TestNotNull(TEXT("Parameter blueprint should be created"), ParamBlueprint);
 
 	// Add a custom function
-	FString TestFunctionName = FString::Printf(TEXT("TestParamsFunction_%s"), *FGuid::NewGuid().ToString());
+	const FString TestFunctionName = FString::Printf(TEXT("TestParamsFunction_%s"), *FGuid::NewGuid().ToString());
 	UEdGraph* FunctionGraph = FBlueprintEditorUtils::CreateNewGraph(
 		ParamBlueprint,
 		FName(*TestFunctionName),
@@ -344,7 +344,7 @@ auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const F
 	FBlueprintEditorUtils::AddFunctionGraph<UClass>(ParamBlueprint, FunctionGraph, false, nullptr);
 
 	// Find the entry node in the function graph
-	UK2Node_FunctionEntry* EntryNode = nullptr;
+	const UK2Node_FunctionEntry* EntryNode = nullptr;
 	for (UEdGraphNode* Node : FunctionGraph->Nodes) {
 		if (UK2Node_FunctionEntry* Entry = Cast<UK2Node_FunctionEntry>(Node)) {
 			EntryNode = Entry;
@@ -371,7 +371,7 @@ auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const F
 	}
 
 	// Add a parameter to the function
-	auto AddParamResult = UnrealMCP::FBlueprintMemberService::AddFunctionParameter(
+	const auto AddParamResult = UnrealMCP::FBlueprintMemberService::AddFunctionParameter(
 		ParamBlueprint->GetName(),
 		TestFunctionName,
 		TEXT("TestFloatParam"),
@@ -381,7 +381,7 @@ auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const F
 	TestTrue(TEXT("Adding float parameter should succeed"), AddParamResult.IsSuccess());
 
 	// Set return type
-	auto SetReturnResult = UnrealMCP::FBlueprintMemberService::SetFunctionReturnType(
+	const auto SetReturnResult = UnrealMCP::FBlueprintMemberService::SetFunctionReturnType(
 		ParamBlueprint->GetName(),
 		TestFunctionName,
 		TEXT("bool")
@@ -415,7 +415,7 @@ auto FBlueprintMemberServiceGetFunctionsParameterAndReturnTypes::RunTest(const F
 					TestFalse(TEXT("Parameter should not be reference"), Param.bIsReference);
 
 					// Test parameter JSON serialization
-					auto ParamJson = Param.ToJson();
+					const auto ParamJson = Param.ToJson();
 					TestTrue(TEXT("Parameter JSON should be valid"), ParamJson.IsValid());
 					TestTrue(TEXT("Parameter JSON should have name"), ParamJson->HasField(TEXT("name")));
 					TestTrue(TEXT("Parameter JSON should have type"), ParamJson->HasField(TEXT("type")));

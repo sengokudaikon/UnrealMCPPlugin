@@ -8,8 +8,35 @@
 #include "Blueprint/UserWidget.h"
 #include "Components/ActorComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/AudioComponent.h"
+#include "Components/LightComponent.h"
+#include "Components/PointLightComponent.h"
+#include "Components/SpotLightComponent.h"
+#include "Components/DirectionalLightComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Components/ArrowComponent.h"
+#include "Components/BillboardComponent.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Camera/CameraComponent.h"
 #include "Engine/Blueprint.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Controller.h"
+#include "GameFramework/Pawn.h"
+#include "Camera/CameraActor.h"
+#include "Engine/DecalActor.h"
+#include "GameFramework/WorldSettings.h"
 #include "UObject/UObjectIterator.h"
 
 namespace UnrealMCP {
@@ -235,6 +262,7 @@ namespace UnrealMCP {
 			TEXT("apply_mapping_context"),
 			TEXT("remove_mapping_context"),
 			TEXT("clear_all_mapping_contexts"),
+			TEXT("create_player_controller_in_editor"),
 			TEXT("create_input_mapping")
 		};
 		OutMethods.Add(TEXT("input"), InputMethods);
@@ -407,27 +435,66 @@ namespace UnrealMCP {
 
 	auto FMCPRegistry::BuildParentClassCache() -> void {
 		ParentClassCache->Empty();
+		
+		TArray<FString> CoreModules = {
+			TEXT("Engine"),
+			TEXT("CoreUObject"),
+			TEXT("GameFramework"),
+			TEXT("EnhancedInput"),
+			TEXT("Camera"),
+			TEXT("GameplayTags"),
+			TEXT("GameplayTasks"),
+			TEXT("AIModule"),
+			TEXT("Slate"),
+			TEXT("UMG")
+		};
 
-		// Iterate through all UClasses derived from AActor
-		for (TObjectIterator<UClass> It; It; ++It) {
-			UClass* Class = *It;
+		TArray<UClass*> CommonActorClasses = {
+			AActor::StaticClass(),
+			APawn::StaticClass(),
+			ACharacter::StaticClass(),
+			APlayerController::StaticClass(),
+			AController::StaticClass(),
+			AGameModeBase::StaticClass(),
+			AGameStateBase::StaticClass(),
+			APlayerState::StaticClass(),
+			ACameraActor::StaticClass(),
+			ADecalActor::StaticClass(),
+			AWorldSettings::StaticClass()
+		};
 
-			// Must be a child of AActor
-			if (!Class->IsChildOf(AActor::StaticClass())) {
-				continue;
+		for (UClass* Class : CommonActorClasses) {
+			if (Class && !ShouldExcludeClass(Class)) {
+				ParentClassCache->AddUnique(Class);
 			}
+		}
+		
+		if (ParentClassCache->Num() < 50) {
+			UE_LOG(LogTemp, Warning, TEXT("UnrealMCP: Performing comprehensive class scan - this may take a moment..."));
 
-			// Skip classes that should be excluded
-			if (ShouldExcludeClass(Class)) {
-				continue;
+			int32 ProcessedClasses = 0;
+			for (TObjectIterator<UClass> It; It; ++It) {
+				UClass* Class = *It;
+				ProcessedClasses++;
+
+				if (ProcessedClasses % 1000 == 0) {
+					UE_LOG(LogTemp, VeryVerbose, TEXT("UnrealMCP: Processed %d classes..."), ProcessedClasses);
+				}
+
+				if (!Class->IsChildOf(AActor::StaticClass())) {
+					continue;
+				}
+
+				if (ShouldExcludeClass(Class)) {
+					continue;
+				}
+
+				if (Class->ClassGeneratedBy != nullptr) {
+					continue;
+				}
+
+				ParentClassCache->AddUnique(Class);
 			}
-
-			// Skip Blueprint-generated classes (we only want native/editor classes as parents)
-			if (Class->ClassGeneratedBy != nullptr) {
-				continue;
-			}
-
-			ParentClassCache->Add(Class);
 		}
 
 		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid parent classes"), ParentClassCache->Num());
@@ -436,26 +503,60 @@ namespace UnrealMCP {
 	auto FMCPRegistry::BuildComponentTypeCache() -> void {
 		ComponentTypeCache->Empty();
 
-		// Iterate through all UClasses derived from UActorComponent
-		for (TObjectIterator<UClass> It; It; ++It) {
-			UClass* Class = *It;
+		TArray<UClass*> CommonComponentClasses = {
+			USceneComponent::StaticClass(),
+			UActorComponent::StaticClass(),
+			UStaticMeshComponent::StaticClass(),
+			USkeletalMeshComponent::StaticClass(),
+			UCameraComponent::StaticClass(),
+			UCharacterMovementComponent::StaticClass(),
+			UCapsuleComponent::StaticClass(),
+			UBoxComponent::StaticClass(),
+			USphereComponent::StaticClass(),
+			UAudioComponent::StaticClass(),
+			UParticleSystemComponent::StaticClass(),
+			ULightComponent::StaticClass(),
+			UPointLightComponent::StaticClass(),
+			USpotLightComponent::StaticClass(),
+			UDirectionalLightComponent::StaticClass(),
+			USpringArmComponent::StaticClass(),
+			UTimelineComponent::StaticClass(),
+			UArrowComponent::StaticClass(),
+			UBillboardComponent::StaticClass()
+		};
 
-			// Must be a child of UActorComponent
-			if (!Class->IsChildOf(UActorComponent::StaticClass())) {
-				continue;
+		for (UClass* Class : CommonComponentClasses) {
+			if (Class && !ShouldExcludeClass(Class)) {
+				ComponentTypeCache->AddUnique(Class);
 			}
+		}
 
-			// Skip classes that should be excluded
-			if (ShouldExcludeClass(Class)) {
-				continue;
+		if (ComponentTypeCache->Num() < 30) {
+			UE_LOG(LogTemp, Warning, TEXT("UnrealMCP: Performing comprehensive component scan - this may take a moment..."));
+
+			int32 ProcessedClasses = 0;
+			for (TObjectIterator<UClass> It; It; ++It) {
+				UClass* Class = *It;
+				ProcessedClasses++;
+
+				if (ProcessedClasses % 1000 == 0) {
+					UE_LOG(LogTemp, VeryVerbose, TEXT("UnrealMCP: Processed %d component classes..."), ProcessedClasses);
+				}
+
+				if (!Class->IsChildOf(UActorComponent::StaticClass())) {
+					continue;
+				}
+
+				if (ShouldExcludeClass(Class)) {
+					continue;
+				}
+
+				if (Class->ClassGeneratedBy != nullptr) {
+					continue;
+				}
+
+				ComponentTypeCache->AddUnique(Class);
 			}
-
-			// Skip Blueprint-generated classes
-			if (Class->ClassGeneratedBy != nullptr) {
-				continue;
-			}
-
-			ComponentTypeCache->Add(Class);
 		}
 
 		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid component types"), ComponentTypeCache->Num());
@@ -464,26 +565,44 @@ namespace UnrealMCP {
 	auto FMCPRegistry::BuildWidgetTypeCache() -> void {
 		WidgetTypeCache->Empty();
 
-		// Iterate through all UClasses derived from UUserWidget
-		for (TObjectIterator<UClass> It; It; ++It) {
-			UClass* Class = *It;
+		TArray<UClass*> CommonWidgetClasses = {
+			UUserWidget::StaticClass()
+		};
 
-			// Must be a child of UUserWidget
-			if (!Class->IsChildOf(UUserWidget::StaticClass())) {
-				continue;
+		for (UClass* Class : CommonWidgetClasses) {
+			if (Class && !ShouldExcludeClass(Class)) {
+				WidgetTypeCache->AddUnique(Class);
 			}
+		}
 
-			// Skip classes that should be excluded
-			if (ShouldExcludeClass(Class)) {
-				continue;
+		// For widgets, we typically don't need comprehensive scanning since most widgets are Blueprint-based
+		// Only scan if we explicitly need more widget types
+		if (WidgetTypeCache->Num() < 2) {
+			UE_LOG(LogTemp, Warning, TEXT("UnrealMCP: Performing comprehensive widget scan - this may take a moment..."));
+
+			int32 ProcessedClasses = 0;
+			for (TObjectIterator<UClass> It; It; ++It) {
+				UClass* Class = *It;
+				ProcessedClasses++;
+
+				if (ProcessedClasses % 1000 == 0) {
+					UE_LOG(LogTemp, VeryVerbose, TEXT("UnrealMCP: Processed %d widget classes..."), ProcessedClasses);
+				}
+
+				if (!Class->IsChildOf(UUserWidget::StaticClass())) {
+					continue;
+				}
+
+				if (ShouldExcludeClass(Class)) {
+					continue;
+				}
+
+				if (Class->ClassGeneratedBy != nullptr) {
+					continue;
+				}
+
+				WidgetTypeCache->AddUnique(Class);
 			}
-
-			// Skip Blueprint-generated classes
-			if (Class->ClassGeneratedBy != nullptr) {
-				continue;
-			}
-
-			WidgetTypeCache->Add(Class);
 		}
 
 		UE_LOG(LogTemp, Log, TEXT("UnrealMCP: Found %d valid widget types"), WidgetTypeCache->Num());
@@ -494,13 +613,11 @@ namespace UnrealMCP {
 			return nullptr;
 		}
 
-		// Try exact name first
 		UClass* FoundClass = FindFirstObject<UClass>(*ClassName, EFindFirstObjectOptions::NativeFirst);
 		if (FoundClass && (!BaseClass || FoundClass->IsChildOf(BaseClass))) {
 			return FoundClass;
 		}
 
-		// Try with 'A' prefix (for actors)
 		if (!ClassName.StartsWith(TEXT("A"))) {
 			const FString ActorClassName = FString::Printf(TEXT("A%s"), *ClassName);
 			FoundClass = FindFirstObject<UClass>(*ActorClassName, EFindFirstObjectOptions::NativeFirst);
@@ -509,7 +626,6 @@ namespace UnrealMCP {
 			}
 		}
 
-		// Try with 'U' prefix (for objects/components)
 		if (!ClassName.StartsWith(TEXT("U"))) {
 			const FString ObjectClassName = FString::Printf(TEXT("U%s"), *ClassName);
 			FoundClass = FindFirstObject<UClass>(*ObjectClassName, EFindFirstObjectOptions::NativeFirst);
@@ -518,7 +634,6 @@ namespace UnrealMCP {
 			}
 		}
 
-		// Try with "Component" suffix for component types
 		if (BaseClass && BaseClass->IsChildOf(UActorComponent::StaticClass())) {
 			if (!ClassName.EndsWith(TEXT("Component"))) {
 				const FString ComponentClassName = FString::Printf(TEXT("%sComponent"), *ClassName);
@@ -527,7 +642,6 @@ namespace UnrealMCP {
 					return FoundClass;
 				}
 
-				// Try with U prefix and Component suffix
 				const FString UComponentClassName = FString::Printf(TEXT("U%sComponent"), *ClassName);
 				FoundClass = FindFirstObject<UClass>(*UComponentClassName, EFindFirstObjectOptions::NativeFirst);
 				if (FoundClass && FoundClass->IsChildOf(BaseClass)) {
@@ -544,17 +658,14 @@ namespace UnrealMCP {
 			return true;
 		}
 
-		// Exclude abstract classes
 		if (Class->HasAnyClassFlags(CLASS_Abstract)) {
 			return true;
 		}
 
-		// Exclude deprecated classes
 		if (Class->HasAnyClassFlags(CLASS_Deprecated)) {
 			return true;
 		}
 
-		// Exclude hidden classes
 		if (Class->HasAnyClassFlags(CLASS_Hidden)) {
 			return true;
 		}

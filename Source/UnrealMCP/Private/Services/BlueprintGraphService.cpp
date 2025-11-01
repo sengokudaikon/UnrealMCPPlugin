@@ -5,6 +5,7 @@
 #include "K2Node_InputAction.h"
 #include "K2Node_Self.h"
 #include "K2Node_VariableGet.h"
+#include "K2Node_VariableSet.h"
 #include "Camera/CameraActor.h"
 #include "Core/CommonUtils.h"
 #include "EdGraph/EdGraph.h"
@@ -87,10 +88,97 @@ namespace UnrealMCP {
 			return TResult<UK2Node_Event*>::Failure(Error);
 		}
 
-		UK2Node_Event* EventNode = FCommonUtils::CreateEventNode(EventGraph, EventName, NodePosition);
-		if (!EventNode) {
-			return TResult<UK2Node_Event*>::Failure(EErrorCode::NodeCreationFailed, TEXT("Failed to create event node"));
+	UClass* EventSourceClass = nullptr;
+	const UFunction* EventFunction = nullptr;
+
+	if (UClass* BlueprintClass = Blueprint->GeneratedClass) {
+		// First check the blueprint class itself
+		EventFunction = BlueprintClass->FindFunctionByName(FName(*EventName));
+		if (EventFunction) {
+			EventSourceClass = BlueprintClass;
 		}
+
+		if (!EventFunction) {
+			for (UClass* ParentClass = BlueprintClass->GetSuperClass(); ParentClass; ParentClass = ParentClass->GetSuperClass()) {
+				EventFunction = ParentClass->FindFunctionByName(FName(*EventName));
+				if (EventFunction) {
+					EventSourceClass = ParentClass;
+					break;
+				}
+			}
+		}
+
+
+		if (!EventFunction && BlueprintClass->IsChildOf(AActor::StaticClass())) {
+			UE_LOG(LogTemp, Display, TEXT("Attempting fallback mapping for event: %s"), *EventName);
+			// Map common event names to their actual function names
+			TMap<FString, FString> EventNameMapping = {
+				{TEXT("BeginPlay"), TEXT("ReceiveBeginPlay")},
+				{TEXT("EndPlay"), TEXT("ReceiveEndPlay")},
+				{TEXT("ActorBeginPlay"), TEXT("ReceiveBeginPlay")},  // ActorBeginPlay is the same as BeginPlay
+				{TEXT("Tick"), TEXT("ReceiveTick")},
+				{TEXT("ReceiveBeginPlay"), TEXT("ReceiveBeginPlay")},
+				{TEXT("ReceiveEndPlay"), TEXT("ReceiveEndPlay")},
+				{TEXT("ReceiveTick"), TEXT("ReceiveTick")}
+			};
+
+			// Try both the original name and mapped names
+			TArray<FString> NamesToTry = {EventName};
+			if (EventNameMapping.Contains(EventName)) {
+				NamesToTry.Add(EventNameMapping[EventName]);
+			}
+
+			for (const FString& NameToTry : NamesToTry) {
+				UE_LOG(LogTemp, Display, TEXT("Trying to find function: %s (for event: %s)"), *NameToTry, *EventName);
+				EventFunction = AActor::StaticClass()->FindFunctionByName(FName(*NameToTry));
+				if (EventFunction) {
+					EventSourceClass = AActor::StaticClass();
+					UE_LOG(LogTemp, Display, TEXT("Found common Actor event '%s' using fallback method (tried: %s)"), *EventName, *NameToTry);
+					break;
+				}
+			}
+		}
+	}
+
+	if (!EventSourceClass || !EventFunction) {
+		// Enhanced error logging for debugging
+		const FString ClassName = Blueprint->GeneratedClass ? Blueprint->GeneratedClass->GetName() : TEXT("None");
+		const FString ParentClassName = Blueprint->ParentClass ? Blueprint->ParentClass->GetName() : TEXT("None");
+		UE_LOG(LogTemp, Warning, TEXT("Failed to find function for event name: %s in class hierarchy (Blueprint: %s, Parent: %s)"),
+		       *EventName, *ClassName, *ParentClassName);
+
+		return TResult<UK2Node_Event*>::Failure(
+			EErrorCode::FunctionNotFound,
+			FString::Printf(TEXT("Event '%s' not found in blueprint '%s' class hierarchy. The event must exist in the blueprint class or its parent classes."), *EventName, *BlueprintName)
+		);
+	}
+
+	// Check for existing event node with this exact function name
+	const FName ActualFunctionName = EventFunction->GetFName();
+	for (UEdGraphNode* Node : EventGraph->Nodes) {
+		if (UK2Node_Event* ExistingEventNode = Cast<UK2Node_Event>(Node);
+			ExistingEventNode && ExistingEventNode->EventReference.GetMemberName() == ActualFunctionName) {
+			// Update position of existing node
+			ExistingEventNode->NodePosX = NodePosition.X;
+			ExistingEventNode->NodePosY = NodePosition.Y;
+			UE_LOG(LogTemp, Display, TEXT("Using existing event node with name %s (function: %s, ID: %s), updated position to (%.1f, %.1f)"),
+			       *EventName, *ActualFunctionName.ToString(), *ExistingEventNode->NodeGuid.ToString(), NodePosition.X, NodePosition.Y);
+			return TResult<UK2Node_Event*>::Success(ExistingEventNode);
+		}
+	}
+
+	// No existing node found, create a new one
+	UK2Node_Event* EventNode = NewObject<UK2Node_Event>(EventGraph);
+	// Use the actual function name, not the requested event name
+	EventNode->EventReference.SetExternalMember(ActualFunctionName, EventSourceClass);
+	EventNode->NodePosX = NodePosition.X;
+	EventNode->NodePosY = NodePosition.Y;
+	EventGraph->AddNode(EventNode, true);
+	EventNode->PostPlacedNewNode();
+	EventNode->AllocateDefaultPins();
+
+	UE_LOG(LogTemp, Display, TEXT("Created new event node with name %s (function: %s, ID: %s) from class %s"),
+	       *EventName, *ActualFunctionName.ToString(), *EventNode->NodeGuid.ToString(), *EventSourceClass->GetName());
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(Blueprint);
 		return TResult<UK2Node_Event*>::Success(EventNode);
@@ -175,7 +263,7 @@ namespace UnrealMCP {
 
 		// For PrintString, try to find it in KismetSystemLibrary as a last resort
 		if (!Function && FunctionName == TEXT("PrintString")) {
-			UClass* KismetSystemLibrary = LoadObject<UClass>(nullptr, TEXT("/Script/Engine.KismetSystemLibrary"));
+			const UClass* KismetSystemLibrary = LoadObject<UClass>(nullptr, TEXT("/Script/Engine.KismetSystemLibrary"));
 			if (KismetSystemLibrary) {
 				Function = KismetSystemLibrary->FindFunctionByName(*FunctionName);
 			}
@@ -338,18 +426,75 @@ namespace UnrealMCP {
 			return FVoidResult::Failure(Error);
 		}
 
+		// Performance logging
+		const double StartTime = FPlatformTime::Seconds();
+		int32 NodeCount = 0;
+		UE_LOG(LogBlueprintGraphService, Display, TEXT("Starting node search: type='%s', blueprint='%s', total nodes=%d"),
+		       *NodeType, *BlueprintName, EventGraph->Nodes.Num());
+
 		if (NodeType == TEXT("Event")) {
 			if (!EventName.IsSet()) {
 				return FVoidResult::Failure(EErrorCode::InvalidInput, TEXT("Missing 'event_name' parameter for Event node search"));
 			}
 
+			const FString EventNameStr = EventName.GetValue();
+			const FName TargetEventName = FName(*EventNameStr);
+			// Also try with "Receive" prefix for common events (BeginPlay -> ReceiveBeginPlay)
+			const FName ReceiveEventName = EventNameStr.StartsWith(TEXT("Receive"))
+				? TargetEventName
+				: FName(*FString::Printf(TEXT("Receive%s"), *EventNameStr));
+
 			for (UEdGraphNode* Node : EventGraph->Nodes) {
+				NodeCount++;
+				// Early exit for large graphs to prevent timeout
+				if (NodeCount > 10000) {
+					UE_LOG(LogBlueprintGraphService, Warning, TEXT("Node search truncated at 10000 nodes to prevent timeout"));
+					break;
+				}
+
 				const UK2Node_Event* EventNode = Cast<UK2Node_Event>(Node);
-				if (EventNode && EventNode->EventReference.GetMemberName() == FName(*EventName.GetValue())) {
-					OutNodeGuids.Add(EventNode->NodeGuid.ToString());
+				if (EventNode) {
+					const FName NodeEventName = EventNode->EventReference.GetMemberName();
+					if (NodeEventName == TargetEventName || NodeEventName == ReceiveEventName) {
+						OutNodeGuids.Add(EventNode->NodeGuid.ToString());
+					}
 				}
 			}
 		}
+		else if (NodeType == TEXT("Function")) {
+			for (UEdGraphNode* Node : EventGraph->Nodes) {
+				NodeCount++;
+				if (NodeCount > 10000) {
+					UE_LOG(LogBlueprintGraphService, Warning, TEXT("Node search truncated at 10000 nodes to prevent timeout"));
+					break;
+				}
+
+				if (const UK2Node_CallFunction* FunctionNode = Cast<UK2Node_CallFunction>(Node)) {
+					OutNodeGuids.Add(FunctionNode->NodeGuid.ToString());
+				}
+			}
+		}
+		else if (NodeType == TEXT("Variable")) {
+			for (UEdGraphNode* Node : EventGraph->Nodes) {
+				NodeCount++;
+				if (NodeCount > 10000) {
+					UE_LOG(LogBlueprintGraphService, Warning, TEXT("Node search truncated at 10000 nodes to prevent timeout"));
+					break;
+				}
+
+				if (Cast<UK2Node_VariableGet>(Node) || Cast<UK2Node_VariableSet>(Node)) {
+					OutNodeGuids.Add(Node->NodeGuid.ToString());
+				}
+			}
+		}
+		else {
+			return FVoidResult::Failure(EErrorCode::InvalidInput,
+				FString::Printf(TEXT("Unsupported node type '%s'. Supported types: Event, Function, Variable"), *NodeType));
+		}
+
+		const double ElapsedTime = FPlatformTime::Seconds() - StartTime;
+		UE_LOG(LogBlueprintGraphService, Display, TEXT("Node search completed: found %d nodes, searched %d nodes in %.3f seconds"),
+		       OutNodeGuids.Num(), NodeCount, ElapsedTime);
 
 		return FVoidResult::Success();
 	}
