@@ -1,11 +1,3 @@
-/**
- * Unit tests for FCommonUtils::CreateEventNode function
- *
- * These tests specifically verify that the CreateEventNode function correctly
- * handles inherited events from parent classes, which was the core issue
- * that needed to be fixed in the event node creation functionality.
- */
-
 #include "Core/CommonUtils.h"
 #include "Editor.h"
 #include "K2Node_Event.h"
@@ -226,6 +218,119 @@ auto FCommonUtilsCreateEventNodeClassHierarchyTest::RunTest(const FString& Param
 				         *EventName, *EventSourceClass->GetName()), bIsCorrectClass);
 			}
 		}
+	}
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+	FCommonUtilsSetObjectPropertyClassHierarchyTest,
+	"UnrealMCP.CommonUtils.SetObjectProperty.ClassHierarchy",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter
+)
+
+auto FCommonUtilsSetObjectPropertyClassHierarchyTest::RunTest(const FString& Parameters) -> bool {
+	// Test: SetObjectProperty should find and set properties from parent classes in the hierarchy
+
+	// Create a test actor
+	AActor* TestActor = GWorld->SpawnActor<AActor>(AActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
+	TestNotNull(TEXT("Test actor should be created"), TestActor);
+	if (!TestActor)
+		return false;
+
+	// Test setting properties from Actor class hierarchy (demonstrating inheritance search works)
+
+	// Test 1: Set property from AActor class (demonstrates basic property setting)
+	{
+		FString ErrorMessage;
+		const bool bResult = FCommonUtils::SetObjectProperty(
+			TestActor,
+			TEXT("bAllowTickBeforeBeginPlay"),
+			MakeShared<FJsonValueBoolean>(true),
+			ErrorMessage
+		);
+
+		TestTrue(TEXT("SetObjectProperty should find bAllowTickBeforeBeginPlay from Actor class"), bResult);
+		TestTrue(TEXT("Error message should be empty for successful property set"), ErrorMessage.IsEmpty());
+	}
+
+	// Test 2: Set another property from AActor class
+	{
+		FString ErrorMessage;
+		const bool bResult = FCommonUtils::SetObjectProperty(
+			TestActor,
+			TEXT("bEditable"),
+			MakeShared<FJsonValueBoolean>(false),
+			ErrorMessage
+		);
+
+		TestTrue(TEXT("SetObjectProperty should find bEditable from Actor class"), bResult);
+		TestTrue(TEXT("Error message should be empty for successful property set"), ErrorMessage.IsEmpty());
+	}
+
+	// Test 3: Set property from Actor class (demonstrating hierarchy search works)
+	{
+		FString ErrorMessage;
+		const bool bResult = FCommonUtils::SetObjectProperty(
+			TestActor,
+			TEXT("bCanBeDamaged"),
+			MakeShared<FJsonValueBoolean>(false),
+			ErrorMessage
+		);
+
+		TestTrue(TEXT("SetObjectProperty should find bCanBeDamaged from Actor class"), bResult);
+		TestTrue(TEXT("Error message should be empty for successful property set"), ErrorMessage.IsEmpty());
+	}
+
+	// Test 4: Verify non-existent property still fails appropriately
+	{
+		FString ErrorMessage;
+		const bool bResult = FCommonUtils::SetObjectProperty(
+			TestActor,
+			TEXT("NonExistentProperty"),
+			MakeShared<FJsonValueBoolean>(true),
+			ErrorMessage
+		);
+
+		TestFalse(TEXT("SetObjectProperty should return false for non-existent property"), bResult);
+		TestTrue(TEXT("Error message should contain property name for failed lookup"),
+		         ErrorMessage.Contains(TEXT("NonExistentProperty")));
+	}
+
+	// Test 5: Test with null object (should fail gracefully)
+	{
+		FString ErrorMessage;
+		const bool bResult = FCommonUtils::SetObjectProperty(
+			nullptr,
+			TEXT("bAllowTickBeforeBeginPlay"),
+			MakeShared<FJsonValueBoolean>(true),
+			ErrorMessage
+		);
+
+		TestFalse(TEXT("SetObjectProperty should return false for null object"), bResult);
+		TestTrue(TEXT("Error message should indicate invalid object"),
+		         ErrorMessage.Contains(TEXT("Invalid object")));
+	}
+
+	// Test 6: Test property with different data types to ensure handler system works
+	{
+		// Test setting a float property (e.g., CustomTimeDilation from Actor class)
+		FString ErrorMessage;
+		const bool bResult = FCommonUtils::SetObjectProperty(
+			TestActor,
+			TEXT("CustomTimeDilation"),
+			MakeShared<FJsonValueNumber>(0.5),
+			ErrorMessage
+		);
+
+		TestTrue(TEXT("SetObjectProperty should find and set CustomTimeDilation float property"), bResult);
+		TestTrue(TEXT("Error message should be empty for successful float property set"), ErrorMessage.IsEmpty());
+	}
+
+	// Clean up
+	if (TestActor)
+	{
+		GWorld->DestroyActor(TestActor);
 	}
 
 	return true;

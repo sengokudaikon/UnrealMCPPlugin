@@ -1,16 +1,4 @@
-﻿/**
- * Functional tests for BlueprintCreationService
- *
- * These tests verify the actual behavior of blueprint creation:
- * - Creating blueprints with different parent classes
- * - Blueprint compilation status
- * - Asset creation and persistence
- * - Error handling for invalid inputs
- *
- * Tests run in the Unreal Editor with real asset creation.
- */
-
-#include "EditorAssetLibrary.h"
+﻿#include "EditorAssetLibrary.h"
 #include "TestUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Core/MCPTypes.h"

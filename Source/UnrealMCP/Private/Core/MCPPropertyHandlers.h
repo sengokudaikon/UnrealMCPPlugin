@@ -237,6 +237,232 @@ namespace PropertyHandlers {
 		}
 	};
 
+	struct FStructHandler {
+		const FStructProperty* Prop;
+		void* Addr;
+		FString PropertyName;
+
+		auto operator()(const TSharedPtr<FJsonValue>& Value, FString& Error) const -> bool {
+			// Handle FVector, FRotator, FTransform, etc.
+			if (Value->Type == EJson::Array) {
+				const TArray<TSharedPtr<FJsonValue>>& Array = Value->AsArray();
+
+				// Vector/Rotator handling (3 components)
+				if (Array.Num() == 3) {
+					if (Prop->Struct == TBaseStructure<FVector>::Get()) {
+						FVector VectorValue(
+							static_cast<float>(Array[0]->AsNumber()),
+							static_cast<float>(Array[1]->AsNumber()),
+							static_cast<float>(Array[2]->AsNumber())
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FVector*>(Addr) = VectorValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FVector property %s to [%f, %f, %f]"),
+						       *PropertyName, VectorValue.X, VectorValue.Y, VectorValue.Z);
+						return true;
+					}
+
+					if (Prop->Struct == TBaseStructure<FRotator>::Get()) {
+						FRotator RotatorValue(
+							static_cast<float>(Array[0]->AsNumber()),
+							static_cast<float>(Array[1]->AsNumber()),
+							static_cast<float>(Array[2]->AsNumber())
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FRotator*>(Addr) = RotatorValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FRotator property %s to [%f, %f, %f]"),
+						       *PropertyName, RotatorValue.Pitch, RotatorValue.Yaw, RotatorValue.Roll);
+						return true;
+					}
+
+					if (Prop->Struct == TBaseStructure<FColor>::Get()) {
+						FColor ColorValue(
+							static_cast<uint8>(Array[0]->AsNumber()),
+							static_cast<uint8>(Array[1]->AsNumber()),
+							static_cast<uint8>(Array[2]->AsNumber()),
+							255 // Default alpha
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FColor*>(Addr) = ColorValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FColor property %s to [%d, %d, %d, %d]"),
+						       *PropertyName, ColorValue.R, ColorValue.G, ColorValue.B, ColorValue.A);
+						return true;
+					}
+				}
+
+				// Transform handling (9 components for rotation matrix + 3 for translation + 3 for scale)
+				if (Array.Num() == 9) {
+					if (Prop->Struct == TBaseStructure<FTransform>::Get()) {
+						// Assuming format: [Roll, Pitch, Yaw, TranslateX, TranslateY, TranslateZ, ScaleX, ScaleY, ScaleZ]
+						FRotator Rotation(
+							static_cast<float>(Array[1]->AsNumber()), // Pitch
+							static_cast<float>(Array[0]->AsNumber()), // Yaw
+							static_cast<float>(Array[2]->AsNumber())  // Roll
+						);
+						FVector Translation(
+							static_cast<float>(Array[3]->AsNumber()),
+							static_cast<float>(Array[4]->AsNumber()),
+							static_cast<float>(Array[5]->AsNumber())
+						);
+						FVector Scale3D(
+							static_cast<float>(Array[6]->AsNumber()),
+							static_cast<float>(Array[7]->AsNumber()),
+							static_cast<float>(Array[8]->AsNumber())
+						);
+
+						FTransform TransformValue(Rotation, Translation, Scale3D);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FTransform*>(Addr) = TransformValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FTransform property %s"), *PropertyName);
+						return true;
+					}
+				}
+
+				// Color handling (4 components with alpha)
+				if (Array.Num() == 4) {
+					if (Prop->Struct == TBaseStructure<FColor>::Get()) {
+						FColor ColorValue(
+							static_cast<uint8>(Array[0]->AsNumber()),
+							static_cast<uint8>(Array[1]->AsNumber()),
+							static_cast<uint8>(Array[2]->AsNumber()),
+							static_cast<uint8>(Array[3]->AsNumber())
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FColor*>(Addr) = ColorValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FColor property %s to [%d, %d, %d, %d]"),
+						       *PropertyName, ColorValue.R, ColorValue.G, ColorValue.B, ColorValue.A);
+						return true;
+					}
+				}
+
+				// LinearColor handling (4 components)
+				if (Array.Num() == 4) {
+					if (Prop->Struct == TBaseStructure<FLinearColor>::Get()) {
+						FLinearColor ColorValue(
+							static_cast<float>(Array[0]->AsNumber()),
+							static_cast<float>(Array[1]->AsNumber()),
+							static_cast<float>(Array[2]->AsNumber()),
+							static_cast<float>(Array[3]->AsNumber())
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FLinearColor*>(Addr) = ColorValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FLinearColor property %s to [%f, %f, %f, %f]"),
+						       *PropertyName, ColorValue.R, ColorValue.G, ColorValue.B, ColorValue.A);
+						return true;
+					}
+				}
+
+				// Vector2D handling (2 components)
+				if (Array.Num() == 2) {
+					if (Prop->Struct == TBaseStructure<FVector2D>::Get()) {
+						FVector2D Vector2DValue(
+							static_cast<float>(Array[0]->AsNumber()),
+							static_cast<float>(Array[1]->AsNumber())
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FVector2D*>(Addr) = Vector2DValue;
+						UE_LOG(LogTemp, Display, TEXT("Setting FVector2D property %s to [%f, %f]"),
+						       *PropertyName, Vector2DValue.X, Vector2DValue.Y);
+						return true;
+					}
+
+					if (Prop->Struct == TBaseStructure<FVector4>::Get()) {
+						// Handle Vector4 with only 2 components (set Z and W to 0)
+						FVector4 Vector4Value(
+							static_cast<float>(Array[0]->AsNumber()),
+							static_cast<float>(Array[1]->AsNumber()),
+							0.0f,
+							0.0f
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FVector4*>(Addr) = Vector4Value;
+						UE_LOG(LogTemp, Display, TEXT("Setting FVector4 property %s to [%f, %f, 0, 0]"),
+						       *PropertyName, Vector4Value.X, Vector4Value.Y);
+						return true;
+					}
+				}
+
+				// Vector4 handling (4 components)
+				if (Array.Num() == 4) {
+					if (Prop->Struct == TBaseStructure<FVector4>::Get()) {
+						FVector4 Vector4Value(
+							static_cast<float>(Array[0]->AsNumber()),
+							static_cast<float>(Array[1]->AsNumber()),
+							static_cast<float>(Array[2]->AsNumber()),
+							static_cast<float>(Array[3]->AsNumber())
+						);
+						Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FVector4*>(Addr) = Vector4Value;
+						UE_LOG(LogTemp, Display, TEXT("Setting FVector4 property %s to [%f, %f, %f, %f]"),
+						       *PropertyName, Vector4Value.X, Vector4Value.Y, Vector4Value.Z, Vector4Value.W);
+						return true;
+					}
+				}
+			}
+
+			// Handle object format for structs
+			else if (Value->Type == EJson::Object) {
+				const TSharedPtr<FJsonObject>& Object = Value->AsObject();
+
+				// Handle Transform with object format
+				if (Prop->Struct == TBaseStructure<FTransform>::Get()) {
+					FRotator Rotation(0.0f, 0.0f, 0.0f);
+					FVector Translation(0.0f, 0.0f, 0.0f);
+					FVector Scale3D(1.0f, 1.0f, 1.0f);
+
+					// Extract rotation
+					if (Object->HasTypedField<EJson::Array>(TEXT("rotation"))) {
+						const TArray<TSharedPtr<FJsonValue>>& RotArray = Object->GetArrayField(TEXT("rotation"));
+						if (RotArray.Num() >= 3) {
+							Rotation = FRotator(
+								static_cast<float>(RotArray[1]->AsNumber()), // Pitch
+								static_cast<float>(RotArray[0]->AsNumber()), // Yaw
+								static_cast<float>(RotArray[2]->AsNumber())  // Roll
+							);
+						}
+					}
+
+					// Extract translation
+					if (Object->HasTypedField<EJson::Array>(TEXT("location"))) {
+						const TArray<TSharedPtr<FJsonValue>>& LocArray = Object->GetArrayField(TEXT("location"));
+						if (LocArray.Num() >= 3) {
+							Translation = FVector(
+								static_cast<float>(LocArray[0]->AsNumber()),
+								static_cast<float>(LocArray[1]->AsNumber()),
+								static_cast<float>(LocArray[2]->AsNumber())
+							);
+						}
+					}
+
+					// Extract scale
+					if (Object->HasTypedField<EJson::Array>(TEXT("scale"))) {
+						const TArray<TSharedPtr<FJsonValue>>& ScaleArray = Object->GetArrayField(TEXT("scale"));
+						if (ScaleArray.Num() >= 3) {
+							Scale3D = FVector(
+								static_cast<float>(ScaleArray[0]->AsNumber()),
+								static_cast<float>(ScaleArray[1]->AsNumber()),
+								static_cast<float>(ScaleArray[2]->AsNumber())
+							);
+						}
+					}
+
+					FTransform TransformValue(Rotation, Translation, Scale3D);
+					Prop->InitializeValue_InContainer(Addr);
+						*static_cast<FTransform*>(Addr) = TransformValue;
+					UE_LOG(LogTemp, Display, TEXT("Setting FTransform property %s from object format"), *PropertyName);
+					return true;
+				}
+			}
+
+			// Log supported struct types for debugging
+			FString SupportedTypes = TEXT("Supported struct types: FVector, FRotator, FTransform, FColor, FLinearColor, FVector2D, FVector4");
+			UE_LOG(LogTemp, Warning, TEXT("Unsupported struct format for %s. %s"), *PropertyName, *SupportedTypes);
+
+			Error = FString::Printf(TEXT("Unsupported struct format for %s. Expected array format with 2-4 or 9 elements, or object format for Transform"), *PropertyName);
+			return false;
+		}
+	};
+
 	struct FUnsupportedHandler {
 		FString PropertyTypeName;
 		FString PropertyName;
@@ -257,6 +483,7 @@ namespace PropertyHandlers {
 		FByteHandler,
 		FEnumByteHandler,
 		FEnumHandler,
+		FStructHandler,
 		FUnsupportedHandler
 	>;
 

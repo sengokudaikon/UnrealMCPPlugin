@@ -117,11 +117,42 @@ auto FCommonUtils::GetVectorFromJson(const TSharedPtr<FJsonObject>& JsonObject, 
 		return Result;
 	}
 
-	if (const TArray<TSharedPtr<FJsonValue>>* JsonArray; JsonObject->TryGetArrayField(FieldName, JsonArray) && JsonArray
-		->Num() >= 3) {
-		Result.X = static_cast<float>((*JsonArray)[0]->AsNumber());
-		Result.Y = static_cast<float>((*JsonArray)[1]->AsNumber());
-		Result.Z = static_cast<float>((*JsonArray)[2]->AsNumber());
+	if (const TArray<TSharedPtr<FJsonValue>>* JsonArray; JsonObject->TryGetArrayField(FieldName, JsonArray)) {
+		// Must have exactly 3 elements for a valid vector
+		if (JsonArray->Num() != 3) {
+			return FVector::ZeroVector;
+		}
+
+	// Check all values are numeric and can be converted
+	for (int32 i = 0; i < 3; ++i) {
+		const TSharedPtr<FJsonValue>& Value = (*JsonArray)[i];
+		if (!Value.IsValid() || Value->Type != EJson::Number) {
+			// Try to convert string to number if possible
+			if (Value->Type == EJson::String) {
+				FString StringValue = Value->AsString();
+				float ConvertedValue = FCString::Atof(*StringValue);
+				// Check if conversion was successful (result is 0 but string wasn't "0" or similar)
+				if (ConvertedValue == 0.0f && !StringValue.StartsWith(TEXT("0")) && !StringValue.StartsWith(TEXT("-0"))) {
+					return FVector::ZeroVector;
+				}
+				// Store converted value for later use
+				switch (i) {
+					case 0: Result.X = ConvertedValue; break;
+					case 1: Result.Y = ConvertedValue; break;
+					case 2: Result.Z = ConvertedValue; break;
+				}
+			} else {
+				return FVector::ZeroVector;
+			}
+		} else {
+			// Value is already numeric, extract it
+			switch (i) {
+				case 0: Result.X = static_cast<float>(Value->AsNumber()); break;
+				case 1: Result.Y = static_cast<float>(Value->AsNumber()); break;
+				case 2: Result.Z = static_cast<float>(Value->AsNumber()); break;
+			}
+		}
+	}
 	}
 
 	return Result;
@@ -693,6 +724,16 @@ auto FCommonUtils::SetObjectProperty(
 
 	FProperty* Property = Object->GetClass()->FindPropertyByName(*PropertyName);
 	if (!Property) {
+		// Search parent classes
+		for (UClass* CurrentClass = Object->GetClass()->GetSuperClass();
+			 CurrentClass && CurrentClass != UObject::StaticClass();
+			 CurrentClass = CurrentClass->GetSuperClass()) {
+			Property = CurrentClass->FindPropertyByName(*PropertyName);
+			if (Property) break;
+		}
+	}
+
+	if (!Property) {
 		OutErrorMessage = FString::Printf(TEXT("Property not found: %s"), *PropertyName);
 		return false;
 	}
@@ -730,6 +771,10 @@ auto FCommonUtils::SetObjectProperty(
 			if (EnumDef && NumericProp) {
 				return PropertyHandlers::FEnumHandler{EnumProp, EnumDef, NumericProp, PropertyAddr, PropertyName};
 			}
+		}
+
+		if (const FStructProperty* StructProp = CastField<FStructProperty>(Property)) {
+			return PropertyHandlers::FStructHandler{StructProp, PropertyAddr, PropertyName};
 		}
 
 		return PropertyHandlers::FUnsupportedHandler{Property->GetClass()->GetName(), PropertyName};

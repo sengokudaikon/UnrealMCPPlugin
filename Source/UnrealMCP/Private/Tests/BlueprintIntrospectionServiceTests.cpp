@@ -1,21 +1,4 @@
-﻿/**
- * Functional tests for BlueprintIntrospectionService
- *
- * These tests verify the actual behavior of blueprint introspection operations:
- * - Creating real blueprints with various component structures
- * - Listing blueprints and verifying path resolution
- * - Extracting detailed blueprint information and metadata
- * - Getting component properties with type-specific data
- * - Building component hierarchies with parent-child relationships
- * - Listing blueprint variables with type and property metadata
- * - Component modification operations (remove, rename)
- * - Edge cases and boundary conditions
- *
- * Tests focus on functional outcomes and behavioral verification
- * rather than simple existence checks or error handling.
- */
-
-#include "Editor.h"
+﻿#include "Editor.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/BoxComponent.h"

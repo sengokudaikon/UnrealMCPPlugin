@@ -1,17 +1,4 @@
-﻿/**
- * Functional tests for ActorService
- *
- * These tests verify the actual behavior of actor operations:
- * - Spawning actors
- * - Finding actors
- * - Deleting actors
- * - Setting actor transforms
- * - Getting and setting actor properties
- *
- * Tests run in the Unreal Editor with real world context.
- */
-
-#include "Editor.h"
+﻿#include "Editor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Dom/JsonObject.h"
 #include "Engine/PointLight.h"

@@ -1,16 +1,4 @@
-/**
- * Functional tests for WidgetService
- *
- * These tests verify the actual behavior of UMG widget operations:
- * - Creating widget blueprints
- * - Adding text blocks to widgets
- * - Adding buttons to widgets
- * - Binding widget events
- * - Setting text block bindings
- * - Getting widget classes
- *
- * Tests run in the Unreal Editor with real world context.
- */
+
 
 #include "EditorAssetLibrary.h"
 #include "Tests/TestUtils.h"

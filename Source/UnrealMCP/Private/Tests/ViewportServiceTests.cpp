@@ -1,14 +1,4 @@
-﻿/**
- * Functional tests for ViewportService
- *
- * These tests verify the actual behavior of viewport operations:
- * - Focusing on actors
- * - Focusing on locations
- * - Taking screenshots
- *
- * Tests run in the Unreal Editor with real world context.
- */
-
+﻿
 #include "Editor.h"
 #include "UnrealEdGlobals.h"
 #include "Editor/UnrealEdEngine.h"

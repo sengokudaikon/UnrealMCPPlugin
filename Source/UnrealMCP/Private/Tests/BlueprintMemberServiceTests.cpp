@@ -1,17 +1,4 @@
-﻿/**
- * Functional tests for BlueprintMemberService
- *
- * These tests verify blueprint function and variable operations through actual behavior:
- * - Function creation, deletion, and configuration with real blueprint modification
- * - Function parameters and return types with signature verification
- * - Variable creation, deletion, renaming with persistence validation
- * - Variable metadata and default values with property inspection
- * - Integration tests showing complete workflows
- *
- * Tests focus on behavioral outcomes and avoid implementation details like error strings.
- * Tests run in the Unreal Editor with real asset creation and modification.
- */
-
+﻿
 #include "EditorAssetLibrary.h"
 #include "K2Node_FunctionEntry.h"
 #include "K2Node_FunctionResult.h"

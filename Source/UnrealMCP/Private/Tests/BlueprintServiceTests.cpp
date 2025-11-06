@@ -1,21 +1,4 @@
-﻿/**
- * Functional tests for BlueprintService
- *
- * These tests verify the actual behavior of blueprint operations:
- * - Spawning blueprint actors (with invalid blueprints)
- * - Adding components (with invalid parameters)
- * - Setting component properties (with invalid targets)
- * - Setting physics properties (with validation)
- * - Setting static mesh properties (with asset loading)
- * - Setting blueprint properties (with error handling)
- *
- * Tests focus on error handling paths as functional tests with valid blueprints
- * would require complex asset setup and management.
- *
- * Tests run in the Unreal Editor with real world context.
- */
-
-#include "Editor.h"
+﻿#include "Editor.h"
 #include "Blueprint/UserWidget.h"
 #include "Core/MCPTypes.h"
 #include "Dom/JsonObject.h"

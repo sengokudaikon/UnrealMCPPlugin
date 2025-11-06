@@ -1,16 +1,4 @@
-﻿/**
- * Functional tests for InputService
- *
- * These tests verify the actual behavior of Enhanced Input System operations:
- * - Creating input actions
- * - Creating input mapping contexts
- * - Adding/removing mappings
- * - Applying mapping contexts at runtime
- * - Creating legacy input mappings
- *
- * Tests run in the Unreal Editor with real world context.
- */
-
+﻿
 #include "Editor.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -34,8 +22,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 auto FInputServiceCreateInputActionTest::RunTest(const FString& Parameters) -> bool {
 	// Test: Create a basic boolean input action
 
+	// Generate unique name using timestamp to avoid conflicts
+	const FString UniqueName = FString::Printf(TEXT("TestJumpAction_%d"), FDateTime::Now().GetTicks());
+
 	UnrealMCP::FInputActionParams Params;
-	Params.Name = TEXT("TestJumpAction");
+	Params.Name = UniqueName;
 	Params.ValueType = TEXT("Boolean");
 	Params.Path = TEXT("/Game/Input");
 
@@ -47,7 +38,8 @@ auto FInputServiceCreateInputActionTest::RunTest(const FString& Parameters) -> b
 	UInputAction* InputAction = Result.GetValue();
 	TestTrue(TEXT("InputAction should not be null"), InputAction != nullptr);
 	if (InputAction) {
-		TestEqual(TEXT("Action name should be prefixed with IA_"), InputAction->GetFName().ToString(), TEXT("IA_TestJumpAction"));
+		const FString ExpectedName = FString::Printf(TEXT("IA_%s"), *UniqueName);
+		TestEqual(TEXT("Action name should be prefixed with IA_"), InputAction->GetFName().ToString(), ExpectedName);
 		TestEqual(TEXT("Value type should be Boolean"),
 		          static_cast<uint8>(InputAction->ValueType),
 		          static_cast<uint8>(EInputActionValueType::Boolean));

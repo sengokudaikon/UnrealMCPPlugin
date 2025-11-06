@@ -1,20 +1,4 @@
-﻿/**
- * Functional tests for BlueprintGraphService
- *
- * These tests verify the actual behavior of blueprint graph operations:
- * - Creating real blueprints and event graphs
- * - Adding various node types and verifying their creation
- * - Connecting nodes and verifying graph topology changes
- * - Setting function parameters with different data types
- * - Finding nodes by criteria in actual graphs
- * - Adding variables with proper type handling
- * - Error handling with real-world scenarios
- *
- * Tests focus on functional outcomes and behavioral verification
- * rather than error message string matching.
- */
-
-#include "EdGraphSchema_K2.h"
+﻿#include "EdGraphSchema_K2.h"
 #include "Editor.h"
 #include "K2Node_CallFunction.h"
 #include "K2Node_Event.h"
